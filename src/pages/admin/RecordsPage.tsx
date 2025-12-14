@@ -122,12 +122,30 @@ export default function RecordsPage() {
       </motion.div>
 
       {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredRecords}
-        onView={(row) => toast.info(`Viewing ${row.title}`)}
-        onEdit={(row) => toast.info(`Download ${row.title}`)}
-      />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-2xl border border-border p-6 shadow-md"
+      >
+        <DataTable
+          columns={columns}
+          data={filteredRecords.map((record) => ({
+            ...record,
+            actions: (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  toast.success(`Downloading ${record.title}...`);
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+            ),
+          }))}
+        />
+      </motion.div>
     </DashboardLayout>
   );
 }

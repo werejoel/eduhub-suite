@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -18,49 +19,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DollarSign, Search, Filter, Plus, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { DollarSign, Search, Filter, Plus, CheckCircle, Clock, AlertCircle, Loader } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import StatCard from "@/components/dashboard/StatCard";
-
-interface FeeRecord {
-  id: string;
-  studentName: string;
-  class: string;
-  feeType: string;
-  amount: number;
-  dueDate: string;
-  status: string;
-  paidDate?: string;
-}
-
-const initialFees: FeeRecord[] = [
-  { id: "1", studentName: "Alice Johnson", class: "Grade 10A", feeType: "Tuition", amount: 5000, dueDate: "2024-02-01", status: "Paid", paidDate: "2024-01-28" },
-  { id: "2", studentName: "Bob Smith", class: "Grade 9B", feeType: "Tuition", amount: 4500, dueDate: "2024-02-01", status: "Pending" },
-  { id: "3", studentName: "Carol Williams", class: "Grade 11A", feeType: "Hostel", amount: 3000, dueDate: "2024-02-01", status: "Paid", paidDate: "2024-01-25" },
-  { id: "4", studentName: "David Brown", class: "Grade 8C", feeType: "Tuition", amount: 4000, dueDate: "2024-02-01", status: "Overdue" },
-  { id: "5", studentName: "Eva Martinez", class: "Grade 12A", feeType: "Exam Fee", amount: 500, dueDate: "2024-02-15", status: "Pending" },
-  { id: "6", studentName: "Frank Wilson", class: "Grade 10B", feeType: "Tuition", amount: 5000, dueDate: "2024-02-01", status: "Paid", paidDate: "2024-01-30" },
-];
+import { useFees, useCreateFee, useUpdateFee } from "@/hooks/useDatabase";
+import { useStudents } from "@/hooks/useDatabase";
+import { Fee } from "@/lib/types";
 
 const columns = [
-  { key: "studentName", label: "Student" },
-  { key: "class", label: "Class" },
-  { key: "feeType", label: "Fee Type" },
+  { key: "student_id", label: "Student ID" },
+  { key: "amount", label: "Amount", render: (value: number) => `$${value.toLocaleString()}` },
+  { key: "term", label: "Term" },
+  { key: "academic_year", label: "Academic Year" },
+  { key: "due_date", label: "Due Date" },
   {
-    key: "amount",
-    label: "Amount",
-    render: (value: number) => `$${value.toLocaleString()}`,
-  },
-  { key: "dueDate", label: "Due Date" },
-  {
-    key: "status",
+    key: "payment_status",
     label: "Status",
     render: (value: string) => {
       const styles = {
-        Paid: "bg-success/10 text-success",
-        Pending: "bg-warning/10 text-warning",
-        Overdue: "bg-destructive/10 text-destructive",
+        paid: "bg-success/10 text-success",
+        pending: "bg-warning/10 text-warning",
+        overdue: "bg-destructive/10 text-destructive",
       };
       return (
         <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[value as keyof typeof styles]}`}>
@@ -72,33 +52,90 @@ const columns = [
 ];
 
 export default function FeesPage() {
-  const [fees, setFees] = useState<FeeRecord[]>(initialFees);
+  const { data: fees, isLoading } = useFees();
+  const { data: students } = useStudents();
+  const createMutation = useCreateFee();
+  const updateMutation = useUpdateFee();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [paymentDialog, setPaymentDialog] = useState<FeeRecord | null>(null);
+  const [newFee, setNewFee] = useState({
+    student_id: "",
+    amount: 0,
+    term: "",
+    academic_year: "",
+    due_date: "",
+    payment_status: "pending" as const,
+  });
 
-  const filteredFees = fees.filter((fee) => {
-    const matchesSearch = fee.studentName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === "all" || fee.status === filterStatus;
+  const filteredFees = (fees || []).filter((fee) => {
+    const matchesSearch = searchQuery === "" || fee.student_id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filterStatus === "all" || fee.payment_status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
-  const totalCollected = fees.filter((f) => f.status === "Paid").reduce((sum, f) => sum + f.amount, 0);
-  const totalPending = fees.filter((f) => f.status === "Pending").reduce((sum, f) => sum + f.amount, 0);
-  const totalOverdue = fees.filter((f) => f.status === "Overdue").reduce((sum, f) => sum + f.amount, 0);
+  const totalCollected = (fees || [])
+    .filter((f) => f.payment_status === "paid")
+    .reduce((sum, f) => sum + f.amount, 0);
+  const totalPending = (fees || [])
+    .filter((f) => f.payment_status === "pending")
+    .reduce((sum, f) => sum + f.amount, 0);
+  const totalOverdue = (fees || [])
+    .filter((f) => f.payment_status === "overdue")
+    .reduce((sum, f) => sum + f.amount, 0);
 
-  const handleRecordPayment = (fee: FeeRecord) => {
-    setFees(
-      fees.map((f) =>
-        f.id === fee.id
-          ? { ...f, status: "Paid", paidDate: new Date().toISOString().split("T")[0] }
-          : f
-      )
-    );
-    setPaymentDialog(null);
-    toast.success("Payment recorded successfully");
+  const handleAddFee = async () => {
+    if (!newFee.student_id || newFee.amount <= 0 || !newFee.term || !newFee.academic_year || !newFee.due_date) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    try {
+      await createMutation.mutateAsync({
+        student_id: newFee.student_id,
+        amount: newFee.amount,
+        term: newFee.term,
+        academic_year: newFee.academic_year,
+        due_date: newFee.due_date,
+        payment_status: "pending",
+      });
+      setNewFee({
+        student_id: "",
+        amount: 0,
+        term: "",
+        academic_year: "",
+        due_date: "",
+        payment_status: "pending",
+      });
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Error creating fee:", error);
+    }
   };
+
+  const handleRecordPayment = async (fee: Fee) => {
+    try {
+      await updateMutation.mutateAsync({
+        id: fee.id,
+        updates: {
+          payment_status: "paid",
+          paid_date: new Date().toISOString().split("T")[0],
+        },
+      });
+    } catch (error) {
+      console.error("Error recording payment:", error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout role="admin" userName="Admin User">
+        <div className="flex items-center justify-center h-screen">
+          <Loader className="w-8 h-8 animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="admin" userName="Admin User">
@@ -106,10 +143,6 @@ export default function FeesPage() {
         title="Fees Management"
         description="Track and manage student fee payments"
         icon={DollarSign}
-        action={{
-          label: "Add Fee Record",
-          onClick: () => setDialogOpen(true),
-        }}
       />
 
       {/* Stats */}
@@ -147,7 +180,7 @@ export default function FeesPage() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by student name..."
+              placeholder="Search by student..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -160,49 +193,110 @@ export default function FeesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Paid">Paid</SelectItem>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Overdue">Overdue</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
             </SelectContent>
           </Select>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add Fee
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Fee Record</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="student_id">Student</Label>
+                  <select
+                    id="student_id"
+                    value={newFee.student_id}
+                    onChange={(e) => setNewFee({ ...newFee, student_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                  >
+                    <option value="">Select a student</option>
+                    {students?.map((student) => (
+                      <option key={student.id} value={student.id}>
+                        {student.first_name} {student.last_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="amount">Amount</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="e.g., 5000"
+                    value={newFee.amount}
+                    onChange={(e) => setNewFee({ ...newFee, amount: parseFloat(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="term">Term</Label>
+                  <Input
+                    id="term"
+                    placeholder="e.g., Term 1"
+                    value={newFee.term}
+                    onChange={(e) => setNewFee({ ...newFee, term: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="academic_year">Academic Year</Label>
+                  <Input
+                    id="academic_year"
+                    placeholder="e.g., 2024"
+                    value={newFee.academic_year}
+                    onChange={(e) => setNewFee({ ...newFee, academic_year: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="due_date">Due Date</Label>
+                  <Input
+                    id="due_date"
+                    type="date"
+                    value={newFee.due_date}
+                    onChange={(e) => setNewFee({ ...newFee, due_date: e.target.value })}
+                  />
+                </div>
+                <Button onClick={handleAddFee} disabled={createMutation.isPending} className="w-full">
+                  {createMutation.isPending ? "Creating..." : "Create Fee Record"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </motion.div>
 
       {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredFees}
-        onEdit={(row) => row.status !== "Paid" && setPaymentDialog(row)}
-        onView={(row) => toast.info(`Viewing ${row.studentName}'s fee record`)}
-      />
-
-      {/* Payment Dialog */}
-      <Dialog open={!!paymentDialog} onOpenChange={() => setPaymentDialog(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Record Payment</DialogTitle>
-          </DialogHeader>
-          {paymentDialog && (
-            <div className="py-4">
-              <div className="bg-muted rounded-xl p-4 mb-4">
-                <p className="text-sm text-muted-foreground">Student</p>
-                <p className="font-semibold">{paymentDialog.studentName}</p>
-                <p className="text-sm text-muted-foreground mt-2">Amount Due</p>
-                <p className="text-2xl font-bold text-primary">${paymentDialog.amount.toLocaleString()}</p>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setPaymentDialog(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => handleRecordPayment(paymentDialog)} variant="success">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-2xl border border-border p-6 shadow-md"
+      >
+        <DataTable
+          columns={columns}
+          data={(filteredFees || []).map((fee) => ({
+            ...fee,
+            actions:
+              fee.payment_status !== "paid" ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleRecordPayment(fee)}
+                >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Confirm Payment
+                  Record Payment
                 </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              ) : null,
+          }))}
+          isLoading={isLoading}
+        />
+      </motion.div>
     </DashboardLayout>
   );
 }

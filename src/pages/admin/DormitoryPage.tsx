@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -18,72 +19,95 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, Search, BedDouble, Users } from "lucide-react";
+import { Building2, Search, BedDouble, Users, Plus, Loader } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import StatCard from "@/components/dashboard/StatCard";
-
-interface DormitoryRecord {
-  id: string;
-  studentName: string;
-  class: string;
-  roomNumber: string;
-  building: string;
-  bedNumber: string;
-  checkInDate: string;
-  status: string;
-}
-
-const initialRecords: DormitoryRecord[] = [
-  { id: "1", studentName: "Alice Johnson", class: "Grade 10A", roomNumber: "101", building: "Block A", bedNumber: "A1", checkInDate: "2024-01-15", status: "Occupied" },
-  { id: "2", studentName: "Bob Smith", class: "Grade 9B", roomNumber: "102", building: "Block A", bedNumber: "B2", checkInDate: "2024-01-12", status: "Occupied" },
-  { id: "3", studentName: "Carol Williams", class: "Grade 11A", roomNumber: "201", building: "Block B", bedNumber: "A1", checkInDate: "2024-01-10", status: "Occupied" },
-  { id: "4", studentName: "David Brown", class: "Grade 8C", roomNumber: "103", building: "Block A", bedNumber: "C3", checkInDate: "2024-01-08", status: "Checked Out" },
-  { id: "5", studentName: "Eva Martinez", class: "Grade 12A", roomNumber: "301", building: "Block C", bedNumber: "A1", checkInDate: "2024-01-05", status: "Occupied" },
-];
+import { useDormitories, useCreateDormitory, useUpdateDormitory } from "@/hooks/useDatabase";
+import { Dormitory } from "@/lib/types";
 
 const columns = [
-  { key: "studentName", label: "Student" },
-  { key: "class", label: "Class" },
-  { key: "building", label: "Building" },
-  { key: "roomNumber", label: "Room" },
-  { key: "bedNumber", label: "Bed" },
-  { key: "checkInDate", label: "Check-in Date" },
-  {
-    key: "status",
-    label: "Status",
-    render: (value: string) => (
-      <span
-        className={`px-3 py-1 rounded-full text-xs font-medium ${
-          value === "Occupied"
-            ? "bg-success/10 text-success"
-            : "bg-muted text-muted-foreground"
-        }`}
-      >
-        {value}
-      </span>
-    ),
-  },
+  { key: "dormitory_name", label: "Dormitory Name" },
+  { key: "dormitory_type", label: "Type" },
+  { key: "capacity", label: "Capacity" },
+  { key: "current_occupancy", label: "Current Occupancy" },
+  { key: "location", label: "Location" },
 ];
 
 export default function DormitoryPage() {
-  const [records, setRecords] = useState<DormitoryRecord[]>(initialRecords);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterBuilding, setFilterBuilding] = useState<string>("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const { data: dormitories, isLoading } = useDormitories();
+  const createMutation = useCreateDormitory();
+  const updateMutation = useUpdateDormitory();
 
-  const filteredRecords = records.filter((record) => {
-    const matchesSearch = record.studentName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesBuilding = filterBuilding === "all" || record.building === filterBuilding;
-    return matchesSearch && matchesBuilding;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newDormitory, setNewDormitory] = useState({
+    dormitory_name: "",
+    dormitory_type: "boys" as const,
+    capacity: 0,
+    current_occupancy: 0,
+    location: "",
   });
 
-  const totalBeds = 200;
-  const occupiedBeds = records.filter((r) => r.status === "Occupied").length;
-  const availableBeds = totalBeds - occupiedBeds;
-  const occupancyRate = Math.round((occupiedBeds / totalBeds) * 100);
+  const filteredDormitories = (dormitories || []).filter((dorm) => {
+    const matchesSearch = dorm.dormitory_name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesType =
+      filterType === "all" || dorm.dormitory_type === filterType;
+    return matchesSearch && matchesType;
+  });
 
-  const uniqueBuildings = [...new Set(records.map((r) => r.building))];
+  const totalCapacity = (dormitories || []).reduce(
+    (sum, d) => sum + d.capacity,
+    0
+  );
+  const totalOccupancy = (dormitories || []).reduce(
+    (sum, d) => sum + d.current_occupancy,
+    0
+  );
+  const availableBeds = totalCapacity - totalOccupancy;
+  const occupancyRate =
+    totalCapacity > 0
+      ? Math.round((totalOccupancy / totalCapacity) * 100)
+      : 0;
+
+  const handleAddDormitory = async () => {
+    if (!newDormitory.dormitory_name || newDormitory.capacity <= 0) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    try {
+      await createMutation.mutateAsync({
+        dormitory_name: newDormitory.dormitory_name,
+        dormitory_type: newDormitory.dormitory_type,
+        capacity: newDormitory.capacity,
+        current_occupancy: newDormitory.current_occupancy,
+        location: newDormitory.location,
+      });
+      setNewDormitory({
+        dormitory_name: "",
+        dormitory_type: "boys",
+        capacity: 0,
+        current_occupancy: 0,
+        location: "",
+      });
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Error creating dormitory:", error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout role="admin" userName="Admin User">
+        <div className="flex items-center justify-center h-screen">
+          <Loader className="w-8 h-8 animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="admin" userName="Admin User">
@@ -91,17 +115,13 @@ export default function DormitoryPage() {
         title="Dormitory Management"
         description="Manage student accommodation and room assignments"
         icon={Building2}
-        action={{
-          label: "Assign Room",
-          onClick: () => setDialogOpen(true),
-        }}
       />
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
         <StatCard
           title="Total Capacity"
-          value={totalBeds}
+          value={totalCapacity}
           change="beds available"
           icon={BedDouble}
           iconColor="bg-primary"
@@ -109,7 +129,7 @@ export default function DormitoryPage() {
         />
         <StatCard
           title="Occupied Beds"
-          value={occupiedBeds}
+          value={totalOccupancy}
           change={`${occupancyRate}% occupancy`}
           changeType="neutral"
           icon={Users}
@@ -136,94 +156,132 @@ export default function DormitoryPage() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by student name..."
+              placeholder="Search dormitory..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
-          <Select value={filterBuilding} onValueChange={setFilterBuilding}>
+          <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="w-full sm:w-48">
               <Building2 className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Filter by building" />
+              <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Buildings</SelectItem>
-              {uniqueBuildings.map((building) => (
-                <SelectItem key={building} value={building}>
-                  {building}
-                </SelectItem>
-              ))}
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="boys">Boys</SelectItem>
+              <SelectItem value="girls">Girls</SelectItem>
             </SelectContent>
           </Select>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add Dormitory
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Dormitory</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="dorm_name">Dormitory Name</Label>
+                  <Input
+                    id="dorm_name"
+                    placeholder="e.g., Block A"
+                    value={newDormitory.dormitory_name}
+                    onChange={(e) =>
+                      setNewDormitory({
+                        ...newDormitory,
+                        dormitory_name: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dorm_type">Type</Label>
+                  <Select
+                    value={newDormitory.dormitory_type}
+                    onValueChange={(value: any) =>
+                      setNewDormitory({
+                        ...newDormitory,
+                        dormitory_type: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="dorm_type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="boys">Boys</SelectItem>
+                      <SelectItem value="girls">Girls</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="capacity">Capacity</Label>
+                  <Input
+                    id="capacity"
+                    type="number"
+                    placeholder="e.g., 50"
+                    value={newDormitory.capacity}
+                    onChange={(e) =>
+                      setNewDormitory({
+                        ...newDormitory,
+                        capacity: parseInt(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    placeholder="e.g., Campus East"
+                    value={newDormitory.location}
+                    onChange={(e) =>
+                      setNewDormitory({
+                        ...newDormitory,
+                        location: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <Button
+                  onClick={handleAddDormitory}
+                  disabled={createMutation.isPending}
+                  className="w-full"
+                >
+                  {createMutation.isPending
+                    ? "Creating..."
+                    : "Create Dormitory"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </motion.div>
 
       {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredRecords}
-        onEdit={(row) => toast.info(`Edit ${row.studentName}'s room assignment`)}
-        onView={(row) => toast.info(`View ${row.studentName}'s details`)}
-        onDelete={(row) => {
-          setRecords(records.filter((r) => r.id !== row.id));
-          toast.success("Room assignment removed");
-        }}
-      />
-
-      {/* Dialog would go here for assigning rooms */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Room</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Student</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select student" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new1">New Student 1</SelectItem>
-                  <SelectItem value="new2">New Student 2</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Building</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select building" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Block A">Block A</SelectItem>
-                    <SelectItem value="Block B">Block B</SelectItem>
-                    <SelectItem value="Block C">Block C</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Room Number</Label>
-                <Input placeholder="e.g. 101" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Bed Number</Label>
-              <Input placeholder="e.g. A1" />
-            </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => { setDialogOpen(false); toast.success("Room assigned successfully"); }}>
-              Assign Room
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-2xl border border-border p-6 shadow-md"
+      >
+        <DataTable
+          columns={columns}
+          data={(filteredDormitories || []).map((dorm) => ({
+            ...dorm,
+            actions: (
+              <Button variant="ghost" size="sm">
+                Manage
+              </Button>
+            ),
+          }))}
+          isLoading={isLoading}
+        />
+      </motion.div>
     </DashboardLayout>
   );
 }

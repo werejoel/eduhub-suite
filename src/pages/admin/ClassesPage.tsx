@@ -1,20 +1,103 @@
+import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
+import DataTable from "@/components/dashboard/DataTable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { BookOpen, Plus, Loader, Search } from "lucide-react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { BookOpen } from "lucide-react";
+import { useClasses, useCreateClass, useUpdateClass, useDeleteClass } from "@/hooks/useDatabase";
+import { useTeachers } from "@/hooks/useDatabase";
+import { Class } from "@/lib/types";
 
-const classes = [
-  { id: "1", name: "Grade 8A", students: 32, teacher: "Ms. Emily Davis", room: "Room 101" },
-  { id: "2", name: "Grade 8B", students: 30, teacher: "Mr. John Smith", room: "Room 102" },
-  { id: "3", name: "Grade 9A", students: 35, teacher: "Mrs. Jennifer Taylor", room: "Room 201" },
-  { id: "4", name: "Grade 9B", students: 28, teacher: "Mr. James Brown", room: "Room 202" },
-  { id: "5", name: "Grade 10A", students: 30, teacher: "Dr. Sarah Wilson", room: "Room 301" },
-  { id: "6", name: "Grade 10B", students: 32, teacher: "Mr. Robert Miller", room: "Room 302" },
-  { id: "7", name: "Grade 11A", students: 25, teacher: "Ms. Lisa Anderson", room: "Room 401" },
-  { id: "8", name: "Grade 12A", students: 22, teacher: "Dr. Michael Thompson", room: "Room 501" },
+const columns = [
+  { key: "class_name", label: "Class Name" },
+  { key: "class_code", label: "Code" },
+  { key: "form_number", label: "Form" },
+  { key: "capacity", label: "Capacity" },
+  { key: "teacher_id", label: "Teacher ID" },
 ];
 
 export default function ClassesPage() {
+  const { data: classes, isLoading } = useClasses();
+  const { data: teachers } = useTeachers();
+  const createMutation = useCreateClass();
+  const updateMutation = useUpdateClass();
+  const deleteMutation = useDeleteClass();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newClass, setNewClass] = useState({
+    class_name: "",
+    class_code: "",
+    form_number: 0,
+    teacher_id: "",
+    capacity: 0,
+  });
+
+  const filteredClasses = (classes || []).filter((cls) => {
+    const matchesSearch =
+      cls.class_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      cls.class_code.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
+  const handleAddClass = async () => {
+    if (
+      !newClass.class_name ||
+      !newClass.class_code ||
+      !newClass.teacher_id ||
+      newClass.capacity <= 0
+    ) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    try {
+      await createMutation.mutateAsync({
+        class_name: newClass.class_name,
+        class_code: newClass.class_code,
+        form_number: newClass.form_number,
+        teacher_id: newClass.teacher_id,
+        capacity: newClass.capacity,
+      });
+      setNewClass({
+        class_name: "",
+        class_code: "",
+        form_number: 0,
+        teacher_id: "",
+        capacity: 0,
+      });
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Error creating class:", error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this class?")) {
+      await deleteMutation.mutateAsync(id);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout role="admin" userName="Admin User">
+        <div className="flex items-center justify-center h-screen">
+          <Loader className="w-8 h-8 animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout role="admin" userName="Admin User">
       <PageHeader
@@ -23,27 +106,134 @@ export default function ClassesPage() {
         icon={BookOpen}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {classes.map((cls, idx) => (
-          <motion.div
-            key={cls.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="bg-card rounded-2xl p-6 border border-border shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="text-3xl font-bold text-foreground">{cls.students}</span>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-2xl border border-border p-6 shadow-md"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex gap-4 flex-1">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search classes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">{cls.name}</h3>
-            <p className="text-sm text-muted-foreground mb-2">{cls.teacher}</p>
-            <p className="text-xs text-muted-foreground">{cls.room}</p>
-          </motion.div>
-        ))}
-      </div>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add Class
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Class</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="class_name">Class Name</Label>
+                  <Input
+                    id="class_name"
+                    placeholder="e.g., Grade 10A"
+                    value={newClass.class_name}
+                    onChange={(e) =>
+                      setNewClass({ ...newClass, class_name: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="class_code">Class Code</Label>
+                  <Input
+                    id="class_code"
+                    placeholder="e.g., GR10A"
+                    value={newClass.class_code}
+                    onChange={(e) =>
+                      setNewClass({ ...newClass, class_code: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="form_number">Form Number</Label>
+                  <Input
+                    id="form_number"
+                    type="number"
+                    placeholder="e.g., 4"
+                    value={newClass.form_number}
+                    onChange={(e) =>
+                      setNewClass({
+                        ...newClass,
+                        form_number: parseInt(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="teacher_id">Teacher</Label>
+                  <select
+                    id="teacher_id"
+                    value={newClass.teacher_id}
+                    onChange={(e) =>
+                      setNewClass({ ...newClass, teacher_id: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                  >
+                    <option value="">Select a teacher</option>
+                    {teachers?.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        {teacher.first_name} {teacher.last_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="capacity">Capacity</Label>
+                  <Input
+                    id="capacity"
+                    type="number"
+                    placeholder="e.g., 40"
+                    value={newClass.capacity}
+                    onChange={(e) =>
+                      setNewClass({
+                        ...newClass,
+                        capacity: parseInt(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <Button
+                  onClick={handleAddClass}
+                  disabled={createMutation.isPending}
+                  className="w-full"
+                >
+                  {createMutation.isPending ? "Creating..." : "Create Class"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <DataTable
+          columns={columns}
+          data={(filteredClasses || []).map((cls) => ({
+            ...cls,
+            actions: (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDelete(cls.id)}
+              >
+                Delete
+              </Button>
+            ),
+          }))}
+          isLoading={isLoading}
+        />
+      </motion.div>
     </DashboardLayout>
   );
 }
