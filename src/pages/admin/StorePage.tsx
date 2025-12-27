@@ -25,6 +25,7 @@ import { motion } from "framer-motion";
 import StatCard from "@/components/dashboard/StatCard";
 import { useStoreItems, useCreateStoreItem } from "@/hooks/useDatabase";
 import { StoreItem } from "@/lib/types";
+import { formatUGX } from "@/lib/utils";
 
 const columns = [
   { key: "item_name", label: "Item Name" },
@@ -33,7 +34,7 @@ const columns = [
   {
     key: "unit_price",
     label: "Unit Price",
-    render: (value: number) => `$${value.toFixed(2)}`,
+    render: (value: number) => formatUGX(value, { decimals: 2 }),
   },
   { key: "supplier", label: "Supplier" },
   {
@@ -131,7 +132,7 @@ export default function StorePage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout role="admin" userName="Admin User">
+      <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
           <Loader className="w-8 h-8 animate-spin" />
         </div>
@@ -140,7 +141,7 @@ export default function StorePage() {
   }
 
   return (
-    <DashboardLayout role="admin" userName="Admin User">
+    <DashboardLayout>
       <PageHeader
         title="Store & Inventory"
         description="Manage school store items and inventory"
@@ -159,7 +160,7 @@ export default function StorePage() {
         />
         <StatCard
           title="Inventory Value"
-          value={`$${totalValue.toLocaleString()}`}
+          value={formatUGX(totalValue)}
           icon={DollarSign}
           iconColor="bg-success"
           delay={0.1}
@@ -274,7 +275,7 @@ export default function StorePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Unit Price ($)</Label>
+                    <Label>Unit Price (UGX)</Label>
                     <Input
                       type="number"
                       step="0.01"

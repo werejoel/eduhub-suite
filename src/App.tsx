@@ -3,7 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
@@ -15,6 +19,7 @@ import FeesPage from "./pages/admin/FeesPage";
 import DormitoryPage from "./pages/admin/DormitoryPage";
 import StorePage from "./pages/admin/StorePage";
 import RecordsPage from "./pages/admin/RecordsPage";
+import UsersPage from "./pages/admin/UsersPage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -24,47 +29,204 @@ import AttendancePage from "./pages/teacher/AttendancePage";
 
 // Headteacher Pages
 import HeadteacherDashboard from "./pages/headteacher/HeadteacherDashboard";
+// Burser Pages
+import BurserDashboard from "./pages/burser/BurserDashboard";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/students" element={<StudentsPage />} />
-          <Route path="/admin/teachers" element={<TeachersPage />} />
-          <Route path="/admin/classes" element={<ClassesPage />} />
-          <Route path="/admin/fees" element={<FeesPage />} />
-          <Route path="/admin/dormitory" element={<DormitoryPage />} />
-          <Route path="/admin/store" element={<StorePage />} />
-          <Route path="/admin/records" element={<RecordsPage />} />
-          
-          {/* Teacher Routes */}
-          <Route path="/teacher" element={<TeacherDashboard />} />
-          <Route path="/teacher/classes" element={<TeacherDashboard />} />
-          <Route path="/teacher/students" element={<TeacherStudentsPage />} />
-          <Route path="/teacher/marks" element={<MarksPage />} />
-          <Route path="/teacher/attendance" element={<AttendancePage />} />
-          
-          {/* Headteacher Routes */}
-          <Route path="/headteacher" element={<HeadteacherDashboard />} />
-          <Route path="/headteacher/staff" element={<HeadteacherDashboard />} />
-          <Route path="/headteacher/students" element={<HeadteacherDashboard />} />
-          <Route path="/headteacher/academic" element={<HeadteacherDashboard />} />
-          <Route path="/headteacher/reports" element={<HeadteacherDashboard />} />
-          <Route path="/headteacher/finances" element={<HeadteacherDashboard />} />
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/students"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <StudentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/teachers"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <TeachersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/classes"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <ClassesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/fees"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <FeesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/dormitory"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DormitoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/store"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <StorePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/records"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <RecordsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <UsersPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Teacher Routes */}
+            <Route
+              path="/teacher"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/classes"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/students"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <TeacherStudentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/marks"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <MarksPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/attendance"
+              element={
+                <ProtectedRoute allowedRoles={['teacher']}>
+                  <AttendancePage />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Headteacher Routes */}
+            <Route
+              path="/headteacher"
+              element={
+                <ProtectedRoute allowedRoles={['headteacher']}>
+                  <HeadteacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/headteacher/staff"
+              element={
+                <ProtectedRoute allowedRoles={['headteacher']}>
+                  <HeadteacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/headteacher/students"
+              element={
+                <ProtectedRoute allowedRoles={['headteacher']}>
+                  <HeadteacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/headteacher/academic"
+              element={
+                <ProtectedRoute allowedRoles={['headteacher']}>
+                  <HeadteacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/headteacher/reports"
+              element={
+                <ProtectedRoute allowedRoles={['headteacher']}>
+                  <HeadteacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/headteacher/finances"
+              element={
+                <ProtectedRoute allowedRoles={['headteacher']}>
+                  <HeadteacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Burser Routes */}
+            <Route
+              path="/burser"
+              element={
+                <ProtectedRoute allowedRoles={['burser']}>
+                  <BurserDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

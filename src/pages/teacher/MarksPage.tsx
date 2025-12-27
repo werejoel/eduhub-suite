@@ -91,7 +91,7 @@ export default function MarksPage() {
   };
 
   return (
-    <DashboardLayout role="teacher" userName="Dr. Sarah Wilson">
+    <DashboardLayout>
       <PageHeader
         title="Marks Management"
         description="Add, edit and manage student marks"

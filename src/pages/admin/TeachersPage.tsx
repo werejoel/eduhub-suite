@@ -117,7 +117,7 @@ export default function TeachersPage() {
   const uniqueSubjects = [...new Set((teachers || []).map((t) => t.subject))].filter(Boolean);
 
   return (
-    <DashboardLayout role="admin" userName="Admin User">
+    <DashboardLayout>
       <PageHeader
         title="Teachers Management"
         description="Manage all teacher records and assignments"

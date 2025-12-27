@@ -77,7 +77,7 @@ export default function RecordsPage() {
   const uniqueTypes = [...new Set(records.map((r) => r.type))];
 
   return (
-    <DashboardLayout role="admin" userName="Admin User">
+    <DashboardLayout>
       <PageHeader
         title="Records & Reports"
         description="View and manage all school records and reports"

@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { GraduationCap, Users, Shield, BookOpen, ArrowRight, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const features = [
   "Complete Student Management",
@@ -14,29 +16,41 @@ const features = [
 
 const roleCards = [
   {
-    title: "Administrator",
-    description: "Full access to all system features",
-    icon: Shield,
-    href: "/admin",
-    color: "bg-primary",
-  },
-  {
     title: "Teacher",
     description: "Manage students, marks & attendance",
     icon: BookOpen,
-    href: "/teacher",
     color: "bg-success",
   },
   {
     title: "Head Teacher",
     description: "Academic oversight & reports",
     icon: GraduationCap,
-    href: "/headteacher",
     color: "bg-secondary",
+  },
+  {
+    title: "Burser",
+    description: "Financial management & transactions",
+    icon: Users,
+    color: "bg-warning",
   },
 ];
 
 const Index = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      // Redirect authenticated users to their dashboard
+      const roleRoutes: Record<string, string> = {
+        admin: '/admin',
+        teacher: '/teacher',
+        headteacher: '/headteacher',
+        burser: '/burser',
+      };
+      navigate(roleRoutes[user.role] || '/admin', { replace: true });
+    }
+  }, [user, loading, navigate]);
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -57,7 +71,7 @@ const Index = () => {
               <div className="inline-flex items-center gap-2 bg-secondary/20 backdrop-blur-sm border border-secondary/30 rounded-full px-4 py-2 mb-6">
                 <GraduationCap className="w-5 h-5 text-secondary" />
                 <span className="text-primary-foreground/90 text-sm font-medium">
-                  School Management System
+                  Kabale Parents School Management System
                 </span>
               </div>
             </motion.div>
@@ -68,7 +82,7 @@ const Index = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight"
             >
-              Manage Your School
+              Managing School
               <br />
               <span className="text-secondary">Effortlessly</span>
             </motion.h1>
@@ -90,13 +104,13 @@ const Index = () => {
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
               <Button asChild variant="hero" size="xl">
-                <Link to="/admin">
+                <Link to="/signup">
                   Get Started
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
               <Button asChild variant="hero-outline" size="xl">
-                <a href="#roles">View Portals</a>
+                <Link to="/login">Sign In</Link>
               </Button>
             </motion.div>
           </div>
@@ -175,7 +189,7 @@ const Index = () => {
                 transition={{ delay: idx * 0.15 }}
               >
                 <Link
-                  to={role.href}
+                  to="/login"
                   className="block group bg-card rounded-2xl p-8 border border-border hover:border-primary/50 hover:shadow-xl transition-all duration-300"
                 >
                   <div className={`${role.color} w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>

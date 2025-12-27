@@ -101,7 +101,7 @@ export default function DormitoryPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout role="admin" userName="Admin User">
+      <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
           <Loader className="w-8 h-8 animate-spin" />
         </div>
@@ -110,7 +110,7 @@ export default function DormitoryPage() {
   }
 
   return (
-    <DashboardLayout role="admin" userName="Admin User">
+    <DashboardLayout>
       <PageHeader
         title="Dormitory Management"
         description="Manage student accommodation and room assignments"

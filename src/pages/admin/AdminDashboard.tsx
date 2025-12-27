@@ -14,30 +14,9 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-
-const stats = [
-  { title: "Total Students", value: "1,234", change: "+12% this month", changeType: "positive" as const, icon: Users, iconColor: "bg-primary" },
-  { title: "Total Teachers", value: "86", change: "+3 new hires", changeType: "positive" as const, icon: GraduationCap, iconColor: "bg-success" },
-  { title: "Fees Collected", value: "$45,230", change: "78% of target", changeType: "neutral" as const, icon: DollarSign, iconColor: "bg-secondary" },
-  { title: "Dormitory", value: "456", change: "85% occupancy", changeType: "neutral" as const, icon: Building2, iconColor: "bg-warning" },
-];
-
-const recentStudents = [
-  { id: "1", name: "Alice Johnson", class: "Grade 10A", admissionDate: "2024-01-15", status: "Active" },
-  { id: "2", name: "Bob Smith", class: "Grade 9B", admissionDate: "2024-01-12", status: "Active" },
-  { id: "3", name: "Carol Williams", class: "Grade 11A", admissionDate: "2024-01-10", status: "Active" },
-  { id: "4", name: "David Brown", class: "Grade 8C", admissionDate: "2024-01-08", status: "Pending" },
-  { id: "5", name: "Eva Martinez", class: "Grade 12A", admissionDate: "2024-01-05", status: "Active" },
-];
-
-const feeData = [
-  { month: "Jan", collected: 12000 },
-  { month: "Feb", collected: 15000 },
-  { month: "Mar", collected: 18000 },
-  { month: "Apr", collected: 14000 },
-  { month: "May", collected: 22000 },
-  { month: "Jun", collected: 25000 },
-];
+import { useStudents, useTeachers, useFees, useDormitories, useClasses } from "@/hooks/useDatabase";
+import { formatUGX } from "@/lib/utils";
+import { useMemo } from "react";
 
 const columns = [
   { key: "name", label: "Student Name" },
@@ -61,8 +40,126 @@ const columns = [
 ];
 
 export default function AdminDashboard() {
+  const { data: students = [], isLoading: studentsLoading } = useStudents();
+  const { data: teachers = [], isLoading: teachersLoading } = useTeachers();
+  const { data: fees = [], isLoading: feesLoading } = useFees();
+  const { data: dormitories = [], isLoading: dormitoriesLoading } = useDormitories();
+  const { data: classes = [] } = useClasses();
+
+  // Calculate stats from real data
+  const stats = useMemo(() => {
+    const totalStudents = students.length;
+    const totalTeachers = teachers.length;
+    const totalFeesCollected = fees
+      .filter(f => f.payment_status === 'paid')
+      .reduce((sum, f) => sum + (f.amount || 0), 0);
+    const totalDormitoryOccupancy = dormitories.reduce((sum, d) => sum + (d.current_occupancy || 0), 0);
+    const totalDormitoryCapacity = dormitories.reduce((sum, d) => sum + (d.capacity || 0), 0);
+    const occupancyRate = totalDormitoryCapacity > 0 
+      ? Math.round((totalDormitoryOccupancy / totalDormitoryCapacity) * 100) 
+      : 0;
+
+    // Calculate student growth (comparing last month vs this month)
+    const thisMonth = new Date().getMonth();
+    const thisMonthStudents = students.filter(s => {
+      const enrollDate = new Date(s.enrollment_date);
+      return enrollDate.getMonth() === thisMonth;
+    }).length;
+    const lastMonthStudents = students.filter(s => {
+      const enrollDate = new Date(s.enrollment_date);
+      return enrollDate.getMonth() === (thisMonth - 1 + 12) % 12;
+    }).length;
+    const studentGrowth = lastMonthStudents > 0 
+      ? `+${Math.round((thisMonthStudents / lastMonthStudents) * 100)}% this month`
+      : `${thisMonthStudents} new this month`;
+
+    // Calculate teacher growth
+    const thisMonthTeachers = teachers.filter(t => {
+      const employDate = new Date(t.employment_date);
+      return employDate.getMonth() === thisMonth;
+    }).length;
+    const teacherGrowth = thisMonthTeachers > 0 
+      ? `+${thisMonthTeachers} new hires`
+      : `${teachers.filter(t => t.status === 'active').length} active`;
+
+    return [
+      { 
+        title: "Total Students", 
+        value: totalStudents.toLocaleString(), 
+        change: studentGrowth, 
+        changeType: "positive" as const, 
+        icon: Users, 
+        iconColor: "bg-primary" 
+      },
+      { 
+        title: "Total Teachers", 
+        value: totalTeachers.toString(), 
+        change: teacherGrowth, 
+        changeType: "positive" as const, 
+        icon: GraduationCap, 
+        iconColor: "bg-success" 
+      },
+      { 
+        title: "Fees Collected", 
+        value: formatUGX(totalFeesCollected), 
+        change: `${fees.filter(f => f.payment_status === 'paid').length} paid`, 
+        changeType: "neutral" as const, 
+        icon: DollarSign, 
+        iconColor: "bg-secondary" 
+      },
+      { 
+        title: "Dormitory", 
+        value: totalDormitoryOccupancy.toString(), 
+        change: `${occupancyRate}% occupancy`, 
+        changeType: "neutral" as const, 
+        icon: Building2, 
+        iconColor: "bg-warning" 
+      },
+    ];
+  }, [students, teachers, fees, dormitories]);
+
+  // Get recent students
+  const recentStudents = useMemo(() => {
+    return students
+      .sort((a, b) => new Date(b.enrollment_date).getTime() - new Date(a.enrollment_date).getTime())
+      .slice(0, 5)
+      .map(student => ({
+        id: student.id,
+        name: `${student.first_name} ${student.last_name}`,
+        class: classes.find(c => c.id === student.class_id)?.class_name || 'Unassigned',
+        admissionDate: new Date(student.enrollment_date).toLocaleDateString(),
+        status: student.status === 'active' ? 'Active' : student.status === 'inactive' ? 'Inactive' : 'Graduated',
+      }));
+  }, [students, classes]);
+
+  // Calculate fee collection by month
+  const feeData = useMemo(() => {
+    const monthlyData: Record<string, number> = {};
+    
+    fees
+      .filter(f => f.payment_status === 'paid' && f.paid_date)
+      .forEach(fee => {
+        const date = new Date(fee.paid_date!);
+        const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+        monthlyData[monthKey] = (monthlyData[monthKey] || 0) + (fee.amount || 0);
+      });
+
+    // Get last 6 months
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+      months.push({ month: monthKey, collected: monthlyData[monthKey] || 0 });
+    }
+
+    return months;
+  }, [fees]);
+
+  const isLoading = studentsLoading || teachersLoading || feesLoading || dormitoriesLoading;
+
   return (
-    <DashboardLayout role="admin" userName="Admin User">
+    <DashboardLayout>
       <PageHeader
         title="Admin Dashboard"
         description="Welcome back! Here's what's happening at your school."
@@ -71,9 +168,18 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, idx) => (
-          <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
-        ))}
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx} className="bg-card rounded-2xl p-6 border border-border animate-pulse">
+              <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-muted rounded w-1/2"></div>
+            </div>
+          ))
+        ) : (
+          stats.map((stat, idx) => (
+            <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
+          ))
+        )}
       </div>
 
       {/* Charts & Quick Actions */}
@@ -113,6 +219,9 @@ export default function AdminDashboard() {
                   fillOpacity={1}
                   fill="url(#colorFee)"
                 />
+                <Tooltip
+                  formatter={(value: number) => formatUGX(value)}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -150,12 +259,27 @@ export default function AdminDashboard() {
       {/* Recent Students Table */}
       <div className="mb-8">
         <h3 className="text-lg font-semibold mb-4">Recent Admissions</h3>
-        <DataTable
-          columns={columns}
-          data={recentStudents}
-          onEdit={(row) => console.log("Edit", row)}
-          onView={(row) => console.log("View", row)}
-        />
+        {isLoading ? (
+          <div className="bg-card rounded-2xl p-6 border border-border animate-pulse">
+            <div className="h-4 bg-muted rounded w-1/4 mb-4"></div>
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-12 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
+        ) : recentStudents.length > 0 ? (
+          <DataTable
+            columns={columns}
+            data={recentStudents}
+            onEdit={(row) => console.log("Edit", row)}
+            onView={(row) => console.log("View", row)}
+          />
+        ) : (
+          <div className="bg-card rounded-2xl p-6 border border-border text-center text-muted-foreground">
+            No recent admissions
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

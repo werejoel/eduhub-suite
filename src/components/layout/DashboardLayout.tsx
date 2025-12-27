@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   label: string;
@@ -30,8 +31,6 @@ interface NavItem {
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  role: "admin" | "teacher" | "headteacher";
-  userName?: string;
 }
 
 const navItems: Record<string, NavItem[]> = {
@@ -39,6 +38,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
     { label: "Students", icon: Users, href: "/admin/students" },
     { label: "Teachers", icon: GraduationCap, href: "/admin/teachers" },
+    { label: "Users", icon: Users, href: "/admin/users" },
     { label: "Classes", icon: BookOpen, href: "/admin/classes" },
     { label: "Fees", icon: DollarSign, href: "/admin/fees" },
     { label: "Dormitory", icon: Building2, href: "/admin/dormitory" },
@@ -61,23 +61,38 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Reports", icon: FileText, href: "/headteacher/reports" },
     { label: "Finances", icon: DollarSign, href: "/headteacher/finances" },
   ],
+  burser: [
+    { label: "Dashboard", icon: LayoutDashboard, href: "/burser" },
+    { label: "Transactions", icon: DollarSign, href: "/burser" },
+    { label: "Fees", icon: FileText, href: "/burser" },
+  ],
 };
 
 const roleLabels = {
   admin: "Administrator",
   teacher: "Teacher",
   headteacher: "Head Teacher",
+  burser: "Burser",
 };
 
-export default function DashboardLayout({ children, role, userName = "John Doe" }: DashboardLayoutProps) {
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { user, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const items = navItems[role];
 
-  const handleLogout = () => {
-    navigate("/");
+  if (!user) {
+    return null; // ProtectedRoute should handle this, but just in case
+  }
+
+  const role = user.role;
+  const userName = `${user.first_name} ${user.last_name}`;
+  const items = navItems[role] || [];
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
   };
 
   return (
@@ -260,11 +275,11 @@ export default function DashboardLayout({ children, role, userName = "John Doe" 
               </button>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                  {userName.split(" ").map(n => n[0]).join("")}
+                  {userName.split(" ").map(n => n[0]).join("").toUpperCase()}
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-sm font-medium">{userName}</p>
-                  <p className="text-xs text-muted-foreground">{roleLabels[role]}</p>
+                  <p className="text-xs text-muted-foreground">{roleLabels[role] || role}</p>
                 </div>
               </div>
             </div>
