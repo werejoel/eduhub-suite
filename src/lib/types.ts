@@ -102,3 +102,16 @@ export interface StoreItem {
   created_at: string;
   updated_at: string;
 }
+
+export type UserRole = 'admin' | 'teacher' | 'headteacher' | 'burser';
+
+export interface User {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: UserRole;
+  email_confirmed: boolean;
+  created_at: string;
+  updated_at: string;
+}

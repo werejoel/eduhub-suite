@@ -123,7 +123,7 @@ export default function StudentsPage() {
   const uniqueClasses = [...new Set((students || []).map((s) => s.class_id))].filter(Boolean);
 
   return (
-    <DashboardLayout role="admin" userName="Admin User">
+    <DashboardLayout>
       <PageHeader
         title="Students Management"
         description="Manage all student records and information"

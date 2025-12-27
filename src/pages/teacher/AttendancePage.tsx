@@ -49,7 +49,7 @@ export default function AttendancePage() {
   };
 
   return (
-    <DashboardLayout role="teacher" userName="Dr. Sarah Wilson">
+    <DashboardLayout>
       <PageHeader
         title="Attendance"
         description="Mark daily attendance for your classes"

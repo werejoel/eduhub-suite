@@ -90,7 +90,7 @@ export default function ClassesPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout role="admin" userName="Admin User">
+      <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
           <Loader className="w-8 h-8 animate-spin" />
         </div>
@@ -99,7 +99,7 @@ export default function ClassesPage() {
   }
 
   return (
-    <DashboardLayout role="admin" userName="Admin User">
+    <DashboardLayout>
       <PageHeader
         title="Classes Management"
         description="View and manage all classes"

@@ -4,25 +4,111 @@ import PageHeader from "@/components/dashboard/PageHeader";
 import { motion } from "framer-motion";
 import { Users, GraduationCap, TrendingUp, DollarSign, FileText, BookOpen } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-
-const stats = [
-  { title: "Total Students", value: "1,234", change: "+5% vs last year", changeType: "positive" as const, icon: Users, iconColor: "bg-primary" },
-  { title: "Total Staff", value: "98", change: "12 teachers, 86 support", changeType: "neutral" as const, icon: GraduationCap, iconColor: "bg-success" },
-  { title: "Pass Rate", value: "94%", change: "+2% improvement", changeType: "positive" as const, icon: TrendingUp, iconColor: "bg-secondary" },
-  { title: "Revenue", value: "$125K", change: "This quarter", changeType: "neutral" as const, icon: DollarSign, iconColor: "bg-warning" },
-];
-
-const performanceData = [
-  { subject: "Math", score: 78 },
-  { subject: "Science", score: 82 },
-  { subject: "English", score: 75 },
-  { subject: "History", score: 70 },
-  { subject: "Arts", score: 88 },
-];
+import { useStudents, useTeachers, useMarks, useFees } from "@/hooks/useDatabase";
+import { formatUGX } from "@/lib/utils";
+import { useMemo } from "react";
 
 export default function HeadteacherDashboard() {
+  const { data: students = [] } = useStudents();
+  const { data: teachers = [] } = useTeachers();
+  const { data: marks = [] } = useMarks();
+  const { data: fees = [] } = useFees();
+
+  // Calculate stats from real data
+  const stats = useMemo(() => {
+    const totalStudents = students.length;
+    const totalTeachers = teachers.length;
+    const activeTeachers = teachers.filter(t => t.status === 'active').length;
+    
+    // Calculate pass rate (assuming 50% is passing)
+    const totalMarks = marks.length;
+    const passingMarks = marks.filter(m => {
+      const percentage = (m.marks_obtained / m.total_marks) * 100;
+      return percentage >= 50;
+    }).length;
+    const passRate = totalMarks > 0 ? Math.round((passingMarks / totalMarks) * 100) : 0;
+
+    // Calculate revenue (fees collected)
+    const totalRevenue = fees
+      .filter(f => f.payment_status === 'paid')
+      .reduce((sum, f) => sum + (f.amount || 0), 0);
+
+    // Student growth (this month vs last month)
+    const thisMonth = new Date().getMonth();
+    const thisMonthStudents = students.filter(s => {
+      const enrollDate = new Date(s.enrollment_date);
+      return enrollDate.getMonth() === thisMonth;
+    }).length;
+    const lastMonthStudents = students.filter(s => {
+      const enrollDate = new Date(s.enrollment_date);
+      return enrollDate.getMonth() === (thisMonth - 1 + 12) % 12;
+    }).length;
+    const growth = lastMonthStudents > 0 
+      ? `+${Math.round(((thisMonthStudents - lastMonthStudents) / lastMonthStudents) * 100)}% vs last month`
+      : `${thisMonthStudents} new this month`;
+
+    return [
+      { 
+        title: "Total Students", 
+        value: totalStudents.toLocaleString(), 
+        change: growth, 
+        changeType: "positive" as const, 
+        icon: Users, 
+        iconColor: "bg-primary" 
+      },
+      { 
+        title: "Total Staff", 
+        value: totalTeachers.toString(), 
+        change: `${activeTeachers} active teachers`, 
+        changeType: "neutral" as const, 
+        icon: GraduationCap, 
+        iconColor: "bg-success" 
+      },
+      { 
+        title: "Pass Rate", 
+        value: `${passRate}%`, 
+        change: "Based on all marks", 
+        changeType: "positive" as const, 
+        icon: TrendingUp, 
+        iconColor: "bg-secondary" 
+      },
+      { 
+        title: "Revenue", 
+        value: formatUGX(totalRevenue, { decimals: 0 }), 
+        change: "This quarter", 
+        changeType: "neutral" as const, 
+        icon: DollarSign, 
+        iconColor: "bg-warning" 
+      },
+    ];
+  }, [students, teachers, marks, fees]);
+
+  // Calculate subject performance
+  const performanceData = useMemo(() => {
+    const subjectScores: Record<string, { total: number; count: number }> = {};
+    
+    marks.forEach(mark => {
+      if (mark.subject) {
+        if (!subjectScores[mark.subject]) {
+          subjectScores[mark.subject] = { total: 0, count: 0 };
+        }
+        const percentage = (mark.marks_obtained / mark.total_marks) * 100;
+        subjectScores[mark.subject].total += percentage;
+        subjectScores[mark.subject].count += 1;
+      }
+    });
+
+    return Object.entries(subjectScores)
+      .map(([subject, data]) => ({
+        subject,
+        score: Math.round(data.total / data.count),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+  }, [marks]);
+
   return (
-    <DashboardLayout role="headteacher" userName="Principal Smith">
+    <DashboardLayout>
       <PageHeader
         title="Head Teacher Dashboard"
         description="School performance overview and management"
@@ -44,15 +130,21 @@ export default function HeadteacherDashboard() {
         >
           <h3 className="text-lg font-semibold mb-4">Subject Performance</h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={performanceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 32%, 91%)" />
-                <XAxis dataKey="subject" stroke="hsl(215, 16%, 47%)" fontSize={12} />
-                <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
-                <Tooltip />
-                <Bar dataKey="score" fill="hsl(217, 91%, 22%)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {performanceData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={performanceData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 32%, 91%)" />
+                  <XAxis dataKey="subject" stroke="hsl(215, 16%, 47%)" fontSize={12} />
+                  <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="score" fill="hsl(217, 91%, 22%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                No performance data available
+              </div>
+            )}
           </div>
         </motion.div>
 

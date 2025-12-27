@@ -26,10 +26,11 @@ import StatCard from "@/components/dashboard/StatCard";
 import { useFees, useCreateFee, useUpdateFee } from "@/hooks/useDatabase";
 import { useStudents } from "@/hooks/useDatabase";
 import { Fee } from "@/lib/types";
+import { formatUGX } from "@/lib/utils";
 
 const columns = [
   { key: "student_id", label: "Student ID" },
-  { key: "amount", label: "Amount", render: (value: number) => `$${value.toLocaleString()}` },
+  { key: "amount", label: "Amount", render: (value: number) => formatUGX(value) },
   { key: "term", label: "Term" },
   { key: "academic_year", label: "Academic Year" },
   { key: "due_date", label: "Due Date" },
@@ -129,7 +130,7 @@ export default function FeesPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout role="admin" userName="Admin User">
+      <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
           <Loader className="w-8 h-8 animate-spin" />
         </div>
@@ -138,7 +139,7 @@ export default function FeesPage() {
   }
 
   return (
-    <DashboardLayout role="admin" userName="Admin User">
+    <DashboardLayout>
       <PageHeader
         title="Fees Management"
         description="Track and manage student fee payments"
@@ -149,21 +150,21 @@ export default function FeesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
         <StatCard
           title="Total Collected"
-          value={`$${totalCollected.toLocaleString()}`}
+          value={formatUGX(totalCollected)}
           icon={CheckCircle}
           iconColor="bg-success"
           delay={0}
         />
         <StatCard
           title="Pending Payments"
-          value={`$${totalPending.toLocaleString()}`}
+          value={formatUGX(totalPending)}
           icon={Clock}
           iconColor="bg-warning"
           delay={0.1}
         />
         <StatCard
           title="Overdue Payments"
-          value={`$${totalOverdue.toLocaleString()}`}
+          value={formatUGX(totalOverdue)}
           icon={AlertCircle}
           iconColor="bg-destructive"
           delay={0.2}

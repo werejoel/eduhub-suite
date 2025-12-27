@@ -5,6 +5,9 @@ import DataTable from "@/components/dashboard/DataTable";
 import { motion } from "framer-motion";
 import { BookOpen, Users, FileText, Clock, CheckCircle } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { useClasses, useStudents, useMarks, useAttendance } from "@/hooks/useDatabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { useMemo } from "react";
 
 const stats = [
   { title: "My Classes", value: "4", change: "Active classes", changeType: "neutral" as const, icon: BookOpen, iconColor: "bg-primary" },
@@ -37,8 +40,90 @@ const columns = [
 ];
 
 export default function TeacherDashboard() {
+  const { user } = useAuth();
+  const { data: classes = [] } = useClasses();
+  const { data: students = [] } = useStudents();
+  const { data: marks = [] } = useMarks();
+  const { data: attendance = [] } = useAttendance();
+
+  // Filter classes for this teacher
+  const myClasses = useMemo(() => {
+    if (!user) return [];
+    return classes.filter(c => c.teacher_id === user.id);
+  }, [classes, user]);
+
+  // Calculate stats from real data
+  const stats = useMemo(() => {
+    const myClassIds = myClasses.map(c => c.id);
+    const myStudents = students.filter(s => myClassIds.includes(s.class_id));
+    const totalStudents = myStudents.length;
+    
+    // Get today's attendance
+    const today = new Date().toISOString().split('T')[0];
+    const todayAttendance = attendance.filter(a => 
+      a.attendance_date === today && myClassIds.includes(a.class_id)
+    );
+    const presentToday = todayAttendance.filter(a => a.status === 'present').length;
+    const totalToday = todayAttendance.length;
+    const attendanceRate = totalToday > 0 ? Math.round((presentToday / totalToday) * 100) : 0;
+    const absentToday = totalToday - presentToday;
+
+    // Pending grades (marks not yet entered for recent exams)
+    const pendingGrades = 0; // This would need more complex logic
+
+    return [
+      { 
+        title: "My Classes", 
+        value: myClasses.length.toString(), 
+        change: "Active classes", 
+        changeType: "neutral" as const, 
+        icon: BookOpen, 
+        iconColor: "bg-primary" 
+      },
+      { 
+        title: "Total Students", 
+        value: totalStudents.toString(), 
+        change: "Across all classes", 
+        changeType: "neutral" as const, 
+        icon: Users, 
+        iconColor: "bg-success" 
+      },
+      { 
+        title: "Pending Grades", 
+        value: pendingGrades.toString(), 
+        change: "Awaiting entry", 
+        changeType: "negative" as const, 
+        icon: FileText, 
+        iconColor: "bg-warning" 
+      },
+      { 
+        title: "Attendance Today", 
+        value: `${attendanceRate}%`, 
+        change: `${absentToday} absent`, 
+        changeType: "positive" as const, 
+        icon: CheckCircle, 
+        iconColor: "bg-secondary" 
+      },
+    ];
+  }, [myClasses, students, attendance]);
+
+  // Format classes for display
+  const formattedClasses = useMemo(() => {
+    return myClasses.map(cls => {
+      const classStudents = students.filter(s => s.class_id === cls.id);
+      return {
+        id: cls.id,
+        name: cls.class_name,
+        subject: cls.class_name, // You might want to add subject to classes table
+        students: classStudents.length,
+        nextClass: "Today 9:00 AM", // This would come from a timetable table
+        room: "Room 301", // This would come from classes table
+      };
+    });
+  }, [myClasses, students]);
+
   return (
-    <DashboardLayout role="teacher" userName="Dr. Sarah Wilson">
+    <DashboardLayout>
       <PageHeader
         title="Teacher Dashboard"
         description="Welcome back! Manage your classes and students."
@@ -63,7 +148,7 @@ export default function TeacherDashboard() {
         >
           <h3 className="text-lg font-semibold mb-4">My Classes</h3>
           <div className="space-y-4">
-            {myClasses.map((cls) => (
+            {formattedClasses.length > 0 ? formattedClasses.map((cls) => (
               <div
                 key={cls.id}
                 className="flex items-center justify-between p-4 bg-muted/50 rounded-xl hover:bg-muted transition-colors cursor-pointer"
@@ -82,7 +167,11 @@ export default function TeacherDashboard() {
                   <p className="text-xs text-muted-foreground">{cls.room}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center text-muted-foreground py-8">
+                No classes assigned
+              </div>
+            )}
           </div>
         </motion.div>
 

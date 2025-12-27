@@ -69,7 +69,7 @@ export default function TeacherStudentsPage() {
   });
 
   return (
-    <DashboardLayout role="teacher" userName="Dr. Sarah Wilson">
+    <DashboardLayout>
       <PageHeader
         title="My Students"
         description="View and manage students in your classes"
