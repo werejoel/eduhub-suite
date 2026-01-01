@@ -1,4 +1,4 @@
-import { useState, useMemo, useContext } from 'react';
+import { useState, useMemo, useContext, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/contexts/AuthContext';
@@ -46,6 +46,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useCreateFee, useDeleteFee } from '@/hooks/useDatabase';
+
+const getCurrentAcademicYear = () => {
+  const y = new Date().getFullYear();
+  return `${y}/${y + 1}`;
+};
 
 const BurserDashboard = () => {
   const navigate = useNavigate();
@@ -57,6 +63,17 @@ const BurserDashboard = () => {
 
   const { data: fees = [] } = useFees();
   const { data: students = [] } = useStudents();
+  const createFee = useCreateFee();
+  const deleteFee = useDeleteFee();
+
+  const [newPayment, setNewPayment] = useState({
+    student_id: '',
+    amount: '',
+    term: '',
+    academic_year: '',
+    payment_status: 'paid',
+    due_date: '',
+  });
 
   // Calculate comprehensive statistics
   const stats = useMemo(() => {
@@ -162,6 +179,74 @@ const BurserDashboard = () => {
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
   }, [fees, students]);
+
+  // Report state and handlers
+  const reportRef = useRef<HTMLDivElement | null>(null);
+  const [weeklyReport, setWeeklyReport] = useState<Record<string, string>>(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('burser_weekly_report') : null;
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target as any;
+    setWeeklyReport(prev => ({ ...prev, [name]: value }));
+  };
+
+  const saveReport = () => {
+    try {
+      localStorage.setItem('burser_weekly_report', JSON.stringify(weeklyReport));
+      toast.success('Weekly report saved locally');
+    } catch {
+      toast.error('Failed to save report');
+    }
+  };
+
+  const printReport = () => {
+    const content = reportRef.current?.innerHTML || '';
+    const w = window.open('', '_blank', 'noopener,noreferrer');
+    if (!w) return toast.error('Unable to open print window');
+    w.document.write(`<html><head><title>Burser Weekly Report</title><meta charset="utf-8"></head><body>`);
+    w.document.write(content);
+    w.document.write('</body></html>');
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); w.close(); }, 300);
+  };
+
+  const handleNewPaymentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target as any;
+    setNewPayment(prev => ({ ...prev, [name]: value }));
+  };
+
+  const submitNewPayment = async () => {
+    if (!newPayment.student_id || !newPayment.amount) {
+      return toast.error('Please select a student and enter an amount');
+    }
+    try {
+      await createFee.mutateAsync({
+        student_id: newPayment.student_id,
+        amount: Number(newPayment.amount),
+        term: newPayment.term || 'N/A',
+        academic_year: newPayment.academic_year || getCurrentAcademicYear(),
+        payment_status: newPayment.payment_status as 'paid' | 'pending' | 'overdue',
+        due_date: newPayment.due_date || new Date().toISOString(),
+      });
+      toast.success('Payment recorded');
+      setNewPayment({ student_id: '', amount: '', term: '', academic_year: '', payment_status: 'paid', due_date: '' });
+    } catch (err) {
+      toast.error('Failed to record payment');
+    }
+  };
+
+  const handleDeletePayment = async (row: any) => {
+    if (!window.confirm('Delete this payment?')) return;
+    try {
+      await deleteFee.mutateAsync(String(row.id));
+      toast.success('Payment deleted');
+    } catch {
+      toast.error('Failed to delete payment');
+    }
+  };
 
   // Render different views based on active tab
   const renderContent = () => {
@@ -352,7 +437,39 @@ const BurserDashboard = () => {
                   { key: 'date', label: 'Date' },
                 ]}
                 data={filteredTransactions}
+                onDelete={(row) => handleDeletePayment(row)}
               />
+            </div>
+
+            {/* Add Payment */}
+            <div className="flex gap-2 mb-4 items-end">
+              <select
+                name="student_id"
+                value={newPayment.student_id}
+                onChange={handleNewPaymentChange}
+                className="border rounded px-2 py-1"
+              >
+                <option value="">Select student</option>
+                {students.map(s => (
+                  <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
+                ))}
+              </select>
+
+              <Input name="amount" value={newPayment.amount} onChange={handleNewPaymentChange} placeholder="Amount" />
+              <Input name="term" value={newPayment.term} onChange={handleNewPaymentChange} placeholder="Term" />
+              <select name="payment_status" value={newPayment.payment_status} onChange={handleNewPaymentChange} className="border rounded px-2 py-1">
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="overdue">Overdue</option>
+              </select>
+              <Input name="due_date" value={newPayment.due_date} onChange={handleNewPaymentChange} placeholder="Due date (YYYY-MM-DD)" />
+              <Input
+                name="academic_year"
+                value={newPayment.academic_year}
+                onChange={handleNewPaymentChange}
+                placeholder="Academic year (e.g. 2025/2026)"
+              />
+              <Button onClick={submitNewPayment}>Add Payment</Button>
             </div>
           </motion.div>
         );
@@ -364,23 +481,257 @@ const BurserDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                { icon: FileText, title: 'Monthly Report', desc: 'Download monthly collection report' },
-                { icon: Calendar, title: 'Term Report', desc: 'Generate term-wise fee report' },
-                { icon: TrendingUp, title: 'Analytics Report', desc: 'Detailed payment analytics' },
-                { icon: Users, title: 'Student Report', desc: 'Individual student payment history' },
-              ].map((item, idx) => (
-                <motion.button
-                  key={idx}
-                  whileHover={{ y: -5 }}
-                  className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-left hover:shadow-lg transition-shadow"
-                >
-                  <item.icon className="w-8 h-8 text-primary mb-3" />
-                  <h3 className="font-semibold mb-1">{item.title}</h3>
-                  <p className="text-sm text-gray-600">{item.desc}</p>
-                </motion.button>
-              ))}
+            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold">KIBAALE PARENTS PRIMARY SCHOOL</h2>
+                  <p className="text-sm text-gray-600">BURSAR’S WEEKLY REPORT — “EDUCATION FOR FREEDOM”</p>
+                  <p className="text-sm text-gray-600">TEL: 0778226647 / 0772557596 / 0701021168</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={saveReport}>Save</Button>
+                  <Button onClick={printReport}>Print / Export</Button>
+                </div>
+              </div>
+
+              <div ref={reportRef} className="space-y-6">
+                {/* BOARDING SECTION */}
+                <div>
+                  <h3 className="font-semibold mb-2">SCHOOL FEES — BOARDING SECTION</h3>
+                  <table className="w-full table-auto border-collapse">
+                    <thead>
+                      <tr className="text-left">
+                        <th className="border px-2 py-1">CLASS</th>
+                        <th className="border px-2 py-1">EXPECTED</th>
+                        <th className="border px-2 py-1">RECEIVED</th>
+                        <th className="border px-2 py-1">BALANCE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['BABY','TOP','P.1','P.2','P.3','P.4','P.5','P.6','P.7'].map(cls => (
+                        <tr key={`boarding-${cls}`}>
+                          <td className="border px-2 py-1">{cls}</td>
+                          <td className="border px-2 py-1">
+                            <Input name={`boarding_${cls}_expected`} value={weeklyReport[`boarding_${cls}_expected`] || ''} onChange={handleInputChange} />
+                          </td>
+                          <td className="border px-2 py-1">
+                            <Input name={`boarding_${cls}_received`} value={weeklyReport[`boarding_${cls}_received`] || ''} onChange={handleInputChange} />
+                          </td>
+                          <td className="border px-2 py-1">
+                            <Input name={`boarding_${cls}_balance`} value={weeklyReport[`boarding_${cls}_balance`] || ''} onChange={handleInputChange} />
+                          </td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <td className="border px-2 py-1 font-semibold">TOTAL</td>
+                        <td className="border px-2 py-1"><Input name="boarding_total_expected" value={weeklyReport.boarding_total_expected || ''} onChange={handleInputChange} /></td>
+                        <td className="border px-2 py-1"><Input name="boarding_total_received" value={weeklyReport.boarding_total_received || ''} onChange={handleInputChange} /></td>
+                        <td className="border px-2 py-1"><Input name="boarding_total_balance" value={weeklyReport.boarding_total_balance || ''} onChange={handleInputChange} /></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* DAY SECTION */}
+                <div>
+                  <h3 className="font-semibold mb-2">SCHOOL FEES — DAY SECTION</h3>
+                  <table className="w-full table-auto border-collapse">
+                    <thead>
+                      <tr className="text-left">
+                        <th className="border px-2 py-1">CLASS</th>
+                        <th className="border px-2 py-1">EXPECTED</th>
+                        <th className="border px-2 py-1">RECEIVED</th>
+                        <th className="border px-2 py-1">BALANCE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['BABY','TOP','P.1','P.2','P.3','P.4','P.5','P.6','P.7'].map(cls => (
+                        <tr key={`day-${cls}`}>
+                          <td className="border px-2 py-1">{cls}</td>
+                          <td className="border px-2 py-1"><Input name={`day_${cls}_expected`} value={weeklyReport[`day_${cls}_expected`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`day_${cls}_received`} value={weeklyReport[`day_${cls}_received`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`day_${cls}_balance`} value={weeklyReport[`day_${cls}_balance`] || ''} onChange={handleInputChange} /></td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <td className="border px-2 py-1 font-semibold">TOTAL</td>
+                        <td className="border px-2 py-1"><Input name="day_total_expected" value={weeklyReport.day_total_expected || ''} onChange={handleInputChange} /></td>
+                        <td className="border px-2 py-1"><Input name="day_total_received" value={weeklyReport.day_total_received || ''} onChange={handleInputChange} /></td>
+                        <td className="border px-2 py-1"><Input name="day_total_balance" value={weeklyReport.day_total_balance || ''} onChange={handleInputChange} /></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* BOOKS */}
+                <div>
+                  <h3 className="font-semibold mb-2">BOOKS</h3>
+                  <table className="w-full table-auto border-collapse">
+                    <thead>
+                      <tr className="text-left">
+                        <th className="border px-2 py-1">BOOKS</th>
+                        <th className="border px-2 py-1">DISTRIBUTED</th>
+                        <th className="border px-2 py-1">BALANCE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['COUNTER BOOKS','CITY BOOKS','96 PAGED BOOKS','48 PAGED BOOKS'].map(b => (
+                        <tr key={`book-${b}`}>
+                          <td className="border px-2 py-1">{b}</td>
+                          <td className="border px-2 py-1"><Input name={`book_${b}_distributed`} value={weeklyReport[`book_${b}_distributed`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`book_${b}_balance`} value={weeklyReport[`book_${b}_balance`] || ''} onChange={handleInputChange} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* REQUIREMENTS */}
+                <div>
+                  <h3 className="font-semibold mb-2">REQUIREMENTS</h3>
+                  <table className="w-full table-auto border-collapse text-sm">
+                    <thead>
+                      <tr>
+                        <th className="border px-2 py-1">CLASS</th>
+                        <th className="border px-2 py-1">BEANS</th>
+                        <th className="border px-2 py-1">FLOUR</th>
+                        <th className="border px-2 py-1">SUGAR</th>
+                        <th className="border px-2 py-1">G/NUTS</th>
+                        <th className="border px-2 py-1">T/P</th>
+                        <th className="border px-2 py-1">BROOMS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['BABY','TOP','P.1','P.2','P.3','P.4','P.5','P.6','P.7'].map(cls => (
+                        <tr key={`req-${cls}`}>
+                          <td className="border px-2 py-1">{cls}</td>
+                          <td className="border px-2 py-1"><Input name={`req_${cls}_beans`} value={weeklyReport[`req_${cls}_beans`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`req_${cls}_flour`} value={weeklyReport[`req_${cls}_flour`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`req_${cls}_sugar`} value={weeklyReport[`req_${cls}_sugar`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`req_${cls}_gnuts`} value={weeklyReport[`req_${cls}_gnuts`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`req_${cls}_tp`} value={weeklyReport[`req_${cls}_tp`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`req_${cls}_brooms`} value={weeklyReport[`req_${cls}_brooms`] || ''} onChange={handleInputChange} /></td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <td className="border px-2 py-1 font-semibold">TOTAL</td>
+                        <td className="border px-2 py-1"><Input name="req_total_beans" value={weeklyReport.req_total_beans || ''} onChange={handleInputChange} /></td>
+                        <td className="border px-2 py-1"><Input name="req_total_flour" value={weeklyReport.req_total_flour || ''} onChange={handleInputChange} /></td>
+                        <td className="border px-2 py-1"><Input name="req_total_sugar" value={weeklyReport.req_total_sugar || ''} onChange={handleInputChange} /></td>
+                        <td className="border px-2 py-1"><Input name="req_total_gnuts" value={weeklyReport.req_total_gnuts || ''} onChange={handleInputChange} /></td>
+                        <td className="border px-2 py-1"><Input name="req_total_tp" value={weeklyReport.req_total_tp || ''} onChange={handleInputChange} /></td>
+                        <td className="border px-2 py-1"><Input name="req_total_brooms" value={weeklyReport.req_total_brooms || ''} onChange={handleInputChange} /></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* OTHER REQUIREMENTS */}
+                <div>
+                  <h3 className="font-semibold mb-2">OTHER REQUIREMENTS</h3>
+                  <table className="w-full table-auto border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="border px-2 py-1">REQUIREMENT</th>
+                        <th className="border px-2 py-1">EXPECTED</th>
+                        <th className="border px-2 py-1">RECEIVED</th>
+                        <th className="border px-2 py-1">BALANCE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['MEDICAL INSURANCE','HOLIDAY PACKAGE','HAIR SHAVING','CHURCH TITHE','LUNCH','OTHER'].map(it => (
+                        <tr key={`other-${it}`}>
+                          <td className="border px-2 py-1">{it}</td>
+                          <td className="border px-2 py-1"><Input name={`other_${it}_expected`} value={weeklyReport[`other_${it}_expected`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`other_${it}_received`} value={weeklyReport[`other_${it}_received`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`other_${it}_balance`} value={weeklyReport[`other_${it}_balance`] || ''} onChange={handleInputChange} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* UNIFORMS */}
+                <div>
+                  <h3 className="font-semibold mb-2">UNIFORMS</h3>
+                  <table className="w-full table-auto border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="border px-2 py-1">UNIFORM</th>
+                        <th className="border px-2 py-1">RECEIVED</th>
+                        <th className="border px-2 py-1">ISSUED</th>
+                        <th className="border px-2 py-1">BALANCE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['SCHOOL SHORTS','SCHOOL SHIRTS','JUMPERS','WHITE SHIRTS','CASUAL DRESSES','CASUAL SHIRTS','CASUAL SHORTS','SUNDAY DRESSES','SUNDAY SHIRTS','SWEATERS','SPORTS SHORTS','SPORTS SHIRTS','NURSERY DRESSES'].map(u => (
+                        <tr key={`uniform-${u}`}>
+                          <td className="border px-2 py-1">{u}</td>
+                          <td className="border px-2 py-1"><Input name={`uniform_${u}_received`} value={weeklyReport[`uniform_${u}_received`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`uniform_${u}_issued`} value={weeklyReport[`uniform_${u}_issued`] || ''} onChange={handleInputChange} /></td>
+                          <td className="border px-2 py-1"><Input name={`uniform_${u}_balance`} value={weeklyReport[`uniform_${u}_balance`] || ''} onChange={handleInputChange} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* STORE */}
+                <div>
+                  <h3 className="font-semibold mb-2">STORE</h3>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Input key={`store-${i}`} name={`store_row_${i}`} value={weeklyReport[`store_row_${i}`] || ''} onChange={handleInputChange} className="mb-2" />
+                  ))}
+                </div>
+
+                {/* WEEKLY EXPENDITURE */}
+                <div>
+                  <h3 className="font-semibold mb-2">WEEKLY EXPENDITURE</h3>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={`ex-${i}`} className="flex gap-2 mb-2">
+                      <Input name={`ex_item_${i}`} value={weeklyReport[`ex_item_${i}`] || ''} onChange={handleInputChange} placeholder="ITEM" />
+                      <Input name={`ex_amount_${i}`} value={weeklyReport[`ex_amount_${i}`] || ''} onChange={handleInputChange} placeholder="AMOUNT" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* BUDGET FOR INCOMING WEEK */}
+                <div>
+                  <h3 className="font-semibold mb-2">BUDGET FOR INCOMING WEEK</h3>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={`bud-${i}`} className="flex gap-2 mb-2">
+                      <Input name={`bud_item_${i}`} value={weeklyReport[`bud_item_${i}`] || ''} onChange={handleInputChange} placeholder="ITEM" />
+                      <Input name={`bud_amount_${i}`} value={weeklyReport[`bud_amount_${i}`] || ''} onChange={handleInputChange} placeholder="AMOUNT" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* RECOMMENDATIONS */}
+                <div>
+                  <h3 className="font-semibold mb-2">RECOMMENDATIONS</h3>
+                  <textarea name="recommendations" value={weeklyReport.recommendations || ''} onChange={handleInputChange} className="w-full border rounded p-2 h-24" />
+                </div>
+
+                {/* PREPARED / APPROVED */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-medium">PREPARED BY</p>
+                    <Input name="prepared_by" value={weeklyReport.prepared_by || ''} onChange={handleInputChange} />
+                    <div className="flex gap-2 mt-2">
+                      <Input name="prepared_sign" value={weeklyReport.prepared_sign || ''} onChange={handleInputChange} placeholder="SIGN" />
+                      <Input name="prepared_date" value={weeklyReport.prepared_date || ''} onChange={handleInputChange} placeholder="DATE" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="font-medium">APPROVED BY</p>
+                    <Input name="approved_by" value={weeklyReport.approved_by || ''} onChange={handleInputChange} />
+                    <div className="flex gap-2 mt-2">
+                      <Input name="approved_sign" value={weeklyReport.approved_sign || ''} onChange={handleInputChange} placeholder="SIGN" />
+                      <Input name="approved_date" value={weeklyReport.approved_date || ''} onChange={handleInputChange} placeholder="DATE" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         );

@@ -333,6 +333,26 @@ export const useUpdateFee = () => {
   });
 };
 
+export const useDeleteFee = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => feeService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.fees });
+      toast({ title: 'Success', description: 'Fee record deleted successfully' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to delete fee record',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
 // ATTENDANCE HOOKS
 export const useAttendance = () => {
   return useQuery({
