@@ -7,19 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Mail, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@/lib/types";
 
 const fetchUsers = async (): Promise<User[]> => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data as User[];
+  const res = await fetch('/api/users?_sort=-createdAt');
+  if (!res.ok) throw new Error('Failed to fetch users');
+  return res.json();
 };
+
 
 const UsersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,12 +28,12 @@ const UsersPage = () => {
 
   const confirmEmail = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ email_confirmed: true, updated_at: new Date().toISOString() })
-        .eq('id', userId);
-
-      if (error) throw error;
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_confirmed: true, updated_at: new Date().toISOString() }),
+      });
+      if (!res.ok) throw new Error('Failed to confirm email');
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       toast.success('Email confirmed successfully. User can now login.');
@@ -48,12 +44,12 @@ const UsersPage = () => {
 
   const unconfirmEmail = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ email_confirmed: false, updated_at: new Date().toISOString() })
-        .eq('id', userId);
-
-      if (error) throw error;
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_confirmed: false, updated_at: new Date().toISOString() }),
+      });
+      if (!res.ok) throw new Error('Failed to revoke confirmation');
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       toast.success('Email confirmation revoked');

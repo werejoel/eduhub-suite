@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserRole } from '@/lib/types';
+import { getRoleDashboard } from '@/lib/roleRoutes';
 
 const SignUp = () => {
   const [firstName, setFirstName] = useState('');
@@ -19,15 +20,40 @@ const SignUp = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<UserRole>('teacher');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const validatePassword = (pwd: string): string | null => {
-    if (pwd.length < 6) {
+  // Auto-navigate once user is created
+  useEffect(() => {
+    if (user && success && !authLoading) {
+      const targetRoute = getRoleDashboard(user.role);
+      // Give a moment to show success message
+      const timer = setTimeout(() => {
+        navigate(targetRoute, { replace: true });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, success, authLoading, navigate]);
+
+  const validateForm = (): string | null => {
+    if (!firstName.trim() || !lastName.trim()) {
+      return 'First name and last name are required';
+    }
+
+    if (!email.trim()) {
+      return 'Email is required';
+    }
+
+    if (password.length < 6) {
       return 'Password must be at least 6 characters long';
     }
+
+    if (password !== confirmPassword) {
+      return 'Passwords do not match';
+    }
+
     return null;
   };
 
@@ -36,24 +62,14 @@ const SignUp = () => {
     setError(null);
     setSuccess(false);
 
-    // Validation
-    if (!firstName.trim() || !lastName.trim()) {
-      setError('First name and last name are required');
+    // Validate
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      setError(passwordError);
-      return;
-    }
-
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
       const { error: signUpError } = await signUp(
@@ -65,37 +81,19 @@ const SignUp = () => {
       );
 
       if (signUpError) {
-        // Check if it's a database setup issue
-        if (
-          signUpError.message?.includes('Database setup incomplete') ||
-          signUpError.message?.includes('404') ||
-          signUpError.message?.includes('table') ||
-          signUpError.message?.includes('users')
-        ) {
-          setError(
-            'Database setup incomplete. Please contact your administrator. The users table needs to be created in Supabase.'
-          );
-        } else {
-          setError(signUpError.message || 'Failed to create account. Please try again.');
-        }
-        setLoading(false);
+        setError(signUpError.message || 'Failed to create account');
+        setIsSubmitting(false);
         return;
       }
 
+      // Success - show confirmation message and stop spinner
       setSuccess(true);
+      setTimeout(() => setIsSubmitting(false), 300);
       
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        navigate('/login', { 
-          state: { 
-            message: 'Account created successfully! Please sign in.',
-            email: email 
-          } 
-        });
-      }, 2000);
+      // Auto-navigate will happen via useEffect when user loads
     } catch (err: any) {
       setError(err.message || 'An error occurred during registration');
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -124,7 +122,7 @@ const SignUp = () => {
               <Alert className="border-success bg-success/10">
                 <CheckCircle2 className="h-4 w-4 text-success" />
                 <AlertDescription className="text-success">
-                  Account created successfully! Redirecting to login...
+                  Account created successfully! Logging you in...
                 </AlertDescription>
               </Alert>
             ) : (
@@ -146,7 +144,7 @@ const SignUp = () => {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
-                      disabled={loading}
+                      disabled={isSubmitting}
                     />
                   </div>
 
@@ -159,14 +157,14 @@ const SignUp = () => {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
-                      disabled={loading}
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
-                  <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
+                  <Select value={role} onValueChange={(value) => setRole(value as UserRole)} disabled={isSubmitting}>
                     <SelectTrigger id="role">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
@@ -190,7 +188,7 @@ const SignUp = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    disabled={loading}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -203,7 +201,7 @@ const SignUp = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    disabled={loading}
+                    disabled={isSubmitting}
                     minLength={6}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -220,7 +218,7 @@ const SignUp = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    disabled={loading}
+                    disabled={isSubmitting}
                     minLength={6}
                   />
                 </div>
@@ -228,10 +226,10 @@ const SignUp = () => {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={loading}
+                  disabled={isSubmitting}
                   size="lg"
                 >
-                  {loading ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Creating account...
@@ -262,4 +260,3 @@ const SignUp = () => {
 };
 
 export default SignUp;
-

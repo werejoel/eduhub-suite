@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { GraduationCap, Users, Shield, BookOpen, ArrowRight, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { getRoleDashboard } from "@/lib/roleRoutes";
 
 const features = [
   "Complete Student Management",
@@ -42,13 +43,8 @@ const Index = () => {
   useEffect(() => {
     if (!loading && user) {
       // Redirect authenticated users to their dashboard
-      const roleRoutes: Record<string, string> = {
-        admin: '/admin',
-        teacher: '/teacher',
-        headteacher: '/headteacher',
-        burser: '/burser',
-      };
-      navigate(roleRoutes[user.role] || '/admin', { replace: true });
+      const dashboardRoute = getRoleDashboard(user.role);
+      navigate(dashboardRoute, { replace: true });
     }
   }, [user, loading, navigate]);
   return (
