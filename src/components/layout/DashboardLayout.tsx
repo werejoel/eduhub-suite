@@ -43,6 +43,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Fees", icon: DollarSign, href: "/admin/fees" },
     { label: "Dormitory", icon: Building2, href: "/admin/dormitory" },
     { label: "Store", icon: ShoppingCart, href: "/admin/store" },
+    { label: "Item Requests", icon: FileText, href: "/admin/item-requests" },
     { label: "Records", icon: FileText, href: "/admin/records" },
     { label: "Settings", icon: Settings, href: "/admin/settings" },
   ],
@@ -60,6 +61,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Academic", icon: BookOpen, href: "/headteacher/academic" },
     { label: "Reports", icon: FileText, href: "/headteacher/reports" },
     { label: "Finances", icon: DollarSign, href: "/headteacher/finances" },
+    { label: "Item Requests", icon: FileText, href: "/headteacher/item-requests" },
   ],
   burser: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/burser" },

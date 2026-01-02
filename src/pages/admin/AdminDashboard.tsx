@@ -30,6 +30,7 @@ import {
   useFees,
   useDormitories,
   useClasses,
+  useItemRequests,
 } from "@/hooks/useDatabase";
 import { useLowStockItems } from "@/hooks/useDatabase";
 import { subscribeToPush } from "@/lib/services";
@@ -65,6 +66,7 @@ function AdminDashboard() {
   const { data: dormitories = [], isLoading: dormitoriesLoading } =
     useDormitories();
   const { data: classes = [] } = useClasses();
+  const { data: pendingRequests = [] } = useItemRequests('pending');
 
   // Calculate stats from real data
   const stats = useMemo(() => {
@@ -346,16 +348,10 @@ function AdminDashboard() {
                 route: "/admin/store",
               },
               {
-                label: "Store Dashboard",
+                label: "Item Requests",
                 icon: ShoppingCart,
-                color: "bg-primary",
-                route: "/store/dashboard",
-              },
-              {
-                label: "Dormitory Dashboard",
-                icon: Building2,
-                color: "bg-secondary",
-                route: "/dormitory/dashboard",
+                color: "bg-accent",
+                route: "/admin/item-requests",
               },
             ].map((action) => (
               <button
@@ -377,6 +373,55 @@ function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
+          className="bg-card rounded-2xl p-6 border border-border shadow-md"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Pending Requests</h3>
+            {pendingRequests.length > 0 && (
+              <span className="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                {pendingRequests.length}
+              </span>
+            )}
+          </div>
+          {pendingRequests.length === 0 ? (
+            <div className="text-muted-foreground text-sm">No pending requests</div>
+          ) : (
+            <div className="space-y-3">
+              {pendingRequests.slice(0, 4).map((req: any) => (
+                <div key={req._id} className="flex items-start justify-between gap-2 pb-2 border-b last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{req.item_name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Qty: {req.quantity_requested} • {req.requested_by}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/admin/item-requests")}
+                    className="text-primary text-xs"
+                  >
+                    Review
+                  </Button>
+                </div>
+              ))}
+              {pendingRequests.length > 4 && (
+                <button
+                  onClick={() => navigate("/admin/item-requests")}
+                  className="w-full text-sm text-primary hover:underline"
+                >
+                  View all {pendingRequests.length} requests
+                </button>
+              )}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Low Stock Widget */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
           className="bg-card rounded-2xl p-6 border border-border shadow-md"
         >
           <h3 className="text-lg font-semibold mb-4">Low Stock Items</h3>

@@ -60,7 +60,7 @@ const createFlexibleModel = (name) => {
   }
 };
 
-const collections = ['students','teachers','classes','fees','attendance','marks','dormitories','store_items','users'];
+const collections = ['students','teachers','classes','fees','attendance','marks','dormitories','store_items','users','item_requests'];
 
 // Users model for authentication
 const UserModel = createFlexibleModel('users');
@@ -377,6 +377,62 @@ collections.forEach((col) => {
         res.status(500).json({ error: err.message });
       }
     });
+  }
+});
+
+// Item Requests endpoints
+const ItemRequestModel = createFlexibleModel('item_requests');
+
+app.post('/api/item-requests', async (req, res) => {
+  try {
+    const request = await ItemRequestModel.create({
+      ...req.body,
+      status: 'pending',
+      created_at: new Date(),
+    });
+    res.status(201).json(request);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.get('/api/item-requests', async (req, res) => {
+  try {
+    const status = req.query.status || 'pending';
+    const requests = await ItemRequestModel.find({ status }).sort('-created_at');
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/item-requests/:id/approve', async (req, res) => {
+  try {
+    const { approval_notes } = req.body;
+    const updated = await ItemRequestModel.findByIdAndUpdate(
+      req.params.id,
+      { status: 'approved', approval_notes, approved_at: new Date() },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Request not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.put('/api/item-requests/:id/reject', async (req, res) => {
+  try {
+    const { rejection_reason } = req.body;
+    const updated = await ItemRequestModel.findByIdAndUpdate(
+      req.params.id,
+      { status: 'rejected', rejection_reason, rejected_at: new Date() },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Request not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 

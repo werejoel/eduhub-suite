@@ -45,6 +45,8 @@ const QUERY_KEYS = {
   storeItems: ["store_items"],
   storeItemById: (id: string) => ["store_items", id],
   lowStockItems: ["store_items", "low-stock"],
+  itemRequests: ["item_requests"],
+  itemRequestsByStatus: (status: string) => ["item_requests", status],
 };
 
 // STUDENT HOOKS
@@ -809,6 +811,77 @@ export const useDeleteStoreItem = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete store item",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+// ITEM REQUESTS HOOKS
+export const useItemRequests = (status: string = 'pending') => {
+  return useQuery({
+    queryKey: QUERY_KEYS.itemRequestsByStatus(status),
+    queryFn: async () => {
+      const res = await fetch(`/api/item-requests?status=${status}`);
+      if (!res.ok) throw new Error('Failed to fetch requests');
+      return res.json();
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const useApproveItemRequest = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, approval_notes }: { id: string; approval_notes: string }) =>
+      fetch(`/api/item-requests/${id}/approve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approval_notes }),
+      }).then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to approve'))),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.itemRequests });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.itemRequestsByStatus('pending') });
+      toast({
+        title: "Success",
+        description: "Item request approved",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve request",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useRejectItemRequest = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, rejection_reason }: { id: string; rejection_reason: string }) =>
+      fetch(`/api/item-requests/${id}/reject`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rejection_reason }),
+      }).then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to reject'))),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.itemRequests });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.itemRequestsByStatus('pending') });
+      toast({
+        title: "Success",
+        description: "Item request rejected",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reject request",
         variant: "destructive",
       });
     },

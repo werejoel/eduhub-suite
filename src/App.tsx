@@ -20,6 +20,7 @@ import DormitoryPage from "./pages/admin/DormitoryPage";
 import StorePage from "./pages/admin/StorePage";
 import RecordsPage from "./pages/admin/RecordsPage";
 import UsersPage from "./pages/admin/UsersPage";
+import ItemRequestsPage from "./pages/admin/ItemRequestsPage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -127,6 +128,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/item-requests"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <ItemRequestsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Teacher Routes */}
             <Route
@@ -216,6 +225,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["headteacher"]}>
                   <FinancesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/headteacher/item-requests"
+              element={
+                <ProtectedRoute allowedRoles={["headteacher"]}>
+                  <ItemRequestsPage />
                 </ProtectedRoute>
               }
             />
