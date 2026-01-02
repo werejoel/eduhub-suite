@@ -23,6 +23,7 @@ interface DataTableProps<T> {
   onDelete?: (row: T) => void;
   onView?: (row: T) => void;
   actions?: boolean;
+  isLoading?: boolean;
 }
 
 export default function DataTable<T extends { id: string | number }>({
@@ -32,6 +33,7 @@ export default function DataTable<T extends { id: string | number }>({
   onDelete,
   onView,
   actions = true,
+  isLoading = false,
 }: DataTableProps<T>) {
   const getValue = (row: T, key: string) => {
     const keys = key.split(".");
@@ -41,6 +43,22 @@ export default function DataTable<T extends { id: string | number }>({
     }
     return value;
   };
+
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-card rounded-2xl border border-border overflow-hidden shadow-md p-12 flex items-center justify-center"
+      >
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
