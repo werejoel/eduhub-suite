@@ -7,6 +7,9 @@ import {
   attendanceService,
   markService,
   dormitoryService,
+  roomService,
+  assignmentLogService,
+  occupancyService,
   storeService,
 } from "@/lib/services";
 import {
@@ -41,6 +44,9 @@ const QUERY_KEYS = {
   marksByStudent: (studentId: string) => ["marks", "student", studentId],
   marksByClass: (classId: string) => ["marks", "class", classId],
   dormitories: ["dormitories"],
+  rooms: ["rooms"],
+  assignmentLogs: ["assignment_logs"],
+  occupancySnapshots: ["occupancy_snapshots"],
   dormitoryById: (id: string) => ["dormitories", id],
   storeItems: ["store_items"],
   storeItemById: (id: string) => ["store_items", id],
@@ -630,6 +636,50 @@ export const useDormitories = () => {
   });
 };
 
+export const useRooms = (dormitoryId?: string) => {
+  return useQuery({
+    queryKey: dormitoryId ? [...QUERY_KEYS.rooms, dormitoryId] : QUERY_KEYS.rooms,
+    queryFn: () => roomService.getAll(dormitoryId ? { dormitory_id: dormitoryId } : undefined),
+    enabled: true,
+  });
+};
+
+export const useCreateRoom = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (room: any) => roomService.create(room),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.rooms });
+      toast({ title: 'Success', description: 'Room created' });
+    },
+  });
+};
+
+export const useUpdateRoom = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: any }) => roomService.update(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.rooms });
+      toast({ title: 'Success', description: 'Room updated' });
+    },
+  });
+};
+
+export const useDeleteRoom = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (id: string) => roomService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.rooms });
+      toast({ title: 'Success', description: 'Room deleted' });
+    },
+  });
+};
+
 export const useDormitory = (id: string) => {
   return useQuery({
     queryKey: QUERY_KEYS.dormitoryById(id),
@@ -660,6 +710,27 @@ export const useCreateDormitory = () => {
         variant: "destructive",
       });
     },
+  });
+};
+
+// ASSIGNMENT LOGS
+export const useAssignmentLogs = (dormitoryId?: string) => {
+  return useQuery({
+    queryKey: dormitoryId ? [...QUERY_KEYS.assignmentLogs, dormitoryId] : QUERY_KEYS.assignmentLogs,
+    queryFn: () => assignmentLogService.getAll(dormitoryId ? { to_dormitory: dormitoryId } : undefined),
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const exportAssignmentCsv = async (params?: Record<string, any>) => {
+  return assignmentLogService.exportCsv(params);
+};
+
+// OCCUPANCY SNAPSHOTS
+export const useOccupancySnapshots = (dormitoryId?: string) => {
+  return useQuery({
+    queryKey: dormitoryId ? [...QUERY_KEYS.occupancySnapshots, dormitoryId] : QUERY_KEYS.occupancySnapshots,
+    queryFn: () => occupancyService.getAll(dormitoryId ? { dormitory_id: dormitoryId } : undefined),
   });
 };
 

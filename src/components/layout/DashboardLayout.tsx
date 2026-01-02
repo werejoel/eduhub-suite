@@ -42,6 +42,9 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Classes", icon: BookOpen, href: "/admin/classes" },
     { label: "Fees", icon: DollarSign, href: "/admin/fees" },
     { label: "Dormitory", icon: Building2, href: "/admin/dormitory" },
+    { label: "Dormitory Details", icon: FileText, href: "/dormitory/details" },
+    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy" },
+    { label: "Assign Students", icon: Users, href: "/dormitory/assignments" },
     { label: "Store", icon: ShoppingCart, href: "/admin/store" },
     { label: "Item Requests", icon: FileText, href: "/admin/item-requests" },
     { label: "Records", icon: FileText, href: "/admin/records" },
@@ -62,6 +65,8 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Reports", icon: FileText, href: "/headteacher/reports" },
     { label: "Finances", icon: DollarSign, href: "/headteacher/finances" },
     { label: "Item Requests", icon: FileText, href: "/headteacher/item-requests" },
+    { label: "Dormitory Details", icon: FileText, href: "/dormitory/details" },
+    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy" },
   ],
   burser: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/burser" },
@@ -75,6 +80,9 @@ const navItems: Record<string, NavItem[]> = {
   dormitory: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/dormitory" },
     { label: "Dormitories", icon: Building2, href: "/admin/dormitory" },
+    { label: "Details", icon: FileText, href: "/dormitory/details" },
+    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy" },
+    { label: "Assign Students", icon: Users, href: "/dormitory/assignments" },
   ],
 };
 

@@ -60,7 +60,7 @@ const createFlexibleModel = (name) => {
   }
 };
 
-const collections = ['students','teachers','classes','fees','attendance','marks','dormitories','store_items','users','item_requests'];
+const collections = ['students','teachers','classes','fees','attendance','marks','dormitories','store_items','users','item_requests','rooms','assignment_logs','occupancy_snapshots'];
 
 // Users model for authentication
 const UserModel = createFlexibleModel('users');
@@ -377,6 +377,112 @@ collections.forEach((col) => {
         res.status(500).json({ error: err.message });
       }
     });
+  }
+});
+
+// Custom student update: log assignments and notify
+app.put('/api/students/:id', async (req, res) => {
+  try {
+    const StudentModel = createFlexibleModel('students');
+    const AssignmentLog = createFlexibleModel('assignment_logs');
+    const existing = await StudentModel.findById(req.params.id).lean();
+    if (!existing) return res.status(404).json({ error: 'Not found' });
+
+    const updates = req.body || {};
+    const updated = await StudentModel.findByIdAndUpdate(req.params.id, updates, { new: true });
+
+    const oldDorm = existing.dormitory_id || existing.dormitory;
+    const newDorm = updates.dormitory_id || updates.dormitory || oldDorm;
+    const oldBed = existing.bed_number || null;
+    const newBed = typeof updates.bed_number !== 'undefined' ? updates.bed_number : oldBed;
+
+    if (String(oldDorm) !== String(newDorm) || String(oldBed) !== String(newBed)) {
+      await AssignmentLog.create({
+        student_id: req.params.id,
+        student_name: `${updated.first_name || ''} ${updated.last_name || ''}`.trim(),
+        from_dormitory: oldDorm || null,
+        to_dormitory: newDorm || null,
+        from_bed: oldBed || null,
+        to_bed: newBed || null,
+        changed_by: (req.user && req.user.id) || 'system',
+        action: String(oldDorm) !== String(newDorm) ? 'reassign' : 'bed_change',
+        timestamp: new Date(),
+      });
+
+      const payload = {
+        title: 'Dormitory Assignment Changed',
+        message: `${updated.first_name || ''} ${updated.last_name || ''} assigned to ${newDorm || 'N/A'}${newBed ? ' bed ' + newBed : ''}`,
+        url: '/dormitory',
+      };
+      pushSubscriptions.forEach(sub => {
+        webpush.sendNotification(sub, JSON.stringify(payload)).catch(err => {
+          if (err && err.statusCode === 410) {
+            const idx = pushSubscriptions.findIndex(s => s.endpoint === sub.endpoint);
+            if (idx >= 0) pushSubscriptions.splice(idx, 1);
+          } else {
+            console.error('Push send error', err && err.body ? err.body : err);
+          }
+        });
+      });
+    }
+
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Custom dormitory update: snapshot occupancy
+app.put('/api/dormitories/:id', async (req, res) => {
+  try {
+    const DormModel = createFlexibleModel('dormitories');
+    const Snapshot = createFlexibleModel('occupancy_snapshots');
+    const existing = await DormModel.findById(req.params.id).lean();
+    if (!existing) return res.status(404).json({ error: 'Not found' });
+
+    const updated = await DormModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    await Snapshot.create({
+      dormitory_id: req.params.id,
+      dormitory_name: updated.dormitory_name || existing.dormitory_name,
+      capacity: updated.capacity || existing.capacity,
+      current_occupancy: updated.current_occupancy || existing.current_occupancy || 0,
+      recorded_at: new Date(),
+    });
+
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Export assignment logs as CSV
+app.get('/api/assignments/export', async (req, res) => {
+  try {
+    const AssignmentLog = createFlexibleModel('assignment_logs');
+    const q = {};
+    if (req.query.dormitory_id) q.to_dormitory = req.query.dormitory_id;
+    const logs = await AssignmentLog.find(q).sort('-timestamp').limit(1000).lean();
+
+    const header = ['timestamp','student_id','student_name','action','from_dormitory','to_dormitory','from_bed','to_bed','changed_by'];
+    const rows = logs.map(l => [
+      (l.timestamp || l.createdAt || '').toISOString ? (l.timestamp || l.createdAt).toISOString() : String(l.timestamp || ''),
+      l.student_id || '',
+      l.student_name || '',
+      l.action || '',
+      l.from_dormitory || '',
+      l.to_dormitory || '',
+      l.from_bed || '',
+      l.to_bed || '',
+      l.changed_by || '',
+    ]);
+
+    const csv = [header.join(','), ...rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','))].join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="assignment_logs.csv"');
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

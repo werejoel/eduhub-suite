@@ -40,6 +40,9 @@ import BurserDashboard from "./pages/burser/BurserDashboard";
 // Store / Dormitory Dashboards
 import StoreDashboard from "./pages/store/StoreDashboard";
 import DormitoryDashboard from "./pages/dormitory/DormitoryDashboard";
+import DormitoryDetails from "./pages/dormitory/DormitoryDetails";
+import OccupancyReport from "./pages/dormitory/OccupancyReport";
+import AssignStudents from "./pages/dormitory/AssignStudents";
 
 const queryClient = new QueryClient();
 
@@ -263,6 +266,30 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["dormitory"]}>
                   <DormitoryDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dormitory/details"
+              element={
+                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                  <DormitoryDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dormitory/occupancy"
+              element={
+                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                  <OccupancyReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dormitory/assignments"
+              element={
+                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                  <AssignStudents />
                 </ProtectedRoute>
               }
             />

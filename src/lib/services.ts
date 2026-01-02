@@ -167,6 +167,33 @@ export const dormitoryService = {
   async delete(id: string) { return deleteItem('dormitories', id); },
 };
 
+// ROOM OPERATIONS
+export const roomService = {
+  async getAll(params?: Record<string, any>) { return getAll<any>('rooms', params); },
+  async getById(id: string) { return getById<any>('rooms', id); },
+  async create(room: any) { return createItem<any>('rooms', room); },
+  async update(id: string, updates: any) { return updateItem<any>('rooms', id, updates); },
+  async delete(id: string) { return deleteItem('rooms', id); },
+};
+
+// ASSIGNMENT LOGS
+export const assignmentLogService = {
+  async getAll(params?: Record<string, any>) { return getAll<any>('assignment_logs', params); },
+  async exportCsv(params?: Record<string, any>) {
+    const url = new URL(apiUrl('/api/assignments/export'), typeof window !== 'undefined' ? window.location.origin : '');
+    if (params) Object.keys(params).forEach(k => url.searchParams.set(k, String(params[k])));
+    const res = await fetch(url.toString(), { headers: { ...getAuthHeaders() } });
+    if (!res.ok) throw new Error('Failed to export');
+    const text = await res.text();
+    return text;
+  }
+};
+
+// OCCUPANCY SNAPSHOTS
+export const occupancyService = {
+  async getAll(params?: Record<string, any>) { return getAll<any>('occupancy_snapshots', params); },
+};
+
 // STORE ITEM OPERATIONS
 export const storeService = {
   async getAll() { return getAll<StoreItem>('store_items', { _sort: 'item_name' }); },
