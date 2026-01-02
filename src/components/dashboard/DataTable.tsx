@@ -75,26 +75,35 @@ export default function DataTable<T extends { id: string | number }>({
                 );
               });
 
+              const status = (row as any).status;
+              const rowClass = status === 'Low Stock' ? 'bg-warning/10' : status === 'Out of Stock' ? 'bg-destructive/10' : 'hover:bg-muted/30';
               return (
-                <TableRow key={rowKey} className="hover:bg-muted/30 transition-colors">
+                <TableRow key={rowKey} className={`${rowClass} transition-colors`}>
                   {cells}
                   {actions && (
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {onView && (
-                          <Button variant="ghost" size="icon" onClick={() => onView(row)} className="h-8 w-8">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {onEdit && (
-                          <Button variant="ghost" size="icon" onClick={() => onEdit(row)} className="h-8 w-8">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {onDelete && (
-                          <Button variant="ghost" size="icon" onClick={() => onDelete(row)} className="h-8 w-8 text-destructive hover:text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                        {/* If row provides its own actions node, render it. Otherwise fall back to icon callbacks. */}
+                        {((row as any).actions as React.ReactNode) ? (
+                          <div className="flex items-center justify-end">{(row as any).actions}</div>
+                        ) : (
+                          <>
+                            {onView && (
+                              <Button variant="ghost" size="icon" onClick={() => onView(row)} className="h-8 w-8">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {onEdit && (
+                              <Button variant="ghost" size="icon" onClick={() => onEdit(row)} className="h-8 w-8">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {onDelete && (
+                              <Button variant="ghost" size="icon" onClick={() => onDelete(row)} className="h-8 w-8 text-destructive hover:text-destructive">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     </TableCell>

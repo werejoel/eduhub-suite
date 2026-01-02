@@ -43,6 +43,7 @@ export default function ClassesPage() {
     teacher_id: "",
     capacity: 0,
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const filteredClasses = (classes || []).filter((cls) => {
     const matchesSearch =
@@ -62,24 +63,44 @@ export default function ClassesPage() {
       return;
     }
     try {
-      await createMutation.mutateAsync({
-        class_name: newClass.class_name,
-        class_code: newClass.class_code,
-        form_number: newClass.form_number,
-        teacher_id: newClass.teacher_id,
-        capacity: newClass.capacity,
-      });
-      setNewClass({
-        class_name: "",
-        class_code: "",
-        form_number: 0,
-        teacher_id: "",
-        capacity: 0,
-      });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          updates: {
+            class_name: newClass.class_name,
+            class_code: newClass.class_code,
+            form_number: newClass.form_number,
+            teacher_id: newClass.teacher_id,
+            capacity: newClass.capacity,
+          },
+        });
+      } else {
+        await createMutation.mutateAsync({
+          class_name: newClass.class_name,
+          class_code: newClass.class_code,
+          form_number: newClass.form_number,
+          teacher_id: newClass.teacher_id,
+          capacity: newClass.capacity,
+        });
+      }
+      setNewClass({ class_name: "", class_code: "", form_number: 0, teacher_id: "", capacity: 0 });
+      setEditingId(null);
       setDialogOpen(false);
     } catch (error) {
-      console.error("Error creating class:", error);
+      console.error(editingId ? "Error updating class:" : "Error creating class:", error);
     }
+  };
+
+  const handleEdit = (cls: Class) => {
+    setEditingId(cls.id as string);
+    setNewClass({
+      class_name: cls.class_name || "",
+      class_code: cls.class_code || "",
+      form_number: cls.form_number || 0,
+      teacher_id: cls.teacher_id || "",
+      capacity: cls.capacity || 0,
+    });
+    setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -124,15 +145,15 @@ export default function ClassesPage() {
             </div>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Class
-              </Button>
-            </DialogTrigger>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add Class
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New Class</DialogTitle>
+                <DialogTitle>{editingId ? "Edit Class" : "Create New Class"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -184,7 +205,7 @@ export default function ClassesPage() {
                   >
                     <option value="">Select a teacher</option>
                     {teachers?.map((teacher) => (
-                      <option key={teacher.id} value={teacher.id}>
+                      <option key={(teacher as any).id ?? (teacher as any)._id} value={(teacher as any).id ?? (teacher as any)._id}>
                         {teacher.first_name} {teacher.last_name}
                       </option>
                     ))}
@@ -207,10 +228,10 @@ export default function ClassesPage() {
                 </div>
                 <Button
                   onClick={handleAddClass}
-                  disabled={createMutation.isPending}
+                  disabled={createMutation.isPending || updateMutation.isPending}
                   className="w-full"
                 >
-                  {createMutation.isPending ? "Creating..." : "Create Class"}
+                  {editingId ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Class")}
                 </Button>
               </div>
             </DialogContent>
@@ -222,13 +243,16 @@ export default function ClassesPage() {
           data={(filteredClasses || []).map((cls) => ({
             ...cls,
             actions: (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDelete(cls.id)}
-              >
-                Delete
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleEdit(cls)}>Edit</Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(cls.id)}
+                >
+                  Delete
+                </Button>
+              </div>
             ),
           }))}
           isLoading={isLoading}

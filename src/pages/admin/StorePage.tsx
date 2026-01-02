@@ -23,7 +23,7 @@ import { ShoppingCart, Search, Package, DollarSign, AlertTriangle, Plus, Loader 
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import StatCard from "@/components/dashboard/StatCard";
-import { useStoreItems, useCreateStoreItem } from "@/hooks/useDatabase";
+import { useStoreItems, useCreateStoreItem, useDeleteStoreItem, useUpdateStoreItem } from "@/hooks/useDatabase";
 import { StoreItem } from "@/lib/types";
 import { formatUGX } from "@/lib/utils";
 
@@ -40,20 +40,18 @@ const columns = [
   {
     key: "status",
     label: "Status",
-    render: (value: string) => {
-      const getStatus = (qty: number, reorder: number) => {
-        if (qty <= 0) return "Out of Stock";
-        if (qty <= reorder) return "Low Stock";
-        return "In Stock";
-      };
+    render: (_: any, row: StoreItem) => {
+      const qty = row.quantity_in_stock ?? 0;
+      const reorder = row.reorder_level ?? 0;
+      const status = qty <= 0 ? "Out of Stock" : qty <= reorder ? "Low Stock" : "In Stock";
       const styles: { [key: string]: string } = {
         "In Stock": "bg-success/10 text-success",
         "Low Stock": "bg-warning/10 text-warning",
         "Out of Stock": "bg-destructive/10 text-destructive",
       };
       return (
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[value]}`}>
-          {value}
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
+          {status}
         </span>
       );
     },
@@ -63,6 +61,10 @@ const columns = [
 export default function StorePage() {
   const { data: items, isLoading } = useStoreItems();
   const createMutation = useCreateStoreItem();
+  const updateMutation = useUpdateStoreItem();
+  const deleteMutation = useDeleteStoreItem();
+
+  const [showLowOnly, setShowLowOnly] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -76,6 +78,7 @@ export default function StorePage() {
     unit_price: 0,
     supplier: "",
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const filteredItems = (items || []).filter((item) => {
     const matchesSearch = item.item_name
@@ -85,6 +88,10 @@ export default function StorePage() {
       filterCategory === "all" || item.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const visibleItems = showLowOnly
+    ? (filteredItems || []).filter((i) => (i.quantity_in_stock ?? 0) <= (i.reorder_level ?? 0))
+    : filteredItems;
 
   const totalItems = (items || []).reduce(
     (sum, item) => sum + item.quantity_in_stock,
@@ -106,15 +113,27 @@ export default function StorePage() {
       return;
     }
     try {
-      await createMutation.mutateAsync({
-        item_name: newItem.item_name,
-        item_code: newItem.item_code,
-        category: newItem.category,
-        quantity_in_stock: newItem.quantity_in_stock,
-        reorder_level: newItem.reorder_level,
-        unit_price: newItem.unit_price,
-        supplier: newItem.supplier,
-      });
+      if (editingId) {
+        await updateMutation.mutateAsync({ id: editingId, updates: {
+          item_name: newItem.item_name,
+          item_code: newItem.item_code,
+          category: newItem.category,
+          quantity_in_stock: newItem.quantity_in_stock,
+          reorder_level: newItem.reorder_level,
+          unit_price: newItem.unit_price,
+          supplier: newItem.supplier,
+        }});
+      } else {
+        await createMutation.mutateAsync({
+          item_name: newItem.item_name,
+          item_code: newItem.item_code,
+          category: newItem.category,
+          quantity_in_stock: newItem.quantity_in_stock,
+          reorder_level: newItem.reorder_level,
+          unit_price: newItem.unit_price,
+          supplier: newItem.supplier,
+        });
+      }
       setNewItem({
         item_name: "",
         item_code: "",
@@ -124,9 +143,30 @@ export default function StorePage() {
         unit_price: 0,
         supplier: "",
       });
+      setEditingId(null);
       setDialogOpen(false);
     } catch (error) {
-      console.error("Error creating item:", error);
+      console.error(editingId ? "Error updating item:" : "Error creating item:", error);
+    }
+  };
+
+  const handleEdit = (it: StoreItem) => {
+    setEditingId(it.id as string);
+    setNewItem({
+      item_name: it.item_name || "",
+      item_code: it.item_code || "",
+      category: it.category || "",
+      quantity_in_stock: it.quantity_in_stock || 0,
+      reorder_level: it.reorder_level || 10,
+      unit_price: it.unit_price || 0,
+      supplier: it.supplier || "",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this item?")) {
+      await deleteMutation.mutateAsync(id);
     }
   };
 
@@ -147,6 +187,17 @@ export default function StorePage() {
         description="Manage school store items and inventory"
         icon={ShoppingCart}
       />
+
+      {lowStockItems > 0 && (
+        <div className="mb-6 p-3 rounded-md bg-warning/10 text-warning flex items-center justify-between">
+          <div className="font-medium">{lowStockItems} item(s) are low or out of stock</div>
+          <div>
+            <Button size="sm" variant={showLowOnly ? "hero-outline" : "outline"} onClick={() => setShowLowOnly((s) => !s)}>
+              {showLowOnly ? "Show all items" : "Show low stock"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
@@ -215,7 +266,7 @@ export default function StorePage() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Item</DialogTitle>
+                <DialogTitle>{editingId ? "Edit Item" : "Add New Item"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -322,11 +373,8 @@ export default function StorePage() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleAddItem}
-                  disabled={createMutation.isPending}
-                >
-                  {createMutation.isPending ? "Adding..." : "Add Item"}
+                <Button onClick={handleAddItem} disabled={createMutation.isPending || updateMutation.isPending}>
+                  {editingId ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Adding..." : "Add Item")}
                 </Button>
               </div>
             </DialogContent>
@@ -342,7 +390,15 @@ export default function StorePage() {
       >
         <DataTable
           columns={columns}
-          data={filteredItems || []}
+          data={(visibleItems || []).map((item) => ({
+            ...item,
+            actions: (
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>Edit</Button>
+                <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)}>Delete</Button>
+              </div>
+            ),
+          }))}
           isLoading={isLoading}
         />
       </motion.div>

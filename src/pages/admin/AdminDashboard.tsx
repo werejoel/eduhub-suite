@@ -30,6 +30,7 @@ import {
   useDormitories,
   useClasses,
 } from "@/hooks/useDatabase";
+import { useLowStockItems } from "@/hooks/useDatabase";
 import { formatUGX } from "@/lib/utils";
 import { useMemo } from "react";
 
@@ -201,6 +202,8 @@ export default function AdminDashboard() {
   const isLoading =
     studentsLoading || teachersLoading || feesLoading || dormitoriesLoading;
 
+  const { data: lowStock = [] } = useLowStockItems(10);
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -328,6 +331,34 @@ export default function AdminDashboard() {
               </button>
             ))}
           </div>
+        </motion.div>
+
+        {/* Low Stock Widget */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="bg-card rounded-2xl p-6 border border-border shadow-md"
+        >
+          <h3 className="text-lg font-semibold mb-4">Low Stock Items</h3>
+          {lowStock.length === 0 ? (
+            <div className="text-muted-foreground">All items healthy</div>
+          ) : (
+            <div className="space-y-2">
+              {lowStock.slice(0, 6).map((it: any) => (
+                <div key={(it as any).id ?? (it as any)._id} className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-medium">{it.item_name}</div>
+                    <div className="text-xs text-muted-foreground">Qty: {it.quantity_in_stock} • Reorder: {it.reorder_level}</div>
+                  </div>
+                  <div className="text-right">
+                    <button onClick={() => navigate('/admin/store')} className="text-sm text-primary underline">Manage</button>
+                  </div>
+                </div>
+              ))}
+              {lowStock.length > 6 && <div className="text-xs text-muted-foreground">+{lowStock.length - 6} more</div>}
+            </div>
+          )}
         </motion.div>
       </div>
 

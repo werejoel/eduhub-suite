@@ -23,7 +23,7 @@ import { DollarSign, Search, Filter, Plus, CheckCircle, Clock, AlertCircle, Load
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import StatCard from "@/components/dashboard/StatCard";
-import { useFees, useCreateFee, useUpdateFee } from "@/hooks/useDatabase";
+import { useFees, useCreateFee, useUpdateFee, useDeleteFee } from "@/hooks/useDatabase";
 import { useStudents } from "@/hooks/useDatabase";
 import { Fee } from "@/lib/types";
 import { formatUGX } from "@/lib/utils";
@@ -57,6 +57,7 @@ export default function FeesPage() {
   const { data: students } = useStudents();
   const createMutation = useCreateFee();
   const updateMutation = useUpdateFee();
+  const deleteMutation = useDeleteFee();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -125,6 +126,12 @@ export default function FeesPage() {
       });
     } catch (error) {
       console.error("Error recording payment:", error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this fee record?")) {
+      await deleteMutation.mutateAsync(id);
     }
   };
 
@@ -221,7 +228,7 @@ export default function FeesPage() {
                   >
                     <option value="">Select a student</option>
                     {students?.map((student) => (
-                      <option key={student.id} value={student.id}>
+                      <option key={(student as any).id ?? (student as any)._id} value={(student as any).id ?? (student as any)._id}>
                         {student.first_name} {student.last_name}
                       </option>
                     ))}
@@ -283,17 +290,17 @@ export default function FeesPage() {
           columns={columns}
           data={(filteredFees || []).map((fee) => ({
             ...fee,
-            actions:
-              fee.payment_status !== "paid" ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleRecordPayment(fee)}
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Record Payment
-                </Button>
-              ) : null,
+            actions: (
+              <div className="flex gap-2">
+                {fee.payment_status !== "paid" ? (
+                  <Button size="sm" variant="outline" onClick={() => handleRecordPayment(fee)}>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Record Payment
+                  </Button>
+                ) : null}
+                <Button size="sm" variant="destructive" onClick={() => handleDelete(fee.id)}>Delete</Button>
+              </div>
+            ),
           }))}
           isLoading={isLoading}
         />

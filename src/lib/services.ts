@@ -9,7 +9,20 @@ async function handleResponse(res: Response) {
   if (res.status === 204) return null;
   const json = await res.json().catch(() => null);
   if (!res.ok) throw new Error(json?.error || res.statusText);
-  return json;
+  // Normalize MongoDB `_id` to `id` for frontend consistency
+  const normalize = (obj: any) => {
+    if (obj && obj._id && !obj.id) {
+      try {
+        obj.id = String(obj._id);
+      } catch (e) {
+        obj.id = obj._id;
+      }
+    }
+    return obj;
+  };
+
+  if (Array.isArray(json)) return json.map(normalize);
+  return normalize(json);
 }
 
 async function getAll<T>(collection: string, params?: Record<string, any>): Promise<T[]> {

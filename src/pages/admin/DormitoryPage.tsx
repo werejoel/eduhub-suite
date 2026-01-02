@@ -23,7 +23,7 @@ import { Building2, Search, BedDouble, Users, Plus, Loader } from "lucide-react"
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import StatCard from "@/components/dashboard/StatCard";
-import { useDormitories, useCreateDormitory, useUpdateDormitory } from "@/hooks/useDatabase";
+import { useDormitories, useCreateDormitory, useUpdateDormitory, useDeleteDormitory } from "@/hooks/useDatabase";
 import { Dormitory } from "@/lib/types";
 
 const columns = [
@@ -38,6 +38,7 @@ export default function DormitoryPage() {
   const { data: dormitories, isLoading } = useDormitories();
   const createMutation = useCreateDormitory();
   const updateMutation = useUpdateDormitory();
+  const deleteMutation = useDeleteDormitory();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -49,6 +50,7 @@ export default function DormitoryPage() {
     current_occupancy: 0,
     location: "",
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const filteredDormitories = (dormitories || []).filter((dorm) => {
     const matchesSearch = dorm.dormitory_name
@@ -79,24 +81,44 @@ export default function DormitoryPage() {
       return;
     }
     try {
-      await createMutation.mutateAsync({
-        dormitory_name: newDormitory.dormitory_name,
-        dormitory_type: newDormitory.dormitory_type,
-        capacity: newDormitory.capacity,
-        current_occupancy: newDormitory.current_occupancy,
-        location: newDormitory.location,
-      });
-      setNewDormitory({
-        dormitory_name: "",
-        dormitory_type: "boys",
-        capacity: 0,
-        current_occupancy: 0,
-        location: "",
-      });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          updates: {
+            dormitory_name: newDormitory.dormitory_name,
+            dormitory_type: newDormitory.dormitory_type,
+            capacity: newDormitory.capacity,
+            current_occupancy: newDormitory.current_occupancy,
+            location: newDormitory.location,
+          },
+        });
+      } else {
+        await createMutation.mutateAsync({
+          dormitory_name: newDormitory.dormitory_name,
+          dormitory_type: newDormitory.dormitory_type,
+          capacity: newDormitory.capacity,
+          current_occupancy: newDormitory.current_occupancy,
+          location: newDormitory.location,
+        });
+      }
+      setNewDormitory({ dormitory_name: "", dormitory_type: "boys", capacity: 0, current_occupancy: 0, location: "" });
+      setEditingId(null);
       setDialogOpen(false);
     } catch (error) {
-      console.error("Error creating dormitory:", error);
+      console.error(editingId ? "Error updating dormitory:" : "Error creating dormitory:", error);
     }
+  };
+
+  const handleEdit = (dorm: Dormitory) => {
+    setEditingId(dorm.id as string);
+    setNewDormitory({
+      dormitory_name: dorm.dormitory_name || "",
+      dormitory_type: (dorm.dormitory_type as any) || "boys",
+      capacity: dorm.capacity || 0,
+      current_occupancy: dorm.current_occupancy || 0,
+      location: dorm.location || "",
+    });
+    setDialogOpen(true);
   };
 
   if (isLoading) {
@@ -108,6 +130,12 @@ export default function DormitoryPage() {
       </DashboardLayout>
     );
   }
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this dormitory?")) {
+      await deleteMutation.mutateAsync(id);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -182,7 +210,7 @@ export default function DormitoryPage() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New Dormitory</DialogTitle>
+                <DialogTitle>{editingId ? "Edit Dormitory" : "Create New Dormitory"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -250,12 +278,10 @@ export default function DormitoryPage() {
                 </div>
                 <Button
                   onClick={handleAddDormitory}
-                  disabled={createMutation.isPending}
+                  disabled={createMutation.isPending || updateMutation.isPending}
                   className="w-full"
                 >
-                  {createMutation.isPending
-                    ? "Creating..."
-                    : "Create Dormitory"}
+                  {editingId ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Dormitory")}
                 </Button>
               </div>
             </DialogContent>
@@ -274,9 +300,10 @@ export default function DormitoryPage() {
           data={(filteredDormitories || []).map((dorm) => ({
             ...dorm,
             actions: (
-              <Button variant="ghost" size="sm">
-                Manage
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleEdit(dorm)}>Edit</Button>
+                <Button variant="destructive" size="sm" onClick={() => handleDelete(dorm.id)}>Delete</Button>
+              </div>
             ),
           }))}
           isLoading={isLoading}

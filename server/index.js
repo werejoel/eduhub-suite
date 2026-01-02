@@ -142,6 +142,15 @@ collections.forEach((col) => {
 
   app.post(base, async (req, res) => {
     try {
+      // For store items compute and store status automatically
+      if (col === 'store_items') {
+        const body = { ...req.body };
+        const qty = parseInt(body.quantity_in_stock) || 0;
+        const reorder = parseInt(body.reorder_level) || 0;
+        body.status = qty <= 0 ? 'Out of Stock' : qty <= reorder ? 'Low Stock' : 'In Stock';
+        const created = await Model.create(body);
+        return res.status(201).json(created);
+      }
       const created = await Model.create(req.body);
       res.status(201).json(created);
     } catch (err) {
@@ -151,6 +160,18 @@ collections.forEach((col) => {
 
   app.put(`${base}/:id`, async (req, res) => {
     try {
+      // For store items, compute new status based on updated quantity or reorder level
+      if (col === 'store_items') {
+        const existing = await Model.findById(req.params.id).lean();
+        if (!existing) return res.status(404).json({ error: 'Not found' });
+        const body = { ...req.body };
+        const qty = typeof body.quantity_in_stock !== 'undefined' ? parseInt(body.quantity_in_stock) : (existing.quantity_in_stock || 0);
+        const reorder = typeof body.reorder_level !== 'undefined' ? parseInt(body.reorder_level) : (existing.reorder_level || 0);
+        body.status = qty <= 0 ? 'Out of Stock' : qty <= reorder ? 'Low Stock' : 'In Stock';
+        const updated = await Model.findByIdAndUpdate(req.params.id, body, { new: true });
+        return res.json(updated);
+      }
+
       const updated = await Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
       if (!updated) return res.status(404).json({ error: 'Not found' });
       res.json(updated);

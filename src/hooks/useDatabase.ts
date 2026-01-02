@@ -628,6 +628,26 @@ export const useUpdateDormitory = () => {
   });
 };
 
+export const useDeleteDormitory = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => dormitoryService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dormitories });
+      toast({ title: "Success", description: "Dormitory deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to delete dormitory",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 // STORE HOOKS
 export const useStoreItems = () => {
   return useQuery({
@@ -688,13 +708,17 @@ export const useUpdateStoreItem = () => {
       id: string;
       updates: Partial<StoreItem>;
     }) => storeService.update(id, updates),
-    onSuccess: () => {
+    onSuccess: (data: StoreItem) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.storeItems });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lowStockItems });
-      toast({
-        title: "Success",
-        description: "Store item updated successfully",
-      });
+      // Show standard success toast
+      toast({ title: "Success", description: "Store item updated successfully" });
+      // If status indicates low/out of stock, show a warning toast
+      if (data?.status === "Low Stock") {
+        toast({ title: "Low stock", description: `${data.item_name} is low on stock`, variant: "destructive" });
+      } else if (data?.status === "Out of Stock") {
+        toast({ title: "Out of stock", description: `${data.item_name} is out of stock`, variant: "destructive" });
+      }
     },
     onError: (error: any) => {
       toast({
