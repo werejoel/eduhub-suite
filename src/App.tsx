@@ -29,6 +29,11 @@ import AttendancePage from "./pages/teacher/AttendancePage";
 
 // Headteacher Pages
 import HeadteacherDashboard from "./pages/headteacher/HeadteacherDashboard";
+import StaffPage from "./pages/headteacher/StaffPage";
+import StudentsPageHead from "./pages/headteacher/StudentsPage";
+import AcademicPage from "./pages/headteacher/AcademicPage";
+import ReportsPage from "./pages/headteacher/ReportsPage";
+import FinancesPage from "./pages/headteacher/FinancesPage";
 // Burser Pages
 import BurserDashboard from "./pages/burser/BurserDashboard";
 
@@ -175,7 +180,7 @@ const App = () => (
               path="/headteacher/staff"
               element={
                 <ProtectedRoute allowedRoles={['headteacher']}>
-                  <HeadteacherDashboard />
+                  <StaffPage />
                 </ProtectedRoute>
               }
             />
@@ -183,7 +188,7 @@ const App = () => (
               path="/headteacher/students"
               element={
                 <ProtectedRoute allowedRoles={['headteacher']}>
-                  <HeadteacherDashboard />
+                  <StudentsPageHead />
                 </ProtectedRoute>
               }
             />
@@ -191,7 +196,7 @@ const App = () => (
               path="/headteacher/academic"
               element={
                 <ProtectedRoute allowedRoles={['headteacher']}>
-                  <HeadteacherDashboard />
+                  <AcademicPage />
                 </ProtectedRoute>
               }
             />
@@ -199,7 +204,7 @@ const App = () => (
               path="/headteacher/reports"
               element={
                 <ProtectedRoute allowedRoles={['headteacher']}>
-                  <HeadteacherDashboard />
+                  <ReportsPage />
                 </ProtectedRoute>
               }
             />
@@ -207,7 +212,7 @@ const App = () => (
               path="/headteacher/finances"
               element={
                 <ProtectedRoute allowedRoles={['headteacher']}>
-                  <HeadteacherDashboard />
+                  <FinancesPage />
                 </ProtectedRoute>
               }
             />

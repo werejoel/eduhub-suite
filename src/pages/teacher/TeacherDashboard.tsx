@@ -3,6 +3,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import PageHeader from "@/components/dashboard/PageHeader";
 import DataTable from "@/components/dashboard/DataTable";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { BookOpen, Users, FileText, Clock, CheckCircle } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useClasses, useStudents, useMarks, useAttendance } from "@/hooks/useDatabase";
@@ -40,6 +41,7 @@ const columns = [
 ];
 
 export default function TeacherDashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: classes = [] } = useClasses();
   const { data: students = [] } = useStudents();
@@ -215,13 +217,14 @@ export default function TeacherDashboard() {
         className="grid grid-cols-2 md:grid-cols-4 gap-4"
       >
         {[
-          { label: "Add Marks", icon: FileText, color: "bg-primary" },
-          { label: "Take Attendance", icon: CheckCircle, color: "bg-success" },
-          { label: "View Schedule", icon: Clock, color: "bg-secondary" },
-          { label: "Student List", icon: Users, color: "bg-warning" },
+          { label: "Add Marks", icon: FileText, color: "bg-primary", route: "/teacher/marks" },
+          { label: "Take Attendance", icon: CheckCircle, color: "bg-success", route: "/teacher/attendance" },
+          { label: "View Schedule", icon: Clock, color: "bg-secondary", route: "/teacher/schedule" },
+          { label: "Student List", icon: Users, color: "bg-warning", route: "/teacher/students" },
         ].map((action) => (
           <button
             key={action.label}
+            onClick={() => navigate(action.route)}
             className="flex flex-col items-center gap-3 p-6 bg-card rounded-2xl border border-border hover:shadow-lg transition-all"
           >
             <div className={`${action.color} p-3 rounded-xl`}>

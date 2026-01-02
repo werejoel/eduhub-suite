@@ -502,6 +502,40 @@ export const useCreateMark = () => {
   });
 };
 
+export const useUpdateMark = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Mark> }) =>
+      markService.update(id, updates),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.marks });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.marksByStudent(data.student_id) });
+      toast({ title: "Success", description: "Mark updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update mark", variant: "destructive" });
+    },
+  });
+};
+
+export const useDeleteMark = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => markService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.marks });
+      toast({ title: "Success", description: "Mark deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to delete mark", variant: "destructive" });
+    },
+  });
+};
+
 export const useBulkCreateMarks = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();

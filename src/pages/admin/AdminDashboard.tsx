@@ -3,6 +3,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import PageHeader from "@/components/dashboard/PageHeader";
 import DataTable from "@/components/dashboard/DataTable";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   Users,
   GraduationCap,
@@ -54,6 +55,7 @@ const columns = [
 ];
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const { data: students = [], isLoading: studentsLoading } = useStudents();
   const { data: teachers = [], isLoading: teachersLoading } = useTeachers();
   const { data: fees = [], isLoading: feesLoading } = useFees();
@@ -294,25 +296,29 @@ export default function AdminDashboard() {
           <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="space-y-3">
             {[
-              { label: "Add New Student", icon: Users, color: "bg-primary" },
+              { label: "Add New Student", icon: Users, color: "bg-primary", route: "/admin/students" },
               {
                 label: "Record Payment",
                 icon: DollarSign,
                 color: "bg-success",
+                route: "/admin/fees",
               },
               {
                 label: "View Timetable",
                 icon: Calendar,
                 color: "bg-secondary",
+                route: "/admin/classes",
               },
               {
                 label: "Manage Store",
                 icon: ShoppingCart,
                 color: "bg-warning",
+                route: "/admin/store",
               },
             ].map((action) => (
               <button
                 key={action.label}
+                onClick={() => navigate(action.route)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors text-left"
               >
                 <div className={`${action.color} p-2 rounded-lg`}>

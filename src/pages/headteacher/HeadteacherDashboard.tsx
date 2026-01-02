@@ -2,6 +2,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import PageHeader from "@/components/dashboard/PageHeader";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Users, GraduationCap, TrendingUp, DollarSign, FileText, BookOpen } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useStudents, useTeachers, useMarks, useFees } from "@/hooks/useDatabase";
@@ -9,6 +10,7 @@ import { formatUGX } from "@/lib/utils";
 import { useMemo } from "react";
 
 export default function HeadteacherDashboard() {
+  const navigate = useNavigate();
   const { data: students = [] } = useStudents();
   const { data: teachers = [] } = useTeachers();
   const { data: marks = [] } = useMarks();
@@ -157,13 +159,14 @@ export default function HeadteacherDashboard() {
           <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "View Reports", icon: FileText, color: "bg-primary" },
-              { label: "Staff Management", icon: GraduationCap, color: "bg-success" },
-              { label: "Academic Calendar", icon: BookOpen, color: "bg-secondary" },
-              { label: "Financial Overview", icon: DollarSign, color: "bg-warning" },
+              { label: "View Reports", icon: FileText, color: "bg-primary", route: "/headteacher/reports" },
+              { label: "Staff Management", icon: GraduationCap, color: "bg-success", route: "/headteacher/staff" },
+              { label: "Academic Calendar", icon: BookOpen, color: "bg-secondary", route: "/headteacher/academic" },
+              { label: "Financial Overview", icon: DollarSign, color: "bg-warning", route: "/headteacher/finances" },
             ].map((action) => (
               <button
                 key={action.label}
+                onClick={() => navigate(action.route)}
                 className="flex items-center gap-3 p-4 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
               >
                 <div className={`${action.color} p-2 rounded-lg`}>

@@ -62,56 +62,46 @@ export default function DataTable<T extends { id: string | number }>({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((row, idx) => (
-              <TableRow
-                key={row.id}
-                className="hover:bg-muted/30 transition-colors"
-              >
-                {columns.map((col) => (
+            {data.map((row, idx) => {
+              const rowKey = (row as any).id ?? (row as any)._id ?? idx;
+              const cells = columns.map((col) => {
+                const value = col.render
+                  ? col.render(getValue(row, String(col.key)), row)
+                  : getValue(row, String(col.key));
+                return (
                   <TableCell key={String(col.key)}>
-                    {col.render
-                      ? col.render(getValue(row, String(col.key)), row)
-                      : getValue(row, String(col.key))}
+                    {value}
                   </TableCell>
-                ))}
-                {actions && (
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {onView && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onView(row)}
-                          className="h-8 w-8"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {onEdit && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onEdit(row)}
-                          className="h-8 w-8"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onDelete(row)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
+                );
+              });
+
+              return (
+                <TableRow key={rowKey} className="hover:bg-muted/30 transition-colors">
+                  {cells}
+                  {actions && (
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {onView && (
+                          <Button variant="ghost" size="icon" onClick={() => onView(row)} className="h-8 w-8">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {onEdit && (
+                          <Button variant="ghost" size="icon" onClick={() => onEdit(row)} className="h-8 w-8">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {onDelete && (
+                          <Button variant="ghost" size="icon" onClick={() => onDelete(row)} className="h-8 w-8 text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
