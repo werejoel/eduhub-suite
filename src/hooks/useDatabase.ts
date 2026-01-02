@@ -456,6 +456,58 @@ export const useBulkCreateAttendance = () => {
   });
 };
 
+export const useUpdateAttendance = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Partial<Attendance>;
+    }) => attendanceService.update(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.attendance });
+      toast({
+        title: "Success",
+        description: "Attendance updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update attendance",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteAttendance = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => attendanceService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.attendance });
+      toast({
+        title: "Success",
+        description: "Attendance deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete attendance",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 // MARKS HOOKS
 export const useMarks = () => {
   return useQuery({
@@ -511,11 +563,17 @@ export const useUpdateMark = () => {
       markService.update(id, updates),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.marks });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.marksByStudent(data.student_id) });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.marksByStudent(data.student_id),
+      });
       toast({ title: "Success", description: "Mark updated successfully" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to update mark", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update mark",
+        variant: "destructive",
+      });
     },
   });
 };
@@ -531,7 +589,11 @@ export const useDeleteMark = () => {
       toast({ title: "Success", description: "Mark deleted successfully" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to delete mark", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete mark",
+        variant: "destructive",
+      });
     },
   });
 };
@@ -636,7 +698,10 @@ export const useDeleteDormitory = () => {
     mutationFn: (id: string) => dormitoryService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dormitories });
-      toast({ title: "Success", description: "Dormitory deleted successfully" });
+      toast({
+        title: "Success",
+        description: "Dormitory deleted successfully",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -712,13 +777,10 @@ export const useUpdateStoreItem = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.storeItems });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lowStockItems });
       // Show standard success toast
-      toast({ title: "Success", description: "Store item updated successfully" });
-      // If status indicates low/out of stock, show a warning toast
-      if (data?.status === "Low Stock") {
-        toast({ title: "Low stock", description: `${data.item_name} is low on stock`, variant: "destructive" });
-      } else if (data?.status === "Out of Stock") {
-        toast({ title: "Out of stock", description: `${data.item_name} is out of stock`, variant: "destructive" });
-      }
+      toast({
+        title: "Success",
+        description: "Store item updated successfully",
+      });
     },
     onError: (error: any) => {
       toast({

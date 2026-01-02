@@ -21,7 +21,12 @@ import {
 import { GraduationCap, Search, Filter, Loader } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useTeachers, useCreateTeacher, useUpdateTeacher, useDeleteTeacher } from "@/hooks/useDatabase";
+import {
+  useTeachers,
+  useCreateTeacher,
+  useUpdateTeacher,
+  useDeleteTeacher,
+} from "@/hooks/useDatabase";
 import { Teacher } from "@/lib/types";
 
 const columns = [
@@ -47,11 +52,12 @@ const columns = [
   },
 ];
 
-export default function TeachersPage() {
+function TeachersPage() {
   const { data: teachers, isLoading } = useTeachers();
   const createMutation = useCreateTeacher();
+  const updateMutation = useUpdateTeacher();
   const deleteMutation = useDeleteTeacher();
-  
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSubject, setFilterSubject] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -70,27 +76,48 @@ export default function TeachersPage() {
     const matchesSearch =
       fullName.includes(searchQuery.toLowerCase()) ||
       teacher.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSubject = filterSubject === "all" || teacher.subject === filterSubject;
+    const matchesSubject =
+      filterSubject === "all" || teacher.subject === filterSubject;
     return matchesSearch && matchesSubject;
   });
 
   const handleAddTeacher = async () => {
-    if (!newTeacher.first_name || !newTeacher.last_name || !newTeacher.email || !newTeacher.subject) {
+    if (
+      !newTeacher.first_name ||
+      !newTeacher.last_name ||
+      !newTeacher.email ||
+      !newTeacher.subject
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
     try {
-      await createMutation.mutateAsync({
-        first_name: newTeacher.first_name,
-        last_name: newTeacher.last_name,
-        email: newTeacher.email,
-        phone: newTeacher.phone,
-        subject: newTeacher.subject,
-        qualification: newTeacher.qualification,
-        employee_id: newTeacher.employee_id,
-        employment_date: new Date().toISOString(),
-        status: "active",
-      });
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          updates: {
+            first_name: newTeacher.first_name,
+            last_name: newTeacher.last_name,
+            email: newTeacher.email,
+            phone: newTeacher.phone,
+            subject: newTeacher.subject,
+            qualification: newTeacher.qualification,
+            employee_id: newTeacher.employee_id,
+          },
+        });
+      } else {
+        await createMutation.mutateAsync({
+          first_name: newTeacher.first_name,
+          last_name: newTeacher.last_name,
+          email: newTeacher.email,
+          phone: newTeacher.phone,
+          subject: newTeacher.subject,
+          qualification: newTeacher.qualification,
+          employee_id: newTeacher.employee_id,
+          employment_date: new Date().toISOString(),
+          status: "active",
+        });
+      }
       setNewTeacher({
         first_name: "",
         last_name: "",
@@ -100,6 +127,7 @@ export default function TeachersPage() {
         qualification: "",
         employee_id: "",
       });
+      setEditingId(null);
       setDialogOpen(false);
     } catch (error) {
       console.error(error);
@@ -114,7 +142,23 @@ export default function TeachersPage() {
     }
   };
 
-  const uniqueSubjects = [...new Set((teachers || []).map((t) => t.subject))].filter(Boolean);
+  const handleEdit = (teacher: Teacher) => {
+    setEditingId(teacher.id as string);
+    setNewTeacher({
+      first_name: teacher.first_name || "",
+      last_name: teacher.last_name || "",
+      email: teacher.email || "",
+      phone: teacher.phone || "",
+      subject: teacher.subject || "",
+      qualification: teacher.qualification || "",
+      employee_id: teacher.employee_id || "",
+    });
+    setDialogOpen(true);
+  };
+
+  const uniqueSubjects = [
+    ...new Set((teachers || []).map((t) => t.subject)),
+  ].filter(Boolean);
 
   return (
     <DashboardLayout>
@@ -171,8 +215,10 @@ export default function TeachersPage() {
           <DataTable
             columns={columns}
             data={filteredTeachers}
-            onEdit={(row) => toast.info(`Edit ${row.first_name} ${row.last_name}`)}
-            onView={(row) => toast.info(`View ${row.first_name} ${row.last_name}`)}
+            onEdit={(row) => handleEdit(row)}
+            onView={(row) =>
+              toast.info(`View ${row.first_name} ${row.last_name}`)
+            }
             onDelete={handleDelete}
           />
 
@@ -189,7 +235,12 @@ export default function TeachersPage() {
                     <Input
                       id="firstName"
                       value={newTeacher.first_name}
-                      onChange={(e) => setNewTeacher({ ...newTeacher, first_name: e.target.value })}
+                      onChange={(e) =>
+                        setNewTeacher({
+                          ...newTeacher,
+                          first_name: e.target.value,
+                        })
+                      }
                       placeholder="First name"
                     />
                   </div>
@@ -198,7 +249,12 @@ export default function TeachersPage() {
                     <Input
                       id="lastName"
                       value={newTeacher.last_name}
-                      onChange={(e) => setNewTeacher({ ...newTeacher, last_name: e.target.value })}
+                      onChange={(e) =>
+                        setNewTeacher({
+                          ...newTeacher,
+                          last_name: e.target.value,
+                        })
+                      }
                       placeholder="Last name"
                     />
                   </div>
@@ -209,7 +265,9 @@ export default function TeachersPage() {
                     id="email"
                     type="email"
                     value={newTeacher.email}
-                    onChange={(e) => setNewTeacher({ ...newTeacher, email: e.target.value })}
+                    onChange={(e) =>
+                      setNewTeacher({ ...newTeacher, email: e.target.value })
+                    }
                     placeholder="teacher@school.edu"
                   />
                 </div>
@@ -218,7 +276,12 @@ export default function TeachersPage() {
                   <Input
                     id="employeeId"
                     value={newTeacher.employee_id}
-                    onChange={(e) => setNewTeacher({ ...newTeacher, employee_id: e.target.value })}
+                    onChange={(e) =>
+                      setNewTeacher({
+                        ...newTeacher,
+                        employee_id: e.target.value,
+                      })
+                    }
                     placeholder="EMP-001"
                   />
                 </div>
@@ -228,7 +291,12 @@ export default function TeachersPage() {
                     <Input
                       id="subject"
                       value={newTeacher.subject}
-                      onChange={(e) => setNewTeacher({ ...newTeacher, subject: e.target.value })}
+                      onChange={(e) =>
+                        setNewTeacher({
+                          ...newTeacher,
+                          subject: e.target.value,
+                        })
+                      }
                       placeholder="e.g., Mathematics"
                     />
                   </div>
@@ -237,7 +305,9 @@ export default function TeachersPage() {
                     <Input
                       id="phone"
                       value={newTeacher.phone}
-                      onChange={(e) => setNewTeacher({ ...newTeacher, phone: e.target.value })}
+                      onChange={(e) =>
+                        setNewTeacher({ ...newTeacher, phone: e.target.value })
+                      }
                       placeholder="+1234567890"
                     />
                   </div>
@@ -247,7 +317,12 @@ export default function TeachersPage() {
                   <Input
                     id="qualification"
                     value={newTeacher.qualification}
-                    onChange={(e) => setNewTeacher({ ...newTeacher, qualification: e.target.value })}
+                    onChange={(e) =>
+                      setNewTeacher({
+                        ...newTeacher,
+                        qualification: e.target.value,
+                      })
+                    }
                     placeholder="e.g., Bachelor of Science"
                   />
                 </div>
@@ -256,7 +331,10 @@ export default function TeachersPage() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddTeacher} disabled={createMutation.isPending}>
+                <Button
+                  onClick={handleAddTeacher}
+                  disabled={createMutation.isPending}
+                >
                   {createMutation.isPending ? "Adding..." : "Add Teacher"}
                 </Button>
               </div>
@@ -267,3 +345,4 @@ export default function TeachersPage() {
     </DashboardLayout>
   );
 }
+export default TeachersPage;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -17,32 +17,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Search, Save, Edit2 } from "lucide-react";
+import { FileText, Search, Save, Edit2, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import {
+  useClasses,
+  useStudents,
+  useMarks,
+  useMarksByClass,
+  useCreateMark,
+  useUpdateMark,
+  useDeleteMark,
+} from "@/hooks/useDatabase";
+import { useAuth } from "@/contexts/AuthContext";
+import type { Mark } from "@/lib/types";
 
-interface StudentMark {
-  id: string;
-  studentName: string;
-  class: string;
-  subject: string;
-  exam: string;
-  marks: number;
-  maxMarks: number;
-  grade: string;
-}
-
-const initialMarks: StudentMark[] = [
-  { id: "1", studentName: "Alice Johnson", class: "Grade 10A", subject: "Mathematics", exam: "Mid-Term", marks: 85, maxMarks: 100, grade: "A" },
-  { id: "2", studentName: "Bob Smith", class: "Grade 10A", subject: "Mathematics", exam: "Mid-Term", marks: 72, maxMarks: 100, grade: "B" },
-  { id: "3", studentName: "Carol Williams", class: "Grade 10A", subject: "Mathematics", exam: "Mid-Term", marks: 91, maxMarks: 100, grade: "A" },
-  { id: "4", studentName: "David Brown", class: "Grade 10A", subject: "Mathematics", exam: "Mid-Term", marks: 65, maxMarks: 100, grade: "C" },
-  { id: "5", studentName: "Eva Martinez", class: "Grade 10A", subject: "Mathematics", exam: "Mid-Term", marks: 78, maxMarks: 100, grade: "B" },
-  { id: "6", studentName: "Frank Wilson", class: "Grade 10A", subject: "Mathematics", exam: "Mid-Term", marks: 88, maxMarks: 100, grade: "A" },
-];
-
-const calculateGrade = (marks: number, maxMarks: number) => {
-  const percentage = (marks / maxMarks) * 100;
+const calculateGrade = (marks: number, totalMarks: number) => {
+  const percentage = (marks / totalMarks) * 100;
   if (percentage >= 90) return "A";
   if (percentage >= 80) return "B";
   if (percentage >= 70) return "C";
@@ -50,32 +41,107 @@ const calculateGrade = (marks: number, maxMarks: number) => {
   return "F";
 };
 
-export default function MarksPage() {
-  const [marks, setMarks] = useState<StudentMark[]>(initialMarks);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedClass, setSelectedClass] = useState("Grade 10A");
-  const [selectedExam, setSelectedExam] = useState("Mid-Term");
-  const [editDialog, setEditDialog] = useState<StudentMark | null>(null);
-  const [editMarks, setEditMarks] = useState(0);
+function MarksPage() {
+  const { user } = useAuth();
+  const { data: classes = [] } = useClasses();
+  const { data: students = [] } = useStudents();
+  const { data: allMarks = [] } = useMarks();
 
-  const filteredMarks = marks.filter((mark) => {
-    const matchesSearch = mark.studentName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = mark.class === selectedClass;
-    const matchesExam = mark.exam === selectedExam;
-    return matchesSearch && matchesClass && matchesExam;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [selectedExam, setSelectedExam] = useState<string>("Mid-Term");
+  const [editingMark, setEditingMark] = useState<Mark | null>(null);
+  const [editMarks, setEditMarks] = useState(0);
+  const [createDialog, setCreateDialog] = useState(false);
+  const [createData, setCreateData] = useState({
+    student_id: "",
+    class_id: "",
+    subject: "",
+    exam_type: "Mid-Term",
+    marks_obtained: 0,
+    total_marks: 100,
+    term: "1",
+    academic_year: "2024",
   });
 
-  const handleSaveMarks = () => {
-    if (editDialog) {
-      setMarks(
-        marks.map((m) =>
-          m.id === editDialog.id
-            ? { ...m, marks: editMarks, grade: calculateGrade(editMarks, m.maxMarks) }
-            : m
-        )
-      );
-      setEditDialog(null);
-      toast.success("Marks updated successfully");
+  const teacherClasses = useMemo(() => {
+    if (!user) return [];
+    return classes.filter((c) => c.teacher_id === user.id);
+  }, [classes, user]);
+
+  useEffect(() => {
+    if (selectedClassId === "" && teacherClasses.length > 0) {
+      setSelectedClassId(teacherClasses[0].id);
+    }
+  }, [teacherClasses, selectedClassId]);
+
+  const classStudents = useMemo(() => {
+    if (!selectedClassId) return [];
+    return students.filter((s) => s.class_id === selectedClassId);
+  }, [students, selectedClassId]);
+
+  const classMarks = useMemo(() => {
+    if (!selectedClassId) return [];
+    return allMarks.filter(
+      (m) => m.class_id === selectedClassId && m.exam_type === selectedExam
+    );
+  }, [allMarks, selectedClassId, selectedExam]);
+
+  const createMutation = useCreateMark();
+  const updateMutation = useUpdateMark();
+  const deleteMutation = useDeleteMark();
+
+  const filteredMarks = useMemo(() => {
+    return classMarks.filter((mark) => {
+      const student = students.find((s) => s.id === mark.student_id);
+      const studentName = student
+        ? `${student.first_name} ${student.last_name}`
+        : "";
+      return studentName.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+  }, [classMarks, searchQuery, students]);
+
+  const handleCreateMark = () => {
+    if (
+      !createData.student_id ||
+      !createData.subject ||
+      !createData.exam_type
+    ) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+    createMutation.mutate({
+      ...createData,
+      class_id: selectedClassId,
+    });
+    setCreateDialog(false);
+    setCreateData({
+      student_id: "",
+      class_id: "",
+      subject: "",
+      exam_type: "Mid-Term",
+      marks_obtained: 0,
+      total_marks: 100,
+      term: "1",
+      academic_year: "2024",
+    });
+  };
+
+  const handleUpdateMark = () => {
+    if (editingMark) {
+      updateMutation.mutate({
+        id: editingMark.id,
+        updates: {
+          marks_obtained: editMarks,
+        },
+      });
+      setEditingMark(null);
+    }
+  };
+
+  const handleDeleteMark = (markId: string) => {
+    if (confirm("Delete this mark record?")) {
+      deleteMutation.mutate(markId);
     }
   };
 
@@ -89,6 +155,8 @@ export default function MarksPage() {
     };
     return colors[grade] || "bg-muted text-muted-foreground";
   };
+
+  const selectedClass = classes.find((c) => c.id === selectedClassId);
 
   return (
     <DashboardLayout>
@@ -104,7 +172,7 @@ export default function MarksPage() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-card rounded-2xl p-4 border border-border shadow-md mb-6"
       >
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -114,15 +182,16 @@ export default function MarksPage() {
               className="pl-10"
             />
           </div>
-          <Select value={selectedClass} onValueChange={setSelectedClass}>
+          <Select value={selectedClassId} onValueChange={setSelectedClassId}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Select class" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Grade 10A">Grade 10A</SelectItem>
-              <SelectItem value="Grade 11B">Grade 11B</SelectItem>
-              <SelectItem value="Grade 9A">Grade 9A</SelectItem>
-              <SelectItem value="Grade 12A">Grade 12A</SelectItem>
+              {teacherClasses.map((cls) => (
+                <SelectItem key={cls.id} value={cls.id}>
+                  {cls.class_name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={selectedExam} onValueChange={setSelectedExam}>
@@ -132,10 +201,14 @@ export default function MarksPage() {
             <SelectContent>
               <SelectItem value="Mid-Term">Mid-Term</SelectItem>
               <SelectItem value="Final">Final Exam</SelectItem>
-              <SelectItem value="Quiz 1">Quiz 1</SelectItem>
-              <SelectItem value="Quiz 2">Quiz 2</SelectItem>
+              <SelectItem value="Quiz">Quiz</SelectItem>
+              <SelectItem value="Monthly">Monthly Test</SelectItem>
             </SelectContent>
           </Select>
+          <Button onClick={() => setCreateDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Mark
+          </Button>
         </div>
       </motion.div>
 
@@ -158,71 +231,130 @@ export default function MarksPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredMarks.map((mark) => (
-                <tr key={mark.id} className="border-t border-border hover:bg-muted/30 transition-colors">
-                  <td className="p-4 font-medium">{mark.studentName}</td>
-                  <td className="p-4 text-muted-foreground">{mark.subject}</td>
-                  <td className="p-4 text-center">
-                    <span className="font-semibold">{mark.marks}</span>
-                    <span className="text-muted-foreground">/{mark.maxMarks}</span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getGradeColor(mark.grade)}`}>
-                      {mark.grade}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditDialog(mark);
-                        setEditMarks(mark.marks);
-                      }}
+              {filteredMarks.length > 0 ? (
+                filteredMarks.map((mark) => {
+                  const student = students.find(
+                    (s) => s.id === mark.student_id
+                  );
+                  const studentName = student
+                    ? `${student.first_name} ${student.last_name}`
+                    : "Unknown Student";
+                  const grade = calculateGrade(
+                    mark.marks_obtained,
+                    mark.total_marks
+                  );
+
+                  return (
+                    <tr
+                      key={mark.id}
+                      className="border-t border-border hover:bg-muted/30 transition-colors"
                     >
-                      <Edit2 className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
+                      <td className="p-4 font-medium">{studentName}</td>
+                      <td className="p-4 text-muted-foreground">
+                        {mark.subject}
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className="font-semibold">
+                          {mark.marks_obtained}
+                        </span>
+                        <span className="text-muted-foreground">
+                          /{mark.total_marks}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${getGradeColor(
+                            grade
+                          )}`}
+                        >
+                          {grade}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingMark(mark);
+                            setEditMarks(mark.marks_obtained);
+                          }}
+                        >
+                          <Edit2 className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteMark(mark.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="p-8 text-center text-muted-foreground"
+                  >
+                    No marks found for this class and exam
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       </motion.div>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
+      <Dialog open={!!editingMark} onOpenChange={() => setEditingMark(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Marks</DialogTitle>
           </DialogHeader>
-          {editDialog && (
+          {editingMark && (
             <div className="space-y-4 py-4">
               <div className="bg-muted rounded-xl p-4">
                 <p className="text-sm text-muted-foreground">Student</p>
-                <p className="font-semibold">{editDialog.studentName}</p>
+                <p className="font-semibold">
+                  {students.find((s) => s.id === editingMark.student_id)
+                    ? `${
+                        students.find((s) => s.id === editingMark.student_id)!
+                          .first_name
+                      } ${
+                        students.find((s) => s.id === editingMark.student_id)!
+                          .last_name
+                      }`
+                    : "Unknown"}
+                </p>
                 <p className="text-sm text-muted-foreground mt-2">Exam</p>
-                <p className="font-medium">{editDialog.exam} - {editDialog.subject}</p>
+                <p className="font-medium">
+                  {editingMark.exam_type} - {editingMark.subject}
+                </p>
               </div>
               <div className="space-y-2">
-                <Label>Marks (out of {editDialog.maxMarks})</Label>
+                <Label>Marks (out of {editingMark.total_marks})</Label>
                 <Input
                   type="number"
                   min={0}
-                  max={editDialog.maxMarks}
+                  max={editingMark.total_marks}
                   value={editMarks}
                   onChange={(e) => setEditMarks(Number(e.target.value))}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Grade: <span className="font-semibold">{calculateGrade(editMarks, editDialog.maxMarks)}</span>
+                  Grade:{" "}
+                  <span className="font-semibold">
+                    {calculateGrade(editMarks, editingMark.total_marks)}
+                  </span>
                 </p>
               </div>
               <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setEditDialog(null)}>
+                <Button variant="outline" onClick={() => setEditingMark(null)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSaveMarks}>
+                <Button onClick={handleUpdateMark}>
                   <Save className="w-4 h-4 mr-2" />
                   Save Marks
                 </Button>
@@ -231,6 +363,119 @@ export default function MarksPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Create Dialog */}
+      <Dialog open={createDialog} onOpenChange={setCreateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Mark</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Student *</Label>
+              <Select
+                value={createData.student_id}
+                onValueChange={(v) => {
+                  console.log("Selected student:", v);
+                  setCreateData({ ...createData, student_id: v });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a student" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classStudents && classStudents.length > 0 ? (
+                    classStudents.map((student) => (
+                      <SelectItem
+                        key={`student-${student.id}`}
+                        value={student.id}
+                      >
+                        {student.first_name} {student.last_name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      No students available
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              {classStudents.length === 0 && (
+                <p className="text-xs text-destructive">
+                  No students in this class. Select a class first.
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Subject *</Label>
+              <Input
+                placeholder="e.g., Mathematics"
+                value={createData.subject}
+                onChange={(e) =>
+                  setCreateData({ ...createData, subject: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Exam Type *</Label>
+              <Select
+                value={createData.exam_type}
+                onValueChange={(v) =>
+                  setCreateData({ ...createData, exam_type: v })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select exam" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Mid-Term">Mid-Term</SelectItem>
+                  <SelectItem value="Final">Final Exam</SelectItem>
+                  <SelectItem value="Quiz">Quiz</SelectItem>
+                  <SelectItem value="Monthly">Monthly Test</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Marks Obtained</Label>
+              <Input
+                type="number"
+                min={0}
+                value={createData.marks_obtained}
+                onChange={(e) =>
+                  setCreateData({
+                    ...createData,
+                    marks_obtained: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Total Marks</Label>
+              <Input
+                type="number"
+                min={1}
+                value={createData.total_marks}
+                onChange={(e) =>
+                  setCreateData({
+                    ...createData,
+                    total_marks: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => setCreateDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateMark}>
+                <Save className="w-4 h-4 mr-2" />
+                Add Mark
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
+export default MarksPage;

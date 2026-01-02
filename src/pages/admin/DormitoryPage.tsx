@@ -19,11 +19,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, Search, BedDouble, Users, Plus, Loader } from "lucide-react";
+import {
+  Building2,
+  Search,
+  BedDouble,
+  Users,
+  Plus,
+  Loader,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import StatCard from "@/components/dashboard/StatCard";
-import { useDormitories, useCreateDormitory, useUpdateDormitory, useDeleteDormitory } from "@/hooks/useDatabase";
+import {
+  useDormitories,
+  useCreateDormitory,
+  useUpdateDormitory,
+  useDeleteDormitory,
+} from "@/hooks/useDatabase";
 import { Dormitory } from "@/lib/types";
 
 const columns = [
@@ -34,12 +46,11 @@ const columns = [
   { key: "location", label: "Location" },
 ];
 
-export default function DormitoryPage() {
+function DormitoryPage() {
   const { data: dormitories, isLoading } = useDormitories();
   const createMutation = useCreateDormitory();
   const updateMutation = useUpdateDormitory();
   const deleteMutation = useDeleteDormitory();
-
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -71,9 +82,7 @@ export default function DormitoryPage() {
   );
   const availableBeds = totalCapacity - totalOccupancy;
   const occupancyRate =
-    totalCapacity > 0
-      ? Math.round((totalOccupancy / totalCapacity) * 100)
-      : 0;
+    totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
 
   const handleAddDormitory = async () => {
     if (!newDormitory.dormitory_name || newDormitory.capacity <= 0) {
@@ -101,11 +110,20 @@ export default function DormitoryPage() {
           location: newDormitory.location,
         });
       }
-      setNewDormitory({ dormitory_name: "", dormitory_type: "boys", capacity: 0, current_occupancy: 0, location: "" });
+      setNewDormitory({
+        dormitory_name: "",
+        dormitory_type: "boys",
+        capacity: 0,
+        current_occupancy: 0,
+        location: "",
+      });
       setEditingId(null);
       setDialogOpen(false);
     } catch (error) {
-      console.error(editingId ? "Error updating dormitory:" : "Error creating dormitory:", error);
+      console.error(
+        editingId ? "Error updating dormitory:" : "Error creating dormitory:",
+        error
+      );
     }
   };
 
@@ -210,7 +228,9 @@ export default function DormitoryPage() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Dormitory" : "Create New Dormitory"}</DialogTitle>
+                <DialogTitle>
+                  {editingId ? "Edit Dormitory" : "Create New Dormitory"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -278,10 +298,18 @@ export default function DormitoryPage() {
                 </div>
                 <Button
                   onClick={handleAddDormitory}
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
                   className="w-full"
                 >
-                  {editingId ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Dormitory")}
+                  {editingId
+                    ? updateMutation.isPending
+                      ? "Saving..."
+                      : "Save Changes"
+                    : createMutation.isPending
+                    ? "Creating..."
+                    : "Create Dormitory"}
                 </Button>
               </div>
             </DialogContent>
@@ -301,8 +329,20 @@ export default function DormitoryPage() {
             ...dorm,
             actions: (
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleEdit(dorm)}>Edit</Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(dorm.id)}>Delete</Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(dorm)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(dorm.id)}
+                >
+                  Delete
+                </Button>
               </div>
             ),
           }))}
@@ -312,3 +352,4 @@ export default function DormitoryPage() {
     </DashboardLayout>
   );
 }
+export default DormitoryPage;

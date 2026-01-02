@@ -19,18 +19,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DollarSign, Search, Filter, Plus, CheckCircle, Clock, AlertCircle, Loader } from "lucide-react";
+import {
+  DollarSign,
+  Search,
+  Filter,
+  Plus,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Loader,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import StatCard from "@/components/dashboard/StatCard";
-import { useFees, useCreateFee, useUpdateFee, useDeleteFee } from "@/hooks/useDatabase";
+import {
+  useFees,
+  useCreateFee,
+  useUpdateFee,
+  useDeleteFee,
+} from "@/hooks/useDatabase";
 import { useStudents } from "@/hooks/useDatabase";
 import { Fee } from "@/lib/types";
 import { formatUGX } from "@/lib/utils";
 
 const columns = [
   { key: "student_id", label: "Student ID" },
-  { key: "amount", label: "Amount", render: (value: number) => formatUGX(value) },
+  {
+    key: "amount",
+    label: "Amount",
+    render: (value: number) => formatUGX(value),
+  },
   { key: "term", label: "Term" },
   { key: "academic_year", label: "Academic Year" },
   { key: "due_date", label: "Due Date" },
@@ -44,7 +62,11 @@ const columns = [
         overdue: "bg-destructive/10 text-destructive",
       };
       return (
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[value as keyof typeof styles]}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-medium ${
+            styles[value as keyof typeof styles]
+          }`}
+        >
           {value}
         </span>
       );
@@ -72,8 +94,11 @@ export default function FeesPage() {
   });
 
   const filteredFees = (fees || []).filter((fee) => {
-    const matchesSearch = searchQuery === "" || fee.student_id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === "all" || fee.payment_status === filterStatus;
+    const matchesSearch =
+      searchQuery === "" ||
+      fee.student_id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      filterStatus === "all" || fee.payment_status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -88,7 +113,13 @@ export default function FeesPage() {
     .reduce((sum, f) => sum + f.amount, 0);
 
   const handleAddFee = async () => {
-    if (!newFee.student_id || newFee.amount <= 0 || !newFee.term || !newFee.academic_year || !newFee.due_date) {
+    if (
+      !newFee.student_id ||
+      newFee.amount <= 0 ||
+      !newFee.term ||
+      !newFee.academic_year ||
+      !newFee.due_date
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -223,12 +254,17 @@ export default function FeesPage() {
                   <select
                     id="student_id"
                     value={newFee.student_id}
-                    onChange={(e) => setNewFee({ ...newFee, student_id: e.target.value })}
+                    onChange={(e) =>
+                      setNewFee({ ...newFee, student_id: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-input rounded-md"
                   >
                     <option value="">Select a student</option>
                     {students?.map((student) => (
-                      <option key={(student as any).id ?? (student as any)._id} value={(student as any).id ?? (student as any)._id}>
+                      <option
+                        key={(student as any).id ?? (student as any)._id}
+                        value={(student as any).id ?? (student as any)._id}
+                      >
                         {student.first_name} {student.last_name}
                       </option>
                     ))}
@@ -241,7 +277,12 @@ export default function FeesPage() {
                     type="number"
                     placeholder="e.g., 5000"
                     value={newFee.amount}
-                    onChange={(e) => setNewFee({ ...newFee, amount: parseFloat(e.target.value) })}
+                    onChange={(e) =>
+                      setNewFee({
+                        ...newFee,
+                        amount: parseFloat(e.target.value),
+                      })
+                    }
                   />
                 </div>
                 <div>
@@ -250,7 +291,9 @@ export default function FeesPage() {
                     id="term"
                     placeholder="e.g., Term 1"
                     value={newFee.term}
-                    onChange={(e) => setNewFee({ ...newFee, term: e.target.value })}
+                    onChange={(e) =>
+                      setNewFee({ ...newFee, term: e.target.value })
+                    }
                   />
                 </div>
                 <div>
@@ -259,7 +302,9 @@ export default function FeesPage() {
                     id="academic_year"
                     placeholder="e.g., 2024"
                     value={newFee.academic_year}
-                    onChange={(e) => setNewFee({ ...newFee, academic_year: e.target.value })}
+                    onChange={(e) =>
+                      setNewFee({ ...newFee, academic_year: e.target.value })
+                    }
                   />
                 </div>
                 <div>
@@ -268,11 +313,19 @@ export default function FeesPage() {
                     id="due_date"
                     type="date"
                     value={newFee.due_date}
-                    onChange={(e) => setNewFee({ ...newFee, due_date: e.target.value })}
+                    onChange={(e) =>
+                      setNewFee({ ...newFee, due_date: e.target.value })
+                    }
                   />
                 </div>
-                <Button onClick={handleAddFee} disabled={createMutation.isPending} className="w-full">
-                  {createMutation.isPending ? "Creating..." : "Create Fee Record"}
+                <Button
+                  onClick={handleAddFee}
+                  disabled={createMutation.isPending}
+                  className="w-full"
+                >
+                  {createMutation.isPending
+                    ? "Creating..."
+                    : "Create Fee Record"}
                 </Button>
               </div>
             </DialogContent>
@@ -293,12 +346,22 @@ export default function FeesPage() {
             actions: (
               <div className="flex gap-2">
                 {fee.payment_status !== "paid" ? (
-                  <Button size="sm" variant="outline" onClick={() => handleRecordPayment(fee)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleRecordPayment(fee)}
+                  >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Record Payment
                   </Button>
                 ) : null}
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(fee.id)}>Delete</Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDelete(fee.id)}
+                >
+                  Delete
+                </Button>
               </div>
             ),
           }))}

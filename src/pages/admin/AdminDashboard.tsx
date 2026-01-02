@@ -57,8 +57,7 @@ const columns = [
     ),
   },
 ];
-
-export default function AdminDashboard() {
+function AdminDashboard() {
   const navigate = useNavigate();
   const { data: students = [], isLoading: studentsLoading } = useStudents();
   const { data: teachers = [], isLoading: teachersLoading } = useTeachers();
@@ -216,15 +215,23 @@ export default function AdminDashboard() {
       />
 
       <div className="mb-4">
-        <Button variant="outline" size="sm" onClick={async () => {
-          try {
-            await subscribeToPush();
-            toast.success('Push notifications enabled');
-          } catch (err) {
-            console.error('Push subscribe error', err);
-            toast.error('Failed to enable push: ' + (err as any).message || '');
-          }
-        }}>Enable push notifications</Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            try {
+              await subscribeToPush();
+              toast.success("Push notifications enabled");
+            } catch (err) {
+              console.error("Push subscribe error", err);
+              toast.error(
+                "Failed to enable push: " + (err as any).message || ""
+              );
+            }
+          }}
+        >
+          Enable push notifications
+        </Button>
       </div>
 
       {/* Stats Grid */}
@@ -314,7 +321,12 @@ export default function AdminDashboard() {
           <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="space-y-3">
             {[
-              { label: "Add New Student", icon: Users, color: "bg-primary", route: "/admin/students" },
+              {
+                label: "Add New Student",
+                icon: Users,
+                color: "bg-primary",
+                route: "/admin/students",
+              },
               {
                 label: "Record Payment",
                 icon: DollarSign,
@@ -332,6 +344,18 @@ export default function AdminDashboard() {
                 icon: ShoppingCart,
                 color: "bg-warning",
                 route: "/admin/store",
+              },
+              {
+                label: "Store Dashboard",
+                icon: ShoppingCart,
+                color: "bg-primary",
+                route: "/store/dashboard",
+              },
+              {
+                label: "Dormitory Dashboard",
+                icon: Building2,
+                color: "bg-secondary",
+                route: "/dormitory/dashboard",
               },
             ].map((action) => (
               <button
@@ -361,17 +385,31 @@ export default function AdminDashboard() {
           ) : (
             <div className="space-y-2">
               {lowStock.slice(0, 6).map((it: any) => (
-                <div key={(it as any).id ?? (it as any)._id} className="flex items-center justify-between gap-3">
+                <div
+                  key={(it as any).id ?? (it as any)._id}
+                  className="flex items-center justify-between gap-3"
+                >
                   <div>
                     <div className="font-medium">{it.item_name}</div>
-                    <div className="text-xs text-muted-foreground">Qty: {it.quantity_in_stock} • Reorder: {it.reorder_level}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Qty: {it.quantity_in_stock} • Reorder: {it.reorder_level}
+                    </div>
                   </div>
                   <div className="text-right">
-                    <button onClick={() => navigate('/admin/store')} className="text-sm text-primary underline">Manage</button>
+                    <button
+                      onClick={() => navigate("/admin/store")}
+                      className="text-sm text-primary underline"
+                    >
+                      Manage
+                    </button>
                   </div>
                 </div>
               ))}
-              {lowStock.length > 6 && <div className="text-xs text-muted-foreground">+{lowStock.length - 6} more</div>}
+              {lowStock.length > 6 && (
+                <div className="text-xs text-muted-foreground">
+                  +{lowStock.length - 6} more
+                </div>
+              )}
             </div>
           )}
         </motion.div>
@@ -405,3 +443,4 @@ export default function AdminDashboard() {
     </DashboardLayout>
   );
 }
+export default AdminDashboard;

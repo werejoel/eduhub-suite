@@ -15,7 +15,12 @@ import {
 import { BookOpen, Plus, Loader, Search } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useClasses, useCreateClass, useUpdateClass, useDeleteClass } from "@/hooks/useDatabase";
+import {
+  useClasses,
+  useCreateClass,
+  useUpdateClass,
+  useDeleteClass,
+} from "@/hooks/useDatabase";
 import { useTeachers } from "@/hooks/useDatabase";
 import { Class } from "@/lib/types";
 
@@ -26,8 +31,7 @@ const columns = [
   { key: "capacity", label: "Capacity" },
   { key: "teacher_id", label: "Teacher ID" },
 ];
-
-export default function ClassesPage() {
+function ClassesPage() {
   const { data: classes, isLoading } = useClasses();
   const { data: teachers } = useTeachers();
   const createMutation = useCreateClass();
@@ -83,11 +87,20 @@ export default function ClassesPage() {
           capacity: newClass.capacity,
         });
       }
-      setNewClass({ class_name: "", class_code: "", form_number: 0, teacher_id: "", capacity: 0 });
+      setNewClass({
+        class_name: "",
+        class_code: "",
+        form_number: 0,
+        teacher_id: "",
+        capacity: 0,
+      });
       setEditingId(null);
       setDialogOpen(false);
     } catch (error) {
-      console.error(editingId ? "Error updating class:" : "Error creating class:", error);
+      console.error(
+        editingId ? "Error updating class:" : "Error creating class:",
+        error
+      );
     }
   };
 
@@ -145,15 +158,17 @@ export default function ClassesPage() {
             </div>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Class
-                </Button>
-              </DialogTrigger>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add Class
+              </Button>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Class" : "Create New Class"}</DialogTitle>
+                <DialogTitle>
+                  {editingId ? "Edit Class" : "Create New Class"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -205,7 +220,10 @@ export default function ClassesPage() {
                   >
                     <option value="">Select a teacher</option>
                     {teachers?.map((teacher) => (
-                      <option key={(teacher as any).id ?? (teacher as any)._id} value={(teacher as any).id ?? (teacher as any)._id}>
+                      <option
+                        key={(teacher as any).id ?? (teacher as any)._id}
+                        value={(teacher as any).id ?? (teacher as any)._id}
+                      >
                         {teacher.first_name} {teacher.last_name}
                       </option>
                     ))}
@@ -228,10 +246,18 @@ export default function ClassesPage() {
                 </div>
                 <Button
                   onClick={handleAddClass}
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
                   className="w-full"
                 >
-                  {editingId ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Class")}
+                  {editingId
+                    ? updateMutation.isPending
+                      ? "Saving..."
+                      : "Save Changes"
+                    : createMutation.isPending
+                    ? "Creating..."
+                    : "Create Class"}
                 </Button>
               </div>
             </DialogContent>
@@ -244,7 +270,13 @@ export default function ClassesPage() {
             ...cls,
             actions: (
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleEdit(cls)}>Edit</Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(cls)}
+                >
+                  Edit
+                </Button>
                 <Button
                   variant="destructive"
                   size="sm"
@@ -255,9 +287,9 @@ export default function ClassesPage() {
               </div>
             ),
           }))}
-          isLoading={isLoading}
         />
       </motion.div>
     </DashboardLayout>
   );
 }
+export default ClassesPage;

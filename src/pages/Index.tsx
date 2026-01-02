@@ -1,7 +1,14 @@
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { GraduationCap, Users, Shield, BookOpen, ArrowRight, CheckCircle } from "lucide-react";
+import {
+  GraduationCap,
+  Users,
+  Shield,
+  BookOpen,
+  ArrowRight,
+  CheckCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { getRoleDashboard } from "@/lib/roleRoutes";
@@ -89,8 +96,9 @@ const Index = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto"
             >
-              A comprehensive solution for managing students, teachers, fees, dormitories, 
-              and all aspects of school administration in one powerful platform.
+              A comprehensive solution for managing students, teachers, fees,
+              dormitories, and all aspects of school administration in one
+              powerful platform.
             </motion.p>
 
             <motion.div
@@ -114,7 +122,11 @@ const Index = () => {
 
         {/* Wave Divider */}
         <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            viewBox="0 0 1440 120"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path
               d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
               className="fill-background"
@@ -151,7 +163,9 @@ const Index = () => {
                 className="flex items-center gap-3 p-4 bg-card rounded-xl border border-border"
               >
                 <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                <span className="text-foreground font-medium text-sm">{feature}</span>
+                <span className="text-foreground font-medium text-sm">
+                  {feature}
+                </span>
               </motion.div>
             ))}
           </div>
@@ -188,11 +202,17 @@ const Index = () => {
                   to="/login"
                   className="block group bg-card rounded-2xl p-8 border border-border hover:border-primary/50 hover:shadow-xl transition-all duration-300"
                 >
-                  <div className={`${role.color} w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <div
+                    className={`${role.color} w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
+                  >
                     <role.icon className="w-7 h-7 text-primary-foreground" />
                   </div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">{role.title}</h3>
-                  <p className="text-muted-foreground mb-6">{role.description}</p>
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    {role.title}
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    {role.description}
+                  </p>
                   <div className="flex items-center text-primary font-medium group-hover:gap-3 gap-2 transition-all">
                     Enter Portal
                     <ArrowRight className="w-4 h-4" />
@@ -209,15 +229,16 @@ const Index = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <GraduationCap className="w-6 h-6 text-secondary" />
-            <span className="text-primary-foreground font-bold text-lg">EduManage</span>
+            <span className="text-primary-foreground font-bold text-lg">
+              EduManagement
+            </span>
           </div>
           <p className="text-primary-foreground/70 text-sm">
-            © 2024 EduManage School Management System. All rights reserved.
+            © 2025 Kabale Parents School Management System. All rights reserved.
           </p>
         </div>
       </footer>
     </div>
   );
 };
-
 export default Index;

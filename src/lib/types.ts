@@ -103,7 +103,7 @@ export interface StoreItem {
   updated_at: string;
 }
 
-export type UserRole = 'admin' | 'teacher' | 'headteacher' | 'burser';
+export type UserRole = 'admin' | 'teacher' | 'headteacher' | 'burser' | 'store' | 'dormitory';
 
 export interface User {
   id: string;

@@ -19,11 +19,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ShoppingCart, Search, Package, DollarSign, AlertTriangle, Plus, Loader } from "lucide-react";
+import {
+  ShoppingCart,
+  Search,
+  Package,
+  DollarSign,
+  AlertTriangle,
+  Plus,
+  Loader,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import StatCard from "@/components/dashboard/StatCard";
-import { useStoreItems, useCreateStoreItem, useDeleteStoreItem, useUpdateStoreItem } from "@/hooks/useDatabase";
+import {
+  useStoreItems,
+  useCreateStoreItem,
+  useDeleteStoreItem,
+  useUpdateStoreItem,
+} from "@/hooks/useDatabase";
 import { StoreItem } from "@/lib/types";
 import { formatUGX } from "@/lib/utils";
 
@@ -43,14 +56,17 @@ const columns = [
     render: (_: any, row: StoreItem) => {
       const qty = row.quantity_in_stock ?? 0;
       const reorder = row.reorder_level ?? 0;
-      const status = qty <= 0 ? "Out of Stock" : qty <= reorder ? "Low Stock" : "In Stock";
+      const status =
+        qty <= 0 ? "Out of Stock" : qty <= reorder ? "Low Stock" : "In Stock";
       const styles: { [key: string]: string } = {
         "In Stock": "bg-success/10 text-success",
         "Low Stock": "bg-warning/10 text-warning",
         "Out of Stock": "bg-destructive/10 text-destructive",
       };
       return (
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}
+        >
           {status}
         </span>
       );
@@ -65,7 +81,6 @@ export default function StorePage() {
   const deleteMutation = useDeleteStoreItem();
 
   const [showLowOnly, setShowLowOnly] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -90,7 +105,9 @@ export default function StorePage() {
   });
 
   const visibleItems = showLowOnly
-    ? (filteredItems || []).filter((i) => (i.quantity_in_stock ?? 0) <= (i.reorder_level ?? 0))
+    ? (filteredItems || []).filter(
+        (i) => (i.quantity_in_stock ?? 0) <= (i.reorder_level ?? 0)
+      )
     : filteredItems;
 
   const totalItems = (items || []).reduce(
@@ -114,15 +131,18 @@ export default function StorePage() {
     }
     try {
       if (editingId) {
-        await updateMutation.mutateAsync({ id: editingId, updates: {
-          item_name: newItem.item_name,
-          item_code: newItem.item_code,
-          category: newItem.category,
-          quantity_in_stock: newItem.quantity_in_stock,
-          reorder_level: newItem.reorder_level,
-          unit_price: newItem.unit_price,
-          supplier: newItem.supplier,
-        }});
+        await updateMutation.mutateAsync({
+          id: editingId,
+          updates: {
+            item_name: newItem.item_name,
+            item_code: newItem.item_code,
+            category: newItem.category,
+            quantity_in_stock: newItem.quantity_in_stock,
+            reorder_level: newItem.reorder_level,
+            unit_price: newItem.unit_price,
+            supplier: newItem.supplier,
+          },
+        });
       } else {
         await createMutation.mutateAsync({
           item_name: newItem.item_name,
@@ -146,7 +166,10 @@ export default function StorePage() {
       setEditingId(null);
       setDialogOpen(false);
     } catch (error) {
-      console.error(editingId ? "Error updating item:" : "Error creating item:", error);
+      console.error(
+        editingId ? "Error updating item:" : "Error creating item:",
+        error
+      );
     }
   };
 
@@ -190,9 +213,15 @@ export default function StorePage() {
 
       {lowStockItems > 0 && (
         <div className="mb-6 p-3 rounded-md bg-warning/10 text-warning flex items-center justify-between">
-          <div className="font-medium">{lowStockItems} item(s) are low or out of stock</div>
+          <div className="font-medium">
+            {lowStockItems} item(s) are low or out of stock
+          </div>
           <div>
-            <Button size="sm" variant={showLowOnly ? "hero-outline" : "outline"} onClick={() => setShowLowOnly((s) => !s)}>
+            <Button
+              size="sm"
+              variant={showLowOnly ? "hero-outline" : "outline"}
+              onClick={() => setShowLowOnly((s) => !s)}
+            >
               {showLowOnly ? "Show all items" : "Show low stock"}
             </Button>
           </div>
@@ -266,7 +295,9 @@ export default function StorePage() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{editingId ? "Edit Item" : "Add New Item"}</DialogTitle>
+                <DialogTitle>
+                  {editingId ? "Edit Item" : "Add New Item"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -367,14 +398,22 @@ export default function StorePage() {
                 </div>
               </div>
               <div className="flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddItem} disabled={createMutation.isPending || updateMutation.isPending}>
-                  {editingId ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Adding..." : "Add Item")}
+                <Button
+                  onClick={handleAddItem}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
+                >
+                  {editingId
+                    ? updateMutation.isPending
+                      ? "Saving..."
+                      : "Save Changes"
+                    : createMutation.isPending
+                    ? "Adding..."
+                    : "Add Item"}
                 </Button>
               </div>
             </DialogContent>
@@ -394,8 +433,20 @@ export default function StorePage() {
             ...item,
             actions: (
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>Edit</Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)}>Delete</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEdit(item)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDelete(item.id)}
+                >
+                  Delete
+                </Button>
               </div>
             ),
           }))}

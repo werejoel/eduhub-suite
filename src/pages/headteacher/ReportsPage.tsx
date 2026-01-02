@@ -3,7 +3,7 @@ import PageHeader from "@/components/dashboard/PageHeader";
 import { FileText } from "lucide-react";
 import { useMarks, useStudents } from "@/hooks/useDatabase";
 
-export default function ReportsPage() {
+const ReportsPage = () => {
   const { data: marks = [], isLoading: marksLoading } = useMarks();
   const { data: students = [], isLoading: studentsLoading } = useStudents();
 
@@ -29,3 +29,4 @@ export default function ReportsPage() {
     </DashboardLayout>
   );
 }
+export default ReportsPage;

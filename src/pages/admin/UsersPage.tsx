@@ -8,7 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Mail, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { User } from "@/lib/types";
+import { User, UserRole } from "@/lib/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const fetchUsers = async (): Promise<User[]> => {
   const res = await fetch('/api/users?_sort=-createdAt');
@@ -120,31 +127,77 @@ const UsersPage = () => {
     {
       key: 'actions',
       label: 'Actions',
-      render: (_: any, row: User) => (
-        <div className="flex gap-2">
-          {!row.email_confirmed ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => confirmEmail(row.id)}
-              className="text-success hover:text-success"
-            >
-              <Mail className="w-4 h-4 mr-1" />
-              Confirm Email
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => unconfirmEmail(row.id)}
-              className="text-destructive hover:text-destructive"
-            >
-              <XCircle className="w-4 h-4 mr-1" />
-              Revoke
-            </Button>
-          )}
-        </div>
-      ),
+      render: (_: any, row: User) => {
+        const UpdateRoleControl = ({ userRow }: { userRow: User }) => {
+          const [selected, setSelected] = useState<UserRole>(
+            (userRow.role as UserRole) || ("teacher" as UserRole)
+          );
+          const queryClient = useQueryClient();
+
+          const applyRole = async () => {
+            try {
+              const res = await fetch(`/api/users/${userRow.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ role: selected, updated_at: new Date().toISOString() }),
+              });
+              if (!res.ok) throw new Error("Failed to update role");
+              queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+              toast.success("User role updated");
+            } catch (err: any) {
+              toast.error(err.message || "Failed to update role");
+            }
+          };
+
+          return (
+            <div className="flex items-center gap-2">
+              <Select value={selected} onValueChange={(v) => setSelected(v as UserRole)}>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="headteacher">Head Teacher</SelectItem>
+                  <SelectItem value="burser">Burser</SelectItem>
+                  <SelectItem value="store">Store Manager</SelectItem>
+                  <SelectItem value="dormitory">Dormitory Manager</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={applyRole} className="whitespace-nowrap">
+                Update
+              </Button>
+            </div>
+          );
+        };
+
+        return (
+          <div className="flex gap-2 items-center">
+            {!row.email_confirmed ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => confirmEmail(row.id)}
+                className="text-success hover:text-success"
+              >
+                <Mail className="w-4 h-4 mr-1" />
+                Confirm Email
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => unconfirmEmail(row.id)}
+                className="text-destructive hover:text-destructive"
+              >
+                <XCircle className="w-4 h-4 mr-1" />
+                Revoke
+              </Button>
+            )}
+            <UpdateRoleControl userRow={row} />
+          </div>
+        );
+      },
     },
   ];
 
@@ -220,6 +273,5 @@ const UsersPage = () => {
     </DashboardLayout>
   );
 };
-
 export default UsersPage;
 

@@ -25,12 +25,54 @@ interface Record {
 }
 
 const initialRecords: Record[] = [
-  { id: "1", type: "Academic", title: "Term 1 Results 2024", date: "2024-03-15", createdBy: "Admin", status: "Published" },
-  { id: "2", type: "Financial", title: "Monthly Fee Report - January", date: "2024-02-01", createdBy: "Accountant", status: "Published" },
-  { id: "3", type: "Attendance", title: "Weekly Attendance Summary", date: "2024-01-29", createdBy: "System", status: "Published" },
-  { id: "4", type: "Disciplinary", title: "Incident Report #45", date: "2024-01-25", createdBy: "Head Teacher", status: "Draft" },
-  { id: "5", type: "Academic", title: "Class Performance Analysis", date: "2024-01-20", createdBy: "Teacher", status: "Published" },
-  { id: "6", type: "Inventory", title: "Stock Audit Report Q4", date: "2024-01-15", createdBy: "Store Manager", status: "Published" },
+  {
+    id: "1",
+    type: "Academic",
+    title: "Term 1 Results 2024",
+    date: "2024-03-15",
+    createdBy: "Admin",
+    status: "Published",
+  },
+  {
+    id: "2",
+    type: "Financial",
+    title: "Monthly Fee Report - January",
+    date: "2024-02-01",
+    createdBy: "Accountant",
+    status: "Published",
+  },
+  {
+    id: "3",
+    type: "Attendance",
+    title: "Weekly Attendance Summary",
+    date: "2024-01-29",
+    createdBy: "System",
+    status: "Published",
+  },
+  {
+    id: "4",
+    type: "Disciplinary",
+    title: "Incident Report #45",
+    date: "2024-01-25",
+    createdBy: "Head Teacher",
+    status: "Draft",
+  },
+  {
+    id: "5",
+    type: "Academic",
+    title: "Class Performance Analysis",
+    date: "2024-01-20",
+    createdBy: "Teacher",
+    status: "Published",
+  },
+  {
+    id: "6",
+    type: "Inventory",
+    title: "Stock Audit Report Q4",
+    date: "2024-01-15",
+    createdBy: "Store Manager",
+    status: "Published",
+  },
 ];
 
 const columns = [
@@ -63,13 +105,15 @@ const columns = [
   },
 ];
 
-export default function RecordsPage() {
+ function RecordsPage() {
   const [records] = useState<Record[]>(initialRecords);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
 
   const filteredRecords = records.filter((record) => {
-    const matchesSearch = record.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = record.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
     const matchesType = filterType === "all" || record.type === filterType;
     return matchesSearch && matchesType;
   });
@@ -149,3 +193,4 @@ export default function RecordsPage() {
     </DashboardLayout>
   );
 }
+export default RecordsPage;

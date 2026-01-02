@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Eye } from "lucide-react";
+import { Edit, Trash2, Eye, Loader } from "lucide-react";
 
 interface Column<T> {
   key: keyof T | string;
@@ -23,6 +23,7 @@ interface DataTableProps<T> {
   onDelete?: (row: T) => void;
   onView?: (row: T) => void;
   actions?: boolean;
+  isLoading?: boolean;
 }
 
 export default function DataTable<T extends { id: string | number }>({
@@ -32,6 +33,7 @@ export default function DataTable<T extends { id: string | number }>({
   onDelete,
   onView,
   actions = true,
+  isLoading = false,
 }: DataTableProps<T>) {
   const getValue = (row: T, key: string) => {
     const keys = key.split(".");
@@ -41,6 +43,22 @@ export default function DataTable<T extends { id: string | number }>({
     }
     return value;
   };
+
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-card rounded-2xl border border-border overflow-hidden shadow-md p-8 flex items-center justify-center min-h-96"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <Loader className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading data...</p>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

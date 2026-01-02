@@ -10,19 +10,6 @@ import { useClasses, useStudents, useMarks, useAttendance } from "@/hooks/useDat
 import { useAuth } from "@/contexts/AuthContext";
 import { useMemo } from "react";
 
-const stats = [
-  { title: "My Classes", value: "4", change: "Active classes", changeType: "neutral" as const, icon: BookOpen, iconColor: "bg-primary" },
-  { title: "Total Students", value: "128", change: "Across all classes", changeType: "neutral" as const, icon: Users, iconColor: "bg-success" },
-  { title: "Pending Grades", value: "15", change: "Awaiting entry", changeType: "negative" as const, icon: FileText, iconColor: "bg-warning" },
-  { title: "Attendance Today", value: "96%", change: "5 absent", changeType: "positive" as const, icon: CheckCircle, iconColor: "bg-secondary" },
-];
-
-const myClasses = [
-  { id: "1", name: "Grade 10A", subject: "Mathematics", students: 32, nextClass: "Today 9:00 AM", room: "Room 301" },
-  { id: "2", name: "Grade 11B", subject: "Mathematics", students: 30, nextClass: "Today 11:00 AM", room: "Room 302" },
-  { id: "3", name: "Grade 9A", subject: "Mathematics", students: 35, nextClass: "Tomorrow 8:00 AM", room: "Room 201" },
-  { id: "4", name: "Grade 12A", subject: "Advanced Math", students: 25, nextClass: "Tomorrow 10:00 AM", room: "Room 401" },
-];
 
 const gradeDistribution = [
   { name: "A", value: 25, color: "hsl(142, 76%, 36%)" },
@@ -39,8 +26,7 @@ const columns = [
   { key: "nextClass", label: "Next Class" },
   { key: "room", label: "Room" },
 ];
-
-export default function TeacherDashboard() {
+function TeacherDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: classes = [] } = useClasses();
@@ -49,14 +35,14 @@ export default function TeacherDashboard() {
   const { data: attendance = [] } = useAttendance();
 
   // Filter classes for this teacher
-  const myClasses = useMemo(() => {
+  const teacherClasses = useMemo(() => {
     if (!user) return [];
     return classes.filter(c => c.teacher_id === user.id);
   }, [classes, user]);
 
   // Calculate stats from real data
   const stats = useMemo(() => {
-    const myClassIds = myClasses.map(c => c.id);
+    const myClassIds = teacherClasses.map(c => c.id);
     const myStudents = students.filter(s => myClassIds.includes(s.class_id));
     const totalStudents = myStudents.length;
     
@@ -76,7 +62,7 @@ export default function TeacherDashboard() {
     return [
       { 
         title: "My Classes", 
-        value: myClasses.length.toString(), 
+        value: teacherClasses.length.toString(), 
         change: "Active classes", 
         changeType: "neutral" as const, 
         icon: BookOpen, 
@@ -107,11 +93,11 @@ export default function TeacherDashboard() {
         iconColor: "bg-secondary" 
       },
     ];
-  }, [myClasses, students, attendance]);
+  }, [teacherClasses, students, attendance]);
 
   // Format classes for display
   const formattedClasses = useMemo(() => {
-    return myClasses.map(cls => {
+    return teacherClasses.map(cls => {
       const classStudents = students.filter(s => s.class_id === cls.id);
       return {
         id: cls.id,
@@ -122,7 +108,7 @@ export default function TeacherDashboard() {
         room: "Room 301", // This would come from classes table
       };
     });
-  }, [myClasses, students]);
+  }, [teacherClasses, students]);
 
   return (
     <DashboardLayout>
@@ -237,3 +223,4 @@ export default function TeacherDashboard() {
     </DashboardLayout>
   );
 }
+export default TeacherDashboard;

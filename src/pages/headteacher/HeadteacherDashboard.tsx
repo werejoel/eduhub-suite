@@ -3,13 +3,32 @@ import StatCard from "@/components/dashboard/StatCard";
 import PageHeader from "@/components/dashboard/PageHeader";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, GraduationCap, TrendingUp, DollarSign, FileText, BookOpen } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { useStudents, useTeachers, useMarks, useFees } from "@/hooks/useDatabase";
+import {
+  Users,
+  GraduationCap,
+  TrendingUp,
+  DollarSign,
+  FileText,
+  BookOpen,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  useStudents,
+  useTeachers,
+  useMarks,
+  useFees,
+} from "@/hooks/useDatabase";
 import { formatUGX } from "@/lib/utils";
 import { useMemo } from "react";
-
-export default function HeadteacherDashboard() {
+const HeadteacherDashboard = () => {
   const navigate = useNavigate();
   const { data: students = [] } = useStudents();
   const { data: teachers = [] } = useTeachers();
@@ -20,67 +39,71 @@ export default function HeadteacherDashboard() {
   const stats = useMemo(() => {
     const totalStudents = students.length;
     const totalTeachers = teachers.length;
-    const activeTeachers = teachers.filter(t => t.status === 'active').length;
-    
+    const activeTeachers = teachers.filter((t) => t.status === "active").length;
+
     // Calculate pass rate (assuming 50% is passing)
     const totalMarks = marks.length;
-    const passingMarks = marks.filter(m => {
+    const passingMarks = marks.filter((m) => {
       const percentage = (m.marks_obtained / m.total_marks) * 100;
       return percentage >= 50;
     }).length;
-    const passRate = totalMarks > 0 ? Math.round((passingMarks / totalMarks) * 100) : 0;
+    const passRate =
+      totalMarks > 0 ? Math.round((passingMarks / totalMarks) * 100) : 0;
 
     // Calculate revenue (fees collected)
     const totalRevenue = fees
-      .filter(f => f.payment_status === 'paid')
+      .filter((f) => f.payment_status === "paid")
       .reduce((sum, f) => sum + (f.amount || 0), 0);
 
     // Student growth (this month vs last month)
     const thisMonth = new Date().getMonth();
-    const thisMonthStudents = students.filter(s => {
+    const thisMonthStudents = students.filter((s) => {
       const enrollDate = new Date(s.enrollment_date);
       return enrollDate.getMonth() === thisMonth;
     }).length;
-    const lastMonthStudents = students.filter(s => {
+    const lastMonthStudents = students.filter((s) => {
       const enrollDate = new Date(s.enrollment_date);
       return enrollDate.getMonth() === (thisMonth - 1 + 12) % 12;
     }).length;
-    const growth = lastMonthStudents > 0 
-      ? `+${Math.round(((thisMonthStudents - lastMonthStudents) / lastMonthStudents) * 100)}% vs last month`
-      : `${thisMonthStudents} new this month`;
+    const growth =
+      lastMonthStudents > 0
+        ? `+${Math.round(
+            ((thisMonthStudents - lastMonthStudents) / lastMonthStudents) * 100
+          )}% vs last month`
+        : `${thisMonthStudents} new this month`;
 
     return [
-      { 
-        title: "Total Students", 
-        value: totalStudents.toLocaleString(), 
-        change: growth, 
-        changeType: "positive" as const, 
-        icon: Users, 
-        iconColor: "bg-primary" 
+      {
+        title: "Total Students",
+        value: totalStudents.toLocaleString(),
+        change: growth,
+        changeType: "positive" as const,
+        icon: Users,
+        iconColor: "bg-primary",
       },
-      { 
-        title: "Total Staff", 
-        value: totalTeachers.toString(), 
-        change: `${activeTeachers} active teachers`, 
-        changeType: "neutral" as const, 
-        icon: GraduationCap, 
-        iconColor: "bg-success" 
+      {
+        title: "Total Staff",
+        value: totalTeachers.toString(),
+        change: `${activeTeachers} active teachers`,
+        changeType: "neutral" as const,
+        icon: GraduationCap,
+        iconColor: "bg-success",
       },
-      { 
-        title: "Pass Rate", 
-        value: `${passRate}%`, 
-        change: "Based on all marks", 
-        changeType: "positive" as const, 
-        icon: TrendingUp, 
-        iconColor: "bg-secondary" 
+      {
+        title: "Pass Rate",
+        value: `${passRate}%`,
+        change: "Based on all marks",
+        changeType: "positive" as const,
+        icon: TrendingUp,
+        iconColor: "bg-secondary",
       },
-      { 
-        title: "Revenue", 
-        value: formatUGX(totalRevenue, { decimals: 0 }), 
-        change: "This quarter", 
-        changeType: "neutral" as const, 
-        icon: DollarSign, 
-        iconColor: "bg-warning" 
+      {
+        title: "Revenue",
+        value: formatUGX(totalRevenue, { decimals: 0 }),
+        change: "This quarter",
+        changeType: "neutral" as const,
+        icon: DollarSign,
+        iconColor: "bg-warning",
       },
     ];
   }, [students, teachers, marks, fees]);
@@ -88,8 +111,8 @@ export default function HeadteacherDashboard() {
   // Calculate subject performance
   const performanceData = useMemo(() => {
     const subjectScores: Record<string, { total: number; count: number }> = {};
-    
-    marks.forEach(mark => {
+
+    marks.forEach((mark) => {
       if (mark.subject) {
         if (!subjectScores[mark.subject]) {
           subjectScores[mark.subject] = { total: 0, count: 0 };
@@ -135,11 +158,22 @@ export default function HeadteacherDashboard() {
             {performanceData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={performanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 32%, 91%)" />
-                  <XAxis dataKey="subject" stroke="hsl(215, 16%, 47%)" fontSize={12} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(214, 32%, 91%)"
+                  />
+                  <XAxis
+                    dataKey="subject"
+                    stroke="hsl(215, 16%, 47%)"
+                    fontSize={12}
+                  />
                   <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
                   <Tooltip />
-                  <Bar dataKey="score" fill="hsl(217, 91%, 22%)" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="score"
+                    fill="hsl(217, 91%, 22%)"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -159,10 +193,30 @@ export default function HeadteacherDashboard() {
           <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "View Reports", icon: FileText, color: "bg-primary", route: "/headteacher/reports" },
-              { label: "Staff Management", icon: GraduationCap, color: "bg-success", route: "/headteacher/staff" },
-              { label: "Academic Calendar", icon: BookOpen, color: "bg-secondary", route: "/headteacher/academic" },
-              { label: "Financial Overview", icon: DollarSign, color: "bg-warning", route: "/headteacher/finances" },
+              {
+                label: "View Reports",
+                icon: FileText,
+                color: "bg-primary",
+                route: "/headteacher/reports",
+              },
+              {
+                label: "Staff Management",
+                icon: GraduationCap,
+                color: "bg-success",
+                route: "/headteacher/staff",
+              },
+              {
+                label: "Academic Calendar",
+                icon: BookOpen,
+                color: "bg-secondary",
+                route: "/headteacher/academic",
+              },
+              {
+                label: "Financial Overview",
+                icon: DollarSign,
+                color: "bg-warning",
+                route: "/headteacher/finances",
+              },
             ].map((action) => (
               <button
                 key={action.label}
@@ -180,4 +234,5 @@ export default function HeadteacherDashboard() {
       </div>
     </DashboardLayout>
   );
-}
+};
+export default HeadteacherDashboard;

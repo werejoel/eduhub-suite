@@ -22,7 +22,12 @@ import {
 import { Users, Search, Filter, Plus, Loader } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useStudents, useCreateStudent, useUpdateStudent, useDeleteStudent } from "@/hooks/useDatabase";
+import {
+  useStudents,
+  useCreateStudent,
+  useUpdateStudent,
+  useDeleteStudent,
+} from "@/hooks/useDatabase";
 import { Student } from "@/lib/types";
 
 const columns = [
@@ -49,12 +54,11 @@ const columns = [
   },
 ];
 
-export default function StudentsPage() {
+function StudentsPage() {
   const { data: students, isLoading } = useStudents();
   const createMutation = useCreateStudent();
   const updateMutation = useUpdateStudent();
   const deleteMutation = useDeleteStudent();
-  
   const [searchQuery, setSearchQuery] = useState("");
   const [filterClass, setFilterClass] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -74,12 +78,18 @@ export default function StudentsPage() {
     const matchesSearch =
       fullName.includes(searchQuery.toLowerCase()) ||
       student.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = filterClass === "all" || student.class_id === filterClass;
+    const matchesClass =
+      filterClass === "all" || student.class_id === filterClass;
     return matchesSearch && matchesClass;
   });
 
   const handleAddStudent = async () => {
-    if (!newStudent.first_name || !newStudent.last_name || !newStudent.email || !newStudent.class_id) {
+    if (
+      !newStudent.first_name ||
+      !newStudent.last_name ||
+      !newStudent.email ||
+      !newStudent.class_id
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -120,7 +130,9 @@ export default function StudentsPage() {
     }
   };
 
-  const uniqueClasses = [...new Set((students || []).map((s) => s.class_id))].filter(Boolean);
+  const uniqueClasses = [
+    ...new Set((students || []).map((s) => s.class_id)),
+  ].filter(Boolean);
 
   return (
     <DashboardLayout>
@@ -177,9 +189,13 @@ export default function StudentsPage() {
           <DataTable
             columns={columns}
             data={filteredStudents}
-            onEdit={(row) => toast.info(`Edit ${row.first_name} ${row.last_name}`)}
+            onEdit={(row) =>
+              toast.info(`Edit ${row.first_name} ${row.last_name}`)
+            }
             onDelete={handleDelete}
-            onView={(row) => toast.info(`View ${row.first_name} ${row.last_name}`)}
+            onView={(row) =>
+              toast.info(`View ${row.first_name} ${row.last_name}`)
+            }
           />
 
           {/* Add Student Dialog */}
@@ -195,7 +211,12 @@ export default function StudentsPage() {
                     <Input
                       id="firstName"
                       value={newStudent.first_name}
-                      onChange={(e) => setNewStudent({ ...newStudent, first_name: e.target.value })}
+                      onChange={(e) =>
+                        setNewStudent({
+                          ...newStudent,
+                          first_name: e.target.value,
+                        })
+                      }
                       placeholder="First name"
                     />
                   </div>
@@ -204,7 +225,12 @@ export default function StudentsPage() {
                     <Input
                       id="lastName"
                       value={newStudent.last_name}
-                      onChange={(e) => setNewStudent({ ...newStudent, last_name: e.target.value })}
+                      onChange={(e) =>
+                        setNewStudent({
+                          ...newStudent,
+                          last_name: e.target.value,
+                        })
+                      }
                       placeholder="Last name"
                     />
                   </div>
@@ -215,7 +241,9 @@ export default function StudentsPage() {
                     id="email"
                     type="email"
                     value={newStudent.email}
-                    onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
+                    onChange={(e) =>
+                      setNewStudent({ ...newStudent, email: e.target.value })
+                    }
                     placeholder="student@school.edu"
                   />
                 </div>
@@ -224,7 +252,12 @@ export default function StudentsPage() {
                   <Input
                     id="admission"
                     value={newStudent.admission_number}
-                    onChange={(e) => setNewStudent({ ...newStudent, admission_number: e.target.value })}
+                    onChange={(e) =>
+                      setNewStudent({
+                        ...newStudent,
+                        admission_number: e.target.value,
+                      })
+                    }
                     placeholder="ADM-001"
                   />
                 </div>
@@ -233,7 +266,9 @@ export default function StudentsPage() {
                     <Label htmlFor="class">Class *</Label>
                     <Select
                       value={newStudent.class_id}
-                      onValueChange={(value) => setNewStudent({ ...newStudent, class_id: value })}
+                      onValueChange={(value) =>
+                        setNewStudent({ ...newStudent, class_id: value })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select class" />
@@ -251,7 +286,9 @@ export default function StudentsPage() {
                     <Label htmlFor="gender">Gender</Label>
                     <Select
                       value={newStudent.gender}
-                      onValueChange={(value: any) => setNewStudent({ ...newStudent, gender: value })}
+                      onValueChange={(value: any) =>
+                        setNewStudent({ ...newStudent, gender: value })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select" />
@@ -270,7 +307,12 @@ export default function StudentsPage() {
                       id="dob"
                       type="date"
                       value={newStudent.date_of_birth}
-                      onChange={(e) => setNewStudent({ ...newStudent, date_of_birth: e.target.value })}
+                      onChange={(e) =>
+                        setNewStudent({
+                          ...newStudent,
+                          date_of_birth: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -278,7 +320,9 @@ export default function StudentsPage() {
                     <Input
                       id="phone"
                       value={newStudent.phone}
-                      onChange={(e) => setNewStudent({ ...newStudent, phone: e.target.value })}
+                      onChange={(e) =>
+                        setNewStudent({ ...newStudent, phone: e.target.value })
+                      }
                       placeholder="+1234567890"
                     />
                   </div>
@@ -288,7 +332,10 @@ export default function StudentsPage() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddStudent} disabled={createMutation.isPending}>
+                <Button
+                  onClick={handleAddStudent}
+                  disabled={createMutation.isPending}
+                >
                   {createMutation.isPending ? "Adding..." : "Add Student"}
                 </Button>
               </div>
@@ -299,3 +346,4 @@ export default function StudentsPage() {
     </DashboardLayout>
   );
 }
+export default StudentsPage;

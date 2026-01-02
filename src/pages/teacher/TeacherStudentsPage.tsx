@@ -25,12 +25,60 @@ interface Student {
 }
 
 const initialStudents: Student[] = [
-  { id: "1", name: "Alice Johnson", class: "Grade 10A", rollNumber: "10A-001", email: "alice@school.edu", attendance: "95%", avgGrade: "A" },
-  { id: "2", name: "Bob Smith", class: "Grade 10A", rollNumber: "10A-002", email: "bob@school.edu", attendance: "88%", avgGrade: "B" },
-  { id: "3", name: "Carol Williams", class: "Grade 10A", rollNumber: "10A-003", email: "carol@school.edu", attendance: "92%", avgGrade: "A" },
-  { id: "4", name: "David Brown", class: "Grade 10A", rollNumber: "10A-004", email: "david@school.edu", attendance: "78%", avgGrade: "C" },
-  { id: "5", name: "Eva Martinez", class: "Grade 10A", rollNumber: "10A-005", email: "eva@school.edu", attendance: "96%", avgGrade: "B" },
-  { id: "6", name: "Frank Wilson", class: "Grade 10A", rollNumber: "10A-006", email: "frank@school.edu", attendance: "90%", avgGrade: "A" },
+  {
+    id: "1",
+    name: "Alice Johnson",
+    class: "Grade 10A",
+    rollNumber: "10A-001",
+    email: "alice@school.edu",
+    attendance: "95%",
+    avgGrade: "A",
+  },
+  {
+    id: "2",
+    name: "Bob Smith",
+    class: "Grade 10A",
+    rollNumber: "10A-002",
+    email: "bob@school.edu",
+    attendance: "88%",
+    avgGrade: "B",
+  },
+  {
+    id: "3",
+    name: "Carol Williams",
+    class: "Grade 10A",
+    rollNumber: "10A-003",
+    email: "carol@school.edu",
+    attendance: "92%",
+    avgGrade: "A",
+  },
+  {
+    id: "4",
+    name: "David Brown",
+    class: "Grade 10A",
+    rollNumber: "10A-004",
+    email: "david@school.edu",
+    attendance: "78%",
+    avgGrade: "C",
+  },
+  {
+    id: "5",
+    name: "Eva Martinez",
+    class: "Grade 10A",
+    rollNumber: "10A-005",
+    email: "eva@school.edu",
+    attendance: "96%",
+    avgGrade: "B",
+  },
+  {
+    id: "6",
+    name: "Frank Wilson",
+    class: "Grade 10A",
+    rollNumber: "10A-006",
+    email: "frank@school.edu",
+    attendance: "90%",
+    avgGrade: "A",
+  },
 ];
 
 const columns = [
@@ -49,21 +97,26 @@ const columns = [
         C: "bg-warning/10 text-warning",
       };
       return (
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${colors[value] || "bg-muted text-muted-foreground"}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-medium ${
+            colors[value] || "bg-muted text-muted-foreground"
+          }`}
+        >
           {value}
         </span>
       );
     },
   },
 ];
-
-export default function TeacherStudentsPage() {
+function TeacherStudentsPage() {
   const [students] = useState<Student[]>(initialStudents);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState("Grade 10A");
 
   const filteredStudents = students.filter((student) => {
-    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = student.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
     const matchesClass = student.class === selectedClass;
     return matchesSearch && matchesClass;
   });
@@ -116,3 +169,4 @@ export default function TeacherStudentsPage() {
     </DashboardLayout>
   );
 }
+export default TeacherStudentsPage;

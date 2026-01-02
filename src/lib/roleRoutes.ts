@@ -9,6 +9,8 @@ export const roleRoutes: Record<UserRole, string> = {
   teacher: '/teacher',
   headteacher: '/headteacher',
   burser: '/burser',
+  store: '/store',
+  dormitory: '/dormitory',
 };
 
 /**

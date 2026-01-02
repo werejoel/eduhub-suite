@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // If server responded indicating pending confirmation, treat as success without login
-      if (data?.message === 'pending_confirmation') {
+      if (data?.message === "pending_confirmation") {
         return { error: null };
       }
 

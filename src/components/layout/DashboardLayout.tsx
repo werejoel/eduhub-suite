@@ -66,6 +66,14 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Transactions", icon: DollarSign, href: "/burser" },
     { label: "Fees", icon: FileText, href: "/burser" },
   ],
+  store: [
+    { label: "Dashboard", icon: LayoutDashboard, href: "/store" },
+    { label: "Inventory", icon: ShoppingCart, href: "/admin/store" },
+  ],
+  dormitory: [
+    { label: "Dashboard", icon: LayoutDashboard, href: "/dormitory" },
+    { label: "Dormitories", icon: Building2, href: "/admin/dormitory" },
+  ],
 };
 
 const roleLabels = {
@@ -73,6 +81,8 @@ const roleLabels = {
   teacher: "Teacher",
   headteacher: "Head Teacher",
   burser: "Burser",
+  store: "Store Manager",
+  dormitory: "Dormitory Manager",
 };
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -116,8 +126,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 exit={{ opacity: 0, width: 0 }}
                 className="overflow-hidden"
               >
-                <h1 className="text-xl font-bold text-primary-foreground whitespace-nowrap">EduManage</h1>
-                <p className="text-xs text-primary-foreground/70">{roleLabels[role]}</p>
+                <h1 className="text-xl font-bold text-primary-foreground whitespace-nowrap">
+                  EduManage
+                </h1>
+                <p className="text-xs text-primary-foreground/70">
+                  {roleLabels[role]}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -199,11 +213,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <GraduationCap className="w-6 h-6 text-secondary-foreground" />
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-primary-foreground">EduManage</h1>
-                    <p className="text-xs text-primary-foreground/70">{roleLabels[role]}</p>
+                    <h1 className="text-xl font-bold text-primary-foreground">
+                      EduManage
+                    </h1>
+                    <p className="text-xs text-primary-foreground/70">
+                      {roleLabels[role]}
+                    </p>
                   </div>
                 </div>
-                <button onClick={() => setMobileOpen(false)} className="text-primary-foreground">
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  className="text-primary-foreground"
+                >
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -275,11 +296,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </button>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                  {userName.split(" ").map(n => n[0]).join("").toUpperCase()}
+                  {userName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-sm font-medium">{userName}</p>
-                  <p className="text-xs text-muted-foreground">{roleLabels[role] || role}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {roleLabels[role] || role}
+                  </p>
                 </div>
               </div>
             </div>
@@ -287,9 +314,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <div className="p-4 lg:p-8">
-          {children}
-        </div>
+        <div className="p-4 lg:p-8">{children}</div>
       </main>
     </div>
   );

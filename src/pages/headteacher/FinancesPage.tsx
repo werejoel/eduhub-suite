@@ -20,7 +20,7 @@ const columns = [
   { key: 'due_date', label: 'Due' },
 ];
 
-export default function FinancesPage() {
+const FinancesPage = () => {
   const { data: fees = [], isLoading } = useFees();
   const createFee = useCreateFee();
   const updateFee = useUpdateFee();
@@ -84,3 +84,4 @@ export default function FinancesPage() {
     </DashboardLayout>
   );
 }
+export default FinancesPage;
