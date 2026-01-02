@@ -2,6 +2,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import PageHeader from "@/components/dashboard/PageHeader";
 import DataTable from "@/components/dashboard/DataTable";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -31,6 +32,8 @@ import {
   useClasses,
 } from "@/hooks/useDatabase";
 import { useLowStockItems } from "@/hooks/useDatabase";
+import { subscribeToPush } from "@/lib/services";
+import { toast } from "sonner";
 import { formatUGX } from "@/lib/utils";
 import { useMemo } from "react";
 
@@ -211,6 +214,18 @@ export default function AdminDashboard() {
         description="Welcome back! Here's what's happening at your school."
         icon={TrendingUp}
       />
+
+      <div className="mb-4">
+        <Button variant="outline" size="sm" onClick={async () => {
+          try {
+            await subscribeToPush();
+            toast.success('Push notifications enabled');
+          } catch (err) {
+            console.error('Push subscribe error', err);
+            toast.error('Failed to enable push: ' + (err as any).message || '');
+          }
+        }}>Enable push notifications</Button>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -12,6 +12,30 @@ const PORT = process.env.PORT || 4000;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret';
+const webpush = require('web-push');
+
+// Setup VAPID keys for Web Push. Prefer env values, otherwise generate temporary keys.
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || null;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || null;
+let vapidPublic = VAPID_PUBLIC_KEY;
+let vapidPrivate = VAPID_PRIVATE_KEY;
+if (!vapidPublic || !vapidPrivate) {
+  try {
+    const keys = webpush.generateVAPIDKeys();
+    vapidPublic = keys.publicKey;
+    vapidPrivate = keys.privateKey;
+    console.warn('Generated temporary VAPID keys. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in env for persistent keys.');
+  } catch (e) {
+    console.error('Failed to generate VAPID keys', e);
+  }
+}
+if (vapidPublic && vapidPrivate) {
+  webpush.setVapidDetails('mailto:admin@example.com', vapidPublic, vapidPrivate);
+  console.log('VAPID public key:', vapidPublic);
+}
+
+// In-memory store for push subscriptions (replace with DB for production)
+const pushSubscriptions = [];
 
 // Connect with retry logic so server keeps trying if DB is down
 async function connectWithRetry() {
@@ -167,8 +191,29 @@ collections.forEach((col) => {
         const body = { ...req.body };
         const qty = typeof body.quantity_in_stock !== 'undefined' ? parseInt(body.quantity_in_stock) : (existing.quantity_in_stock || 0);
         const reorder = typeof body.reorder_level !== 'undefined' ? parseInt(body.reorder_level) : (existing.reorder_level || 0);
-        body.status = qty <= 0 ? 'Out of Stock' : qty <= reorder ? 'Low Stock' : 'In Stock';
+        const newStatus = qty <= 0 ? 'Out of Stock' : qty <= reorder ? 'Low Stock' : 'In Stock';
+        body.status = newStatus;
         const updated = await Model.findByIdAndUpdate(req.params.id, body, { new: true });
+
+        // Send push notifications to subscribers if status is Low Stock or Out of Stock
+        if (newStatus === 'Low Stock' || newStatus === 'Out of Stock') {
+          const payload = {
+            title: `Store Alert: ${newStatus}`,
+            message: `${updated.item_name} is ${newStatus} (qty: ${qty})`,
+            url: '/admin/store',
+          };
+          pushSubscriptions.forEach(sub => {
+            webpush.sendNotification(sub, JSON.stringify(payload)).catch(err => {
+              if (err && err.statusCode === 410) {
+                const idx = pushSubscriptions.findIndex(s => s.endpoint === sub.endpoint);
+                if (idx >= 0) pushSubscriptions.splice(idx, 1);
+              } else {
+                console.error('Push send error', err && err.body ? err.body : err);
+              }
+            });
+          });
+        }
+
         return res.json(updated);
       }
 
@@ -288,6 +333,46 @@ collections.forEach((col) => {
         const t = parseInt(req.params.threshold) || 10;
         const results = await Model.find({ quantity_in_stock: { $lte: t } });
         res.json(results);
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    });
+  }
+
+  // Push subscription endpoint
+  if (col === 'store_items') {
+    app.post('/api/push/subscribe', async (req, res) => {
+      try {
+        const sub = req.body;
+        if (!sub || !sub.endpoint) return res.status(400).json({ error: 'Invalid subscription' });
+        // Deduplicate by endpoint
+        const exists = pushSubscriptions.find(s => s.endpoint === sub.endpoint);
+        if (!exists) pushSubscriptions.push(sub);
+        res.status(201).json({ ok: true });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    });
+
+    app.get('/api/push/publicKey', (req, res) => {
+      if (!vapidPublic) return res.status(500).json({ error: 'VAPID not configured' });
+      res.json({ publicKey: vapidPublic });
+    });
+
+    app.post('/api/push/notify', async (req, res) => {
+      try {
+        const payload = req.body || { title: 'EduHub', message: 'Notification' };
+        const promises = pushSubscriptions.map(sub => webpush.sendNotification(sub, JSON.stringify(payload)).catch(err => {
+          // If subscription is gone, remove it
+          if (err && err.statusCode === 410) {
+            const idx = pushSubscriptions.findIndex(s => s.endpoint === sub.endpoint);
+            if (idx >= 0) pushSubscriptions.splice(idx, 1);
+          } else {
+            console.error('Push send error', err && err.body ? err.body : err);
+          }
+        }));
+        await Promise.all(promises);
+        res.json({ ok: true });
       } catch (err) {
         res.status(500).json({ error: err.message });
       }
