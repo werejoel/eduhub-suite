@@ -23,7 +23,9 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
 
 // Auth is handled by the server via authService
 
@@ -92,11 +94,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         last_name: lastName,
         role,
       });
+      // If server issued a token (e.g., immediate activation), log user in.
       if (data?.token) {
         localStorage.setItem("eduhub_token", data.token);
         setUser(data.user || null);
         return { error: null };
       }
+
+      // If server responded indicating pending confirmation, treat as success without login
+      if (data?.message === 'pending_confirmation') {
+        return { error: null };
+      }
+
+      // Fallback: treat other responses without token as errors
       return { error: data };
     } catch (err) {
       return { error: err };

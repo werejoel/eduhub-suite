@@ -1,24 +1,41 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { motion } from 'framer-motion';
-import { GraduationCap, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserRole } from '@/lib/types';
-import { getRoleDashboard } from '@/lib/roleRoutes';
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { motion } from "framer-motion";
+import {
+  GraduationCap,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UserRole } from "@/lib/types";
+import { getRoleDashboard } from "@/lib/roleRoutes";
 
 const SignUp = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('teacher');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<UserRole>("teacher");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -39,19 +56,19 @@ const SignUp = () => {
 
   const validateForm = (): string | null => {
     if (!firstName.trim() || !lastName.trim()) {
-      return 'First name and last name are required';
+      return "First name and last name are required";
     }
 
     if (!email.trim()) {
-      return 'Email is required';
+      return "Email is required";
     }
 
     if (password.length < 6) {
-      return 'Password must be at least 6 characters long';
+      return "Password must be at least 6 characters long";
     }
 
     if (password !== confirmPassword) {
-      return 'Passwords do not match';
+      return "Passwords do not match";
     }
 
     return null;
@@ -81,7 +98,7 @@ const SignUp = () => {
       );
 
       if (signUpError) {
-        setError(signUpError.message || 'Failed to create account');
+        setError(signUpError.message || "Failed to create account");
         setIsSubmitting(false);
         return;
       }
@@ -89,10 +106,10 @@ const SignUp = () => {
       // Success - show confirmation message and stop spinner
       setSuccess(true);
       setTimeout(() => setIsSubmitting(false), 300);
-      
+
       // Auto-navigate will happen via useEffect when user loads
     } catch (err: any) {
-      setError(err.message || 'An error occurred during registration');
+      setError(err.message || "An error occurred during registration");
       setIsSubmitting(false);
     }
   };
@@ -122,7 +139,7 @@ const SignUp = () => {
               <Alert className="border-success bg-success/10">
                 <CheckCircle2 className="h-4 w-4 text-success" />
                 <AlertDescription className="text-success">
-                  Account created successfully! Logging you in...
+                  Account created. Await administrator approval to activate your account.
                 </AlertDescription>
               </Alert>
             ) : (
@@ -164,7 +181,11 @@ const SignUp = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
-                  <Select value={role} onValueChange={(value) => setRole(value as UserRole)} disabled={isSubmitting}>
+                  <Select
+                    value={role}
+                    onValueChange={(value) => setRole(value as UserRole)}
+                    disabled={isSubmitting}
+                  >
                     <SelectTrigger id="role">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
@@ -235,7 +256,7 @@ const SignUp = () => {
                       Creating account...
                     </>
                   ) : (
-                    'Create Account'
+                    "Create Account"
                   )}
                 </Button>
               </form>
@@ -243,7 +264,7 @@ const SignUp = () => {
 
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
-                Already have an account?{' '}
+                Already have an account?{" "}
                 <Link
                   to="/login"
                   className="text-primary hover:underline font-medium"

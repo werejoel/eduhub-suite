@@ -13,8 +13,22 @@ import {
   BookOpen,
   ShoppingCart,
 } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { useStudents, useTeachers, useFees, useDormitories, useClasses } from "@/hooks/useDatabase";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  useStudents,
+  useTeachers,
+  useFees,
+  useDormitories,
+  useClasses,
+} from "@/hooks/useDatabase";
 import { formatUGX } from "@/lib/utils";
 import { useMemo } from "react";
 
@@ -43,7 +57,8 @@ export default function AdminDashboard() {
   const { data: students = [], isLoading: studentsLoading } = useStudents();
   const { data: teachers = [], isLoading: teachersLoading } = useTeachers();
   const { data: fees = [], isLoading: feesLoading } = useFees();
-  const { data: dormitories = [], isLoading: dormitoriesLoading } = useDormitories();
+  const { data: dormitories = [], isLoading: dormitoriesLoading } =
+    useDormitories();
   const { data: classes = [] } = useClasses();
 
   // Calculate stats from real data
@@ -51,69 +66,82 @@ export default function AdminDashboard() {
     const totalStudents = students.length;
     const totalTeachers = teachers.length;
     const totalFeesCollected = fees
-      .filter(f => f.payment_status === 'paid')
+      .filter((f) => f.payment_status === "paid")
       .reduce((sum, f) => sum + (f.amount || 0), 0);
-    const totalDormitoryOccupancy = dormitories.reduce((sum, d) => sum + (d.current_occupancy || 0), 0);
-    const totalDormitoryCapacity = dormitories.reduce((sum, d) => sum + (d.capacity || 0), 0);
-    const occupancyRate = totalDormitoryCapacity > 0 
-      ? Math.round((totalDormitoryOccupancy / totalDormitoryCapacity) * 100) 
-      : 0;
+    const totalDormitoryOccupancy = dormitories.reduce(
+      (sum, d) => sum + (d.current_occupancy || 0),
+      0
+    );
+    const totalDormitoryCapacity = dormitories.reduce(
+      (sum, d) => sum + (d.capacity || 0),
+      0
+    );
+    const occupancyRate =
+      totalDormitoryCapacity > 0
+        ? Math.round((totalDormitoryOccupancy / totalDormitoryCapacity) * 100)
+        : 0;
 
     // Calculate student growth (comparing last month vs this month)
     const thisMonth = new Date().getMonth();
-    const thisMonthStudents = students.filter(s => {
+    const thisMonthStudents = students.filter((s) => {
       const enrollDate = new Date(s.enrollment_date);
       return enrollDate.getMonth() === thisMonth;
     }).length;
-    const lastMonthStudents = students.filter(s => {
+    const lastMonthStudents = students.filter((s) => {
       const enrollDate = new Date(s.enrollment_date);
       return enrollDate.getMonth() === (thisMonth - 1 + 12) % 12;
     }).length;
-    const studentGrowth = lastMonthStudents > 0 
-      ? `+${Math.round((thisMonthStudents / lastMonthStudents) * 100)}% this month`
-      : `${thisMonthStudents} new this month`;
+    const studentGrowth =
+      lastMonthStudents > 0
+        ? `+${Math.round(
+            (thisMonthStudents / lastMonthStudents) * 100
+          )}% this month`
+        : `${thisMonthStudents} new this month`;
 
     // Calculate teacher growth
-    const thisMonthTeachers = teachers.filter(t => {
+    const thisMonthTeachers = teachers.filter((t) => {
       const employDate = new Date(t.employment_date);
       return employDate.getMonth() === thisMonth;
     }).length;
-    const teacherGrowth = thisMonthTeachers > 0 
-      ? `+${thisMonthTeachers} new hires`
-      : `${teachers.filter(t => t.status === 'active').length} active`;
+    const teacherGrowth =
+      thisMonthTeachers > 0
+        ? `+${thisMonthTeachers} new hires`
+        : `${teachers.filter((t) => t.status === "active").length} active`;
 
     return [
-      { 
-        title: "Total Students", 
-        value: totalStudents.toLocaleString(), 
-        change: studentGrowth, 
-        changeType: "positive" as const, 
-        icon: Users, 
-        iconColor: "bg-primary" 
+      {
+        title: "Total Students",
+        value: totalStudents.toLocaleString(),
+        change: studentGrowth,
+        changeType: "positive" as const,
+        icon: Users,
+        iconColor: "bg-primary",
       },
-      { 
-        title: "Total Teachers", 
-        value: totalTeachers.toString(), 
-        change: teacherGrowth, 
-        changeType: "positive" as const, 
-        icon: GraduationCap, 
-        iconColor: "bg-success" 
+      {
+        title: "Total Teachers",
+        value: totalTeachers.toString(),
+        change: teacherGrowth,
+        changeType: "positive" as const,
+        icon: GraduationCap,
+        iconColor: "bg-success",
       },
-      { 
-        title: "Fees Collected", 
-        value: formatUGX(totalFeesCollected), 
-        change: `${fees.filter(f => f.payment_status === 'paid').length} paid`, 
-        changeType: "neutral" as const, 
-        icon: DollarSign, 
-        iconColor: "bg-secondary" 
+      {
+        title: "Fees Collected",
+        value: formatUGX(totalFeesCollected),
+        change: `${
+          fees.filter((f) => f.payment_status === "paid").length
+        } paid`,
+        changeType: "neutral" as const,
+        icon: DollarSign,
+        iconColor: "bg-secondary",
       },
-      { 
-        title: "Dormitory", 
-        value: totalDormitoryOccupancy.toString(), 
-        change: `${occupancyRate}% occupancy`, 
-        changeType: "neutral" as const, 
-        icon: Building2, 
-        iconColor: "bg-warning" 
+      {
+        title: "Dormitory",
+        value: totalDormitoryOccupancy.toString(),
+        change: `${occupancyRate}% occupancy`,
+        changeType: "neutral" as const,
+        icon: Building2,
+        iconColor: "bg-warning",
       },
     ];
   }, [students, teachers, fees, dormitories]);
@@ -121,27 +149,39 @@ export default function AdminDashboard() {
   // Get recent students
   const recentStudents = useMemo(() => {
     return students
-      .sort((a, b) => new Date(b.enrollment_date).getTime() - new Date(a.enrollment_date).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.enrollment_date).getTime() -
+          new Date(a.enrollment_date).getTime()
+      )
       .slice(0, 5)
-      .map(student => ({
+      .map((student) => ({
         id: student.id,
         name: `${student.first_name} ${student.last_name}`,
-        class: classes.find(c => c.id === student.class_id)?.class_name || 'Unassigned',
+        class:
+          classes.find((c) => c.id === student.class_id)?.class_name ||
+          "Unassigned",
         admissionDate: new Date(student.enrollment_date).toLocaleDateString(),
-        status: student.status === 'active' ? 'Active' : student.status === 'inactive' ? 'Inactive' : 'Graduated',
+        status:
+          student.status === "active"
+            ? "Active"
+            : student.status === "inactive"
+            ? "Inactive"
+            : "Graduated",
       }));
   }, [students, classes]);
 
   // Calculate fee collection by month
   const feeData = useMemo(() => {
     const monthlyData: Record<string, number> = {};
-    
+
     fees
-      .filter(f => f.payment_status === 'paid' && f.paid_date)
-      .forEach(fee => {
+      .filter((f) => f.payment_status === "paid" && f.paid_date)
+      .forEach((fee) => {
         const date = new Date(fee.paid_date!);
-        const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
-        monthlyData[monthKey] = (monthlyData[monthKey] || 0) + (fee.amount || 0);
+        const monthKey = date.toLocaleDateString("en-US", { month: "short" });
+        monthlyData[monthKey] =
+          (monthlyData[monthKey] || 0) + (fee.amount || 0);
       });
 
     // Get last 6 months
@@ -149,14 +189,15 @@ export default function AdminDashboard() {
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
-      const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+      const monthKey = date.toLocaleDateString("en-US", { month: "short" });
       months.push({ month: monthKey, collected: monthlyData[monthKey] || 0 });
     }
 
     return months;
   }, [fees]);
 
-  const isLoading = studentsLoading || teachersLoading || feesLoading || dormitoriesLoading;
+  const isLoading =
+    studentsLoading || teachersLoading || feesLoading || dormitoriesLoading;
 
   return (
     <DashboardLayout>
@@ -168,18 +209,19 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, idx) => (
-            <div key={idx} className="bg-card rounded-2xl p-6 border border-border animate-pulse">
-              <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-              <div className="h-8 bg-muted rounded w-1/2"></div>
-            </div>
-          ))
-        ) : (
-          stats.map((stat, idx) => (
-            <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
-          ))
-        )}
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="bg-card rounded-2xl p-6 border border-border animate-pulse"
+              >
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-1/2"></div>
+              </div>
+            ))
+          : stats.map((stat, idx) => (
+              <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
+            ))}
       </div>
 
       {/* Charts & Quick Actions */}
@@ -191,18 +233,35 @@ export default function AdminDashboard() {
           transition={{ delay: 0.4 }}
           className="lg:col-span-2 bg-card rounded-2xl p-6 border border-border shadow-md"
         >
-          <h3 className="text-lg font-semibold mb-4">Fee Collection Overview</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Fee Collection Overview
+          </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={feeData}>
                 <defs>
                   <linearGradient id="colorFee" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(217, 91%, 22%)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(217, 91%, 22%)" stopOpacity={0} />
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(217, 91%, 22%)"
+                      stopOpacity={0.3}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(217, 91%, 22%)"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 32%, 91%)" />
-                <XAxis dataKey="month" stroke="hsl(215, 16%, 47%)" fontSize={12} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(214, 32%, 91%)"
+                />
+                <XAxis
+                  dataKey="month"
+                  stroke="hsl(215, 16%, 47%)"
+                  fontSize={12}
+                />
                 <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
                 <Tooltip
                   contentStyle={{
@@ -219,9 +278,7 @@ export default function AdminDashboard() {
                   fillOpacity={1}
                   fill="url(#colorFee)"
                 />
-                <Tooltip
-                  formatter={(value: number) => formatUGX(value)}
-                />
+                <Tooltip formatter={(value: number) => formatUGX(value)} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -238,9 +295,21 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             {[
               { label: "Add New Student", icon: Users, color: "bg-primary" },
-              { label: "Record Payment", icon: DollarSign, color: "bg-success" },
-              { label: "View Timetable", icon: Calendar, color: "bg-secondary" },
-              { label: "Manage Store", icon: ShoppingCart, color: "bg-warning" },
+              {
+                label: "Record Payment",
+                icon: DollarSign,
+                color: "bg-success",
+              },
+              {
+                label: "View Timetable",
+                icon: Calendar,
+                color: "bg-secondary",
+              },
+              {
+                label: "Manage Store",
+                icon: ShoppingCart,
+                color: "bg-warning",
+              },
             ].map((action) => (
               <button
                 key={action.label}

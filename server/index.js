@@ -51,12 +51,12 @@ app.post('/api/auth/register', async (req, res) => {
     if (existing) return res.status(400).json({ error: 'User already exists' });
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = await UserModel.create({ email, password: hashed, role, first_name, last_name });
-    const payload = { id: user._id, role: user.role };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+    // Create account in pending state; admin must confirm before login
+    const user = await UserModel.create({ email, password: hashed, role, first_name, last_name, email_confirmed: false });
 
-    const safeUser = { id: user._id, email: user.email, role: user.role, first_name: user.first_name, last_name: user.last_name };
-    res.status(201).json({ token, user: safeUser });
+    const safeUser = { id: user._id, email: user.email, role: user.role, first_name: user.first_name, last_name: user.last_name, email_confirmed: false };
+    // Do not issue a token yet; require admin confirmation
+    res.status(201).json({ message: 'pending_confirmation', user: safeUser });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -69,6 +69,9 @@ app.post('/api/auth/login', async (req, res) => {
 
     const user = await UserModel.findOne({ email });
     if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+
+    // Require admin confirmation before allowing login
+    if (user.email_confirmed === false) return res.status(403).json({ error: 'Email not confirmed. Await administrator approval.' });
 
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: 'Invalid credentials' });

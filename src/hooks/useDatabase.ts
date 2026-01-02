@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   studentService,
   teacherService,
@@ -8,30 +8,43 @@ import {
   markService,
   dormitoryService,
   storeService,
-} from '@/lib/services';
-import { Student, Teacher, Class, Fee, Attendance, Mark, Dormitory, StoreItem } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+} from "@/lib/services";
+import {
+  Student,
+  Teacher,
+  Class,
+  Fee,
+  Attendance,
+  Mark,
+  Dormitory,
+  StoreItem,
+} from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 const QUERY_KEYS = {
-  students: ['students'],
-  studentById: (id: string) => ['students', id],
-  teachers: ['teachers'],
-  teacherById: (id: string) => ['teachers', id],
-  classes: ['classes'],
-  classById: (id: string) => ['classes', id],
-  fees: ['fees'],
-  feesByStudent: (studentId: string) => ['fees', 'student', studentId],
-  attendance: ['attendance'],
-  attendanceByStudent: (studentId: string) => ['attendance', 'student', studentId],
-  attendanceByClass: (classId: string) => ['attendance', 'class', classId],
-  marks: ['marks'],
-  marksByStudent: (studentId: string) => ['marks', 'student', studentId],
-  marksByClass: (classId: string) => ['marks', 'class', classId],
-  dormitories: ['dormitories'],
-  dormitoryById: (id: string) => ['dormitories', id],
-  storeItems: ['store_items'],
-  storeItemById: (id: string) => ['store_items', id],
-  lowStockItems: ['store_items', 'low-stock'],
+  students: ["students"],
+  studentById: (id: string) => ["students", id],
+  teachers: ["teachers"],
+  teacherById: (id: string) => ["teachers", id],
+  classes: ["classes"],
+  classById: (id: string) => ["classes", id],
+  fees: ["fees"],
+  feesByStudent: (studentId: string) => ["fees", "student", studentId],
+  attendance: ["attendance"],
+  attendanceByStudent: (studentId: string) => [
+    "attendance",
+    "student",
+    studentId,
+  ],
+  attendanceByClass: (classId: string) => ["attendance", "class", classId],
+  marks: ["marks"],
+  marksByStudent: (studentId: string) => ["marks", "student", studentId],
+  marksByClass: (classId: string) => ["marks", "class", classId],
+  dormitories: ["dormitories"],
+  dormitoryById: (id: string) => ["dormitories", id],
+  storeItems: ["store_items"],
+  storeItemById: (id: string) => ["store_items", id],
+  lowStockItems: ["store_items", "low-stock"],
 };
 
 // STUDENT HOOKS
@@ -56,17 +69,17 @@ export const useCreateStudent = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (student: Omit<Student, 'id' | 'created_at' | 'updated_at'>) =>
+    mutationFn: (student: Omit<Student, "id" | "created_at" | "updated_at">) =>
       studentService.create(student),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.students });
-      toast({ title: 'Success', description: 'Student created successfully' });
+      toast({ title: "Success", description: "Student created successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create student',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create student",
+        variant: "destructive",
       });
     },
   });
@@ -81,14 +94,16 @@ export const useUpdateStudent = () => {
       studentService.update(id, updates),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.students });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.studentById(data.id) });
-      toast({ title: 'Success', description: 'Student updated successfully' });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.studentById(data.id),
+      });
+      toast({ title: "Success", description: "Student updated successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to update student',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to update student",
+        variant: "destructive",
       });
     },
   });
@@ -102,13 +117,13 @@ export const useDeleteStudent = () => {
     mutationFn: (id: string) => studentService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.students });
-      toast({ title: 'Success', description: 'Student deleted successfully' });
+      toast({ title: "Success", description: "Student deleted successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete student',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to delete student",
+        variant: "destructive",
       });
     },
   });
@@ -136,17 +151,17 @@ export const useCreateTeacher = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (teacher: Omit<Teacher, 'id' | 'created_at' | 'updated_at'>) =>
+    mutationFn: (teacher: Omit<Teacher, "id" | "created_at" | "updated_at">) =>
       teacherService.create(teacher),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.teachers });
-      toast({ title: 'Success', description: 'Teacher created successfully' });
+      toast({ title: "Success", description: "Teacher created successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create teacher',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create teacher",
+        variant: "destructive",
       });
     },
   });
@@ -161,14 +176,16 @@ export const useUpdateTeacher = () => {
       teacherService.update(id, updates),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.teachers });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.teacherById(data.id) });
-      toast({ title: 'Success', description: 'Teacher updated successfully' });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.teacherById(data.id),
+      });
+      toast({ title: "Success", description: "Teacher updated successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to update teacher',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to update teacher",
+        variant: "destructive",
       });
     },
   });
@@ -182,13 +199,13 @@ export const useDeleteTeacher = () => {
     mutationFn: (id: string) => teacherService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.teachers });
-      toast({ title: 'Success', description: 'Teacher deleted successfully' });
+      toast({ title: "Success", description: "Teacher deleted successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete teacher',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to delete teacher",
+        variant: "destructive",
       });
     },
   });
@@ -216,17 +233,17 @@ export const useCreateClass = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (classData: Omit<Class, 'id' | 'created_at' | 'updated_at'>) =>
+    mutationFn: (classData: Omit<Class, "id" | "created_at" | "updated_at">) =>
       classService.create(classData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.classes });
-      toast({ title: 'Success', description: 'Class created successfully' });
+      toast({ title: "Success", description: "Class created successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create class',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create class",
+        variant: "destructive",
       });
     },
   });
@@ -241,14 +258,16 @@ export const useUpdateClass = () => {
       classService.update(id, updates),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.classes });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.classById(data.id) });
-      toast({ title: 'Success', description: 'Class updated successfully' });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.classById(data.id),
+      });
+      toast({ title: "Success", description: "Class updated successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to update class',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to update class",
+        variant: "destructive",
       });
     },
   });
@@ -262,13 +281,13 @@ export const useDeleteClass = () => {
     mutationFn: (id: string) => classService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.classes });
-      toast({ title: 'Success', description: 'Class deleted successfully' });
+      toast({ title: "Success", description: "Class deleted successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete class',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to delete class",
+        variant: "destructive",
       });
     },
   });
@@ -296,17 +315,20 @@ export const useCreateFee = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (fee: Omit<Fee, 'id' | 'created_at' | 'updated_at'>) =>
+    mutationFn: (fee: Omit<Fee, "id" | "created_at" | "updated_at">) =>
       feeService.create(fee),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.fees });
-      toast({ title: 'Success', description: 'Fee record created successfully' });
+      toast({
+        title: "Success",
+        description: "Fee record created successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create fee record',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create fee record",
+        variant: "destructive",
       });
     },
   });
@@ -321,13 +343,16 @@ export const useUpdateFee = () => {
       feeService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.fees });
-      toast({ title: 'Success', description: 'Fee record updated successfully' });
+      toast({
+        title: "Success",
+        description: "Fee record updated successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to update fee record',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to update fee record",
+        variant: "destructive",
       });
     },
   });
@@ -341,13 +366,16 @@ export const useDeleteFee = () => {
     mutationFn: (id: string) => feeService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.fees });
-      toast({ title: 'Success', description: 'Fee record deleted successfully' });
+      toast({
+        title: "Success",
+        description: "Fee record deleted successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error?.message || 'Failed to delete fee record',
-        variant: 'destructive',
+        title: "Error",
+        description: error?.message || "Failed to delete fee record",
+        variant: "destructive",
       });
     },
   });
@@ -383,17 +411,21 @@ export const useCreateAttendance = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (attendance: Omit<Attendance, 'id' | 'created_at' | 'updated_at'>) =>
-      attendanceService.create(attendance),
+    mutationFn: (
+      attendance: Omit<Attendance, "id" | "created_at" | "updated_at">
+    ) => attendanceService.create(attendance),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.attendance });
-      toast({ title: 'Success', description: 'Attendance recorded successfully' });
+      toast({
+        title: "Success",
+        description: "Attendance recorded successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to record attendance',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to record attendance",
+        variant: "destructive",
       });
     },
   });
@@ -404,17 +436,21 @@ export const useBulkCreateAttendance = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (records: Omit<Attendance, 'id' | 'created_at' | 'updated_at'>[]) =>
-      attendanceService.bulkCreate(records),
+    mutationFn: (
+      records: Omit<Attendance, "id" | "created_at" | "updated_at">[]
+    ) => attendanceService.bulkCreate(records),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.attendance });
-      toast({ title: 'Success', description: 'Attendance records created successfully' });
+      toast({
+        title: "Success",
+        description: "Attendance records created successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create attendance records',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create attendance records",
+        variant: "destructive",
       });
     },
   });
@@ -450,17 +486,17 @@ export const useCreateMark = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (mark: Omit<Mark, 'id' | 'created_at' | 'updated_at'>) =>
+    mutationFn: (mark: Omit<Mark, "id" | "created_at" | "updated_at">) =>
       markService.create(mark),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.marks });
-      toast({ title: 'Success', description: 'Mark recorded successfully' });
+      toast({ title: "Success", description: "Mark recorded successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to record mark',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to record mark",
+        variant: "destructive",
       });
     },
   });
@@ -471,17 +507,17 @@ export const useBulkCreateMarks = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (records: Omit<Mark, 'id' | 'created_at' | 'updated_at'>[]) =>
+    mutationFn: (records: Omit<Mark, "id" | "created_at" | "updated_at">[]) =>
       markService.bulkCreate(records),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.marks });
-      toast({ title: 'Success', description: 'Marks recorded successfully' });
+      toast({ title: "Success", description: "Marks recorded successfully" });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to record marks',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to record marks",
+        variant: "destructive",
       });
     },
   });
@@ -509,17 +545,21 @@ export const useCreateDormitory = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (dormitory: Omit<Dormitory, 'id' | 'created_at' | 'updated_at'>) =>
-      dormitoryService.create(dormitory),
+    mutationFn: (
+      dormitory: Omit<Dormitory, "id" | "created_at" | "updated_at">
+    ) => dormitoryService.create(dormitory),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dormitories });
-      toast({ title: 'Success', description: 'Dormitory created successfully' });
+      toast({
+        title: "Success",
+        description: "Dormitory created successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create dormitory',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create dormitory",
+        variant: "destructive",
       });
     },
   });
@@ -530,17 +570,25 @@ export const useUpdateDormitory = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Dormitory> }) =>
-      dormitoryService.update(id, updates),
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Partial<Dormitory>;
+    }) => dormitoryService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dormitories });
-      toast({ title: 'Success', description: 'Dormitory updated successfully' });
+      toast({
+        title: "Success",
+        description: "Dormitory updated successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to update dormitory',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to update dormitory",
+        variant: "destructive",
       });
     },
   });
@@ -575,17 +623,20 @@ export const useCreateStoreItem = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (item: Omit<StoreItem, 'id' | 'created_at' | 'updated_at'>) =>
+    mutationFn: (item: Omit<StoreItem, "id" | "created_at" | "updated_at">) =>
       storeService.create(item),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.storeItems });
-      toast({ title: 'Success', description: 'Store item created successfully' });
+      toast({
+        title: "Success",
+        description: "Store item created successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create store item',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create store item",
+        variant: "destructive",
       });
     },
   });
@@ -596,18 +647,26 @@ export const useUpdateStoreItem = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<StoreItem> }) =>
-      storeService.update(id, updates),
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Partial<StoreItem>;
+    }) => storeService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.storeItems });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lowStockItems });
-      toast({ title: 'Success', description: 'Store item updated successfully' });
+      toast({
+        title: "Success",
+        description: "Store item updated successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to update store item',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to update store item",
+        variant: "destructive",
       });
     },
   });
@@ -621,13 +680,16 @@ export const useDeleteStoreItem = () => {
     mutationFn: (id: string) => storeService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.storeItems });
-      toast({ title: 'Success', description: 'Store item deleted successfully' });
+      toast({
+        title: "Success",
+        description: "Store item deleted successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete store item',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to delete store item",
+        variant: "destructive",
       });
     },
   });

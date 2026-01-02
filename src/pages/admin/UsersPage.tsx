@@ -13,7 +13,13 @@ import { User } from "@/lib/types";
 const fetchUsers = async (): Promise<User[]> => {
   const res = await fetch('/api/users?_sort=-createdAt');
   if (!res.ok) throw new Error('Failed to fetch users');
-  return res.json();
+  const data = await res.json();
+  // Normalize server documents: map MongoDB's `_id` to `id` and createdAt -> created_at
+  return (data || []).map((u: any) => ({
+    ...u,
+    id: u.id || u._id,
+    created_at: u.created_at || u.createdAt || u.created_at,
+  }));
 };
 
 
