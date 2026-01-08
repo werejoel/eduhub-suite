@@ -1200,7 +1200,7 @@ const BurserDashboard = () => {
       {/* Sidebar */}
       <motion.aside
         animate={{ width: sidebarOpen ? 280 : 80 }}
-        className="bg-gradient-to-b from-primary to-primary/90 text-white shadow-xl overflow-hidden"
+        className="bg-red-900 text-white shadow-xl overflow-hidden"
       >
         <div className="p-6 flex items-center justify-between">
           {sidebarOpen && <h1 className="text-xl font-bold">Burser</h1>}

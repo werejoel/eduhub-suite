@@ -121,7 +121,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <motion.aside
         initial={false}
         animate={{ width: sidebarOpen ? 280 : 80 }}
-        className="hidden lg:flex flex-col gradient-hero fixed h-screen z-40"
+        className="hidden lg:flex flex-col bg-red-900 fixed h-screen z-40"
       >
         {/* Logo */}
         <div className="p-6 flex items-center gap-3">
@@ -215,7 +215,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: "spring", damping: 25 }}
-              className="fixed left-0 top-0 h-full w-72 gradient-hero z-50 lg:hidden flex flex-col"
+              className="fixed left-0 top-0 h-full w-72 bg-red-900 z-50 lg:hidden flex flex-col"
             >
               <div className="p-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">

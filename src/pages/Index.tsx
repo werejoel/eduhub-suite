@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { getRoleDashboard } from "@/lib/roleRoutes";
+import { getRoleDashboard} from "@/lib/roleRoutes";
 
 const features = [
   "Complete Student Management",
@@ -33,13 +33,13 @@ const roleCards = [
     title: "Head Teacher",
     description: "Academic oversight & reports",
     icon: GraduationCap,
-    color: "bg-secondary",
+    color: "bg-warning",
   },
   {
     title: "Burser",
     description: "Financial management & transactions",
     icon: Users,
-    color: "bg-warning",
+    color: "bg-primary",
   },
 ];
 
@@ -55,9 +55,9 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-red-900">
       {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-hero">
+      <section className="relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-secondary rounded-full blur-3xl animate-pulse-slow" />
@@ -225,7 +225,7 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 bg-primary">
+      <footer className="py-8 bg-red-900">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <GraduationCap className="w-6 h-6 text-secondary" />
