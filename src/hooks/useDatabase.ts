@@ -77,7 +77,7 @@ export const useCreateStudent = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (student: Omit<Student, "id" | "created_at" | "updated_at">) =>
+    mutationFn: (student: Omit<Student, "id" | "createdAt" | "updatedAt">) =>
       studentService.create(student),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.students });
@@ -159,7 +159,7 @@ export const useCreateTeacher = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (teacher: Omit<Teacher, "id" | "created_at" | "updated_at">) =>
+    mutationFn: (teacher: Omit<Teacher, "id" | "createdAt" | "updatedAt">) =>
       teacherService.create(teacher),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.teachers });
@@ -241,7 +241,7 @@ export const useCreateClass = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (classData: Omit<Class, "id" | "created_at" | "updated_at">) =>
+    mutationFn: (classData: Omit<Class, "id" | "createdAt" | "updatedAt">) =>
       classService.create(classData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.classes });
@@ -323,7 +323,7 @@ export const useCreateFee = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (fee: Omit<Fee, "id" | "created_at" | "updated_at">) =>
+    mutationFn: (fee: Omit<Fee, "id" | "createdAt" | "updatedAt">) =>
       feeService.create(fee),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.fees });
@@ -420,7 +420,7 @@ export const useCreateAttendance = () => {
 
   return useMutation({
     mutationFn: (
-      attendance: Omit<Attendance, "id" | "created_at" | "updated_at">
+      attendance: Omit<Attendance, "id" | "createdAt" | "updatedAt">
     ) => attendanceService.create(attendance),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.attendance });
@@ -445,7 +445,7 @@ export const useBulkCreateAttendance = () => {
 
   return useMutation({
     mutationFn: (
-      records: Omit<Attendance, "id" | "created_at" | "updated_at">[]
+      records: Omit<Attendance, "id" | "createdAt" | "updatedAt">[]
     ) => attendanceService.bulkCreate(records),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.attendance });
@@ -546,7 +546,7 @@ export const useCreateMark = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (mark: Omit<Mark, "id" | "created_at" | "updated_at">) =>
+    mutationFn: (mark: Omit<Mark, "id" | "createdAt" | "updatedAt">) =>
       markService.create(mark),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.marks });
@@ -611,7 +611,7 @@ export const useBulkCreateMarks = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (records: Omit<Mark, "id" | "created_at" | "updated_at">[]) =>
+    mutationFn: (records: Omit<Mark, "id" | "createdAt" | "updatedAt">[]) =>
       markService.bulkCreate(records),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.marks });
@@ -694,7 +694,7 @@ export const useCreateDormitory = () => {
 
   return useMutation({
     mutationFn: (
-      dormitory: Omit<Dormitory, "id" | "created_at" | "updated_at">
+      dormitory: Omit<Dormitory, "id" | "createdAt" | "updatedAt">
     ) => dormitoryService.create(dormitory),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dormitories });
@@ -815,7 +815,7 @@ export const useCreateStoreItem = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (item: Omit<StoreItem, "id" | "created_at" | "updated_at">) =>
+    mutationFn: (item: Omit<StoreItem, "id" | "createdAt" | "updatedAt">) =>
       storeService.create(item),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.storeItems });

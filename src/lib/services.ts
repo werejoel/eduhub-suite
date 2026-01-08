@@ -95,7 +95,7 @@ export const studentService = {
     return getAll<Student>('students', { _sort: 'last_name' });
   },
   async getById(id: string) { return getById<Student>('students', id); },
-  async create(student: Omit<Student, 'id' | 'created_at' | 'updated_at'>) { return createItem<Student>('students', student); },
+  async create(student: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Student>('students', student); },
   async update(id: string, updates: Partial<Student>) { return updateItem<Student>('students', id, updates); },
   async delete(id: string) { return deleteItem('students', id); },
   async searchByName(name: string) {
@@ -109,7 +109,7 @@ export const studentService = {
 export const teacherService = {
   async getAll() { return getAll<Teacher>('teachers', { _sort: 'last_name' }); },
   async getById(id: string) { return getById<Teacher>('teachers', id); },
-  async create(teacher: Omit<Teacher, 'id' | 'created_at' | 'updated_at'>) { return createItem<Teacher>('teachers', teacher); },
+  async create(teacher: Omit<Teacher, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Teacher>('teachers', teacher); },
   async update(id: string, updates: Partial<Teacher>) { return updateItem<Teacher>('teachers', id, updates); },
   async delete(id: string) { return deleteItem('teachers', id); },
 };
@@ -118,7 +118,7 @@ export const teacherService = {
 export const classService = {
   async getAll() { return getAll<Class>('classes', { _sort: 'form_number' }); },
   async getById(id: string) { return getById<Class>('classes', id); },
-  async create(classData: Omit<Class, 'id' | 'created_at' | 'updated_at'>) { return createItem<Class>('classes', classData); },
+  async create(classData: Omit<Class, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Class>('classes', classData); },
   async update(id: string, updates: Partial<Class>) { return updateItem<Class>('classes', id, updates); },
   async delete(id: string) { return deleteItem('classes', id); },
 };
@@ -127,7 +127,7 @@ export const classService = {
 export const feeService = {
   async getAll() { return getAll<Fee>('fees', { _sort: 'due_date' }); },
   async getByStudent(studentId: string) { const res = await fetch(apiUrl(`/api/fees/student/${studentId}`)); return handleResponse(res) as Promise<Fee[]>; },
-  async create(fee: Omit<Fee, 'id' | 'created_at' | 'updated_at'>) { return createItem<Fee>('fees', fee); },
+  async create(fee: Omit<Fee, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Fee>('fees', fee); },
   async update(id: string, updates: Partial<Fee>) { return updateItem<Fee>('fees', id, updates); },
   async delete(id: string) { return deleteItem('fees', id); },
   async getByStatus(status: 'paid' | 'pending' | 'overdue') { const res = await fetch(apiUrl(`/api/fees/status/${status}`)); return handleResponse(res) as Promise<Fee[]>; },
@@ -139,8 +139,8 @@ export const attendanceService = {
   async getAll() { return getAll<Attendance>('attendance', { _sort: '-attendance_date' }); },
   async getByStudent(studentId: string) { const res = await fetch(apiUrl(`/api/attendance/student/${studentId}`)); return handleResponse(res) as Promise<Attendance[]>; },
   async getByClass(classId: string) { const res = await fetch(apiUrl(`/api/attendance/class/${classId}`)); return handleResponse(res) as Promise<Attendance[]>; },
-  async create(attendance: Omit<Attendance, 'id' | 'created_at' | 'updated_at'>) { return createItem<Attendance>('attendance', attendance); },
-  async bulkCreate(records: Omit<Attendance, 'id' | 'created_at' | 'updated_at'>[]) { const res = await fetch(apiUrl('/api/attendance/bulk'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records) }); return handleResponse(res) as Promise<Attendance[]>; },
+  async create(attendance: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Attendance>('attendance', attendance); },
+  async bulkCreate(records: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'>[]) { const res = await fetch(apiUrl('/api/attendance/bulk'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records) }); return handleResponse(res) as Promise<Attendance[]>; },
   async update(id: string, updates: Partial<Attendance>) { return updateItem<Attendance>('attendance', id, updates); },
   async delete(id: string) { return deleteItem('attendance', id); },
   async getById(id: string) { return getById<Attendance>('attendance', id); },

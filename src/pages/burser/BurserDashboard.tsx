@@ -63,7 +63,6 @@ const BurserDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [balanceVisible, setBalanceVisible] = useState(true);
-
   const { data: fees = [] } = useFees();
   const { data: students = [] } = useStudents();
   const createFee = useCreateFee();
@@ -112,7 +111,7 @@ const BurserDashboard = () => {
     > = {};
 
     fees.forEach((fee) => {
-      const date = new Date(fee.created_at);
+      const date = new Date(fee.createdAt);
       const monthKey = `${date.getFullYear()}-${String(
         date.getMonth() + 1
       ).padStart(2, "0")}`;
@@ -156,11 +155,23 @@ const BurserDashboard = () => {
     return fees
       .sort(
         (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
       .slice(0, 15)
       .map((fee) => {
         const student = students.find((s) => s.id === fee.student_id);
+        
+        // Format dates safely
+        const formatDate = (dateStr: any) => {
+          if (!dateStr) return "N/A";
+          try {
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString();
+          } catch {
+            return "N/A";
+          }
+        };
+
         return {
           id: fee.id,
           student: student
@@ -169,8 +180,8 @@ const BurserDashboard = () => {
           amount: fee.amount,
           term: fee.term,
           status: fee.payment_status,
-          date: new Date(fee.created_at).toLocaleDateString(),
-          dueDate: new Date(fee.due_date).toLocaleDateString(),
+          date: formatDate(fee.createdAt),
+          dueDate: formatDate(fee.due_date),
         };
       });
   }, [fees, students]);
@@ -264,6 +275,13 @@ const BurserDashboard = () => {
     if (!newPayment.student_id || !newPayment.amount) {
       return toast.error("Please select a student and enter an amount");
     }
+    
+    // Format due_date to ISO string if it's just a date
+    let dueDate = newPayment.due_date;
+    if (dueDate && !dueDate.includes('T')) {
+      dueDate = new Date(dueDate + 'T00:00:00').toISOString();
+    }
+    
     try {
       await createFee.mutateAsync({
         student_id: newPayment.student_id,
@@ -274,9 +292,10 @@ const BurserDashboard = () => {
           | "paid"
           | "pending"
           | "overdue",
-        due_date: newPayment.due_date || new Date().toISOString(),
+        due_date: dueDate || new Date().toISOString(),
+        // MongoDB automatically creates 'createdAt' field via timestamps: true
       });
-      toast.success("Payment recorded");
+      toast.success("Payment recorded successfully");
       setNewPayment({
         student_id: "",
         amount: "",
@@ -504,6 +523,71 @@ const BurserDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
+            {/* Add Payment Form */}
+            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+              <h3 className="text-lg font-semibold mb-4">Record New Payment</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                <select
+                  name="student_id"
+                  value={newPayment.student_id}
+                  onChange={handleNewPaymentChange}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select student</option>
+                  {students.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.first_name} {s.last_name}
+                    </option>
+                  ))}
+                </select>
+
+                <Input
+                  name="amount"
+                  type="number"
+                  value={newPayment.amount}
+                  onChange={handleNewPaymentChange}
+                  placeholder="Amount (UGX)"
+                />
+                <Input
+                  name="term"
+                  value={newPayment.term}
+                  onChange={handleNewPaymentChange}
+                  placeholder="Term"
+                />
+                <select
+                  name="payment_status"
+                  value={newPayment.payment_status}
+                  onChange={handleNewPaymentChange}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="paid">Paid</option>
+                  <option value="pending">Pending</option>
+                  <option value="overdue">Overdue</option>
+                </select>
+                <Input
+                  name="due_date"
+                  type="date"
+                  value={newPayment.due_date}
+                  onChange={handleNewPaymentChange}
+                  placeholder="Due date"
+                />
+                <Input
+                  name="academic_year"
+                  value={newPayment.academic_year}
+                  onChange={handleNewPaymentChange}
+                  placeholder="Academic year"
+                />
+              </div>
+              <Button 
+                onClick={submitNewPayment}
+                className="mt-4 gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Record Payment
+              </Button>
+            </div>
+
+            {/* Payments Table */}
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <div className="flex-1 relative">
@@ -565,65 +649,26 @@ const BurserDashboard = () => {
                       </span>
                     ),
                   },
-                  { key: "dueDate", label: "Due Date" },
-                  { key: "date", label: "Date" },
+                  { 
+                    key: "dueDate", 
+                    label: "Due Date",
+                    render: (value: any) => {
+                      if (!value || value === "N/A") return "N/A";
+                      return String(value);
+                    },
+                  },
+                  { 
+                    key: "date", 
+                    label: "Created Date",
+                    render: (value: any) => {
+                      if (!value || value === "N/A") return "N/A";
+                      return String(value);
+                    },
+                  },
                 ]}
                 data={filteredTransactions}
                 onDelete={(row) => handleDeletePayment(row)}
               />
-            </div>
-
-            {/* Add Payment */}
-            <div className="flex gap-2 mb-4 items-end">
-              <select
-                name="student_id"
-                value={newPayment.student_id}
-                onChange={handleNewPaymentChange}
-                className="border rounded px-2 py-1"
-              >
-                <option value="">Select student</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.first_name} {s.last_name}
-                  </option>
-                ))}
-              </select>
-
-              <Input
-                name="amount"
-                value={newPayment.amount}
-                onChange={handleNewPaymentChange}
-                placeholder="Amount"
-              />
-              <Input
-                name="term"
-                value={newPayment.term}
-                onChange={handleNewPaymentChange}
-                placeholder="Term"
-              />
-              <select
-                name="payment_status"
-                value={newPayment.payment_status}
-                onChange={handleNewPaymentChange}
-                className="border rounded px-2 py-1"
-              >
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="overdue">Overdue</option>
-              </select>
-              <Input
-                name="due_date"
-                value={newPayment.due_date}
-                onChange={handleNewPaymentChange}
-                placeholder="Due date (YYYY-MM-DD)"
-              />
-              <Input
-                name="academic_year"
-                value={newPayment.academic_year}
-                onChange={handleNewPaymentChange}
-                placeholder="Academic year (e.g. 2025/2026)"
-              />
-              <Button onClick={submitNewPayment}>Add Payment</Button>
             </div>
           </motion.div>
         );

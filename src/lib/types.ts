@@ -11,8 +11,8 @@ export interface Student {
   class_id: string;
   enrollment_date: string;
   status: 'active' | 'inactive' | 'graduated';
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Teacher {
@@ -26,8 +26,8 @@ export interface Teacher {
   qualification: string;
   employment_date: string;
   status: 'active' | 'inactive';
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Class {
@@ -37,8 +37,8 @@ export interface Class {
   form_number: number;
   teacher_id: string;
   capacity: number;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Fee {
@@ -50,8 +50,8 @@ export interface Fee {
   payment_status: 'paid' | 'pending' | 'overdue';
   due_date: string;
   paid_date?: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Attendance {
@@ -61,8 +61,8 @@ export interface Attendance {
   attendance_date: string;
   status: 'present' | 'absent' | 'late';
   remarks?: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Mark {
@@ -75,8 +75,8 @@ export interface Mark {
   total_marks: number;
   term: string;
   academic_year: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Dormitory {
@@ -86,8 +86,8 @@ export interface Dormitory {
   capacity: number;
   current_occupancy: number;
   location: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StoreItem {
@@ -99,8 +99,8 @@ export interface StoreItem {
   unit_price: number;
   category: string;
   supplier: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type UserRole = 'admin' | 'teacher' | 'headteacher' | 'burser' | 'store' | 'dormitory';
@@ -112,6 +112,6 @@ export interface User {
   last_name: string;
   role: UserRole;
   email_confirmed: boolean;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
