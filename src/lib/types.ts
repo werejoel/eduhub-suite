@@ -17,15 +17,17 @@ export interface Student {
 
 export interface Teacher {
   id: string;
-  employee_id: string;
+  email: string;
   first_name: string;
   last_name: string;
-  email: string;
-  phone: string;
-  subject: string;
-  qualification: string;
-  employment_date: string;
-  status: "active" | "inactive";
+  role: "teacher" | "headteacher";
+  email_confirmed: boolean;
+  phone?: string;
+  subject?: string;
+  qualification?: string;
+  employment_date?: string;
+  employee_id?: string;
+  status?: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
 }

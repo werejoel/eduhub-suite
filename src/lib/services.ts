@@ -105,13 +105,16 @@ export const studentService = {
 };
 
 
-// TEACHER OPERATIONS
+// TEACHER OPERATIONS - Fetch from users collection with role "teacher"
 export const teacherService = {
-  async getAll() { return getAll<Teacher>('teachers', { _sort: 'last_name' }); },
-  async getById(id: string) { return getById<Teacher>('teachers', id); },
-  async create(teacher: Omit<Teacher, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Teacher>('teachers', teacher); },
-  async update(id: string, updates: Partial<Teacher>) { return updateItem<Teacher>('teachers', id, updates); },
-  async delete(id: string) { return deleteItem('teachers', id); },
+  async getAll() { 
+    // Fetch users with role "teacher"
+    return getAll<Teacher>('users', { role: 'teacher', _sort: 'last_name' });
+  },
+  async getById(id: string) { return getById<Teacher>('users', id); },
+  async create(teacher: Omit<Teacher, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Teacher>('users', teacher); },
+  async update(id: string, updates: Partial<Teacher>) { return updateItem<Teacher>('users', id, updates); },
+  async delete(id: string) { return deleteItem('users', id); },
 };
 
 // CLASS OPERATIONS
@@ -121,6 +124,10 @@ export const classService = {
   async create(classData: Omit<Class, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Class>('classes', classData); },
   async update(id: string, updates: Partial<Class>) { return updateItem<Class>('classes', id, updates); },
   async delete(id: string) { return deleteItem('classes', id); },
+  async getByTeacher(teacherId: string) { 
+    const res = await fetch(apiUrl(`/api/classes?teacher_id=${teacherId}`));
+    return handleResponse(res) as Promise<Class[]>;
+  },
 };
 
 // FEE OPERATIONS

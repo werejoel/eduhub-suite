@@ -239,6 +239,64 @@ export const useDeleteTeacher = () => {
   });
 };
 
+// Teacher class assignment
+export const useTeacherClasses = (teacherId: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.classes,
+    queryFn: () => classService.getByTeacher(teacherId),
+    enabled: !!teacherId,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useAssignClassToTeacher = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ classId, teacherId }: { classId: string; teacherId: string }) =>
+      classService.update(classId, { teacher_id: teacherId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.classes });
+      toast({
+        title: "Success",
+        description: "Class assigned to teacher successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign class",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUnassignClassFromTeacher = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (classId: string) =>
+      classService.update(classId, { teacher_id: "" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.classes });
+      toast({
+        title: "Success",
+        description: "Class unassigned successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unassign class",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 // CLASS HOOKS
 export const useClasses = () => {
   return useQuery({
