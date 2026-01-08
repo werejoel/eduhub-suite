@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useFees, useStudents } from "@/hooks/useDatabase";
 import { formatUGX } from "@/lib/utils";
+import { exportToExcel, exportMultipleSheets, formatDataForExport } from "@/lib/exportToExcel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DataTable from "@/components/dashboard/DataTable";
@@ -357,6 +358,37 @@ const BurserDashboard = () => {
               </motion.div>
             </div>
 
+            {/* Export Overview Button */}
+            <div className="flex justify-end">
+              <Button
+                className="gap-2"
+                onClick={() => {
+                  const overviewData = [{
+                    'Metric': 'Total Collected',
+                    'Value (UGX)': stats.totalCollected,
+                    'Collection Rate (%)': stats.collectionRate,
+                  }, {
+                    'Metric': 'Pending Fees',
+                    'Value (UGX)': stats.totalPending,
+                    'Count': stats.pendingCount,
+                  }, {
+                    'Metric': 'Overdue Fees',
+                    'Value (UGX)': stats.totalOverdue,
+                    'Count': stats.overdueCount,
+                  }, {
+                    'Metric': 'Expected Revenue',
+                    'Value (UGX)': stats.totalExpected,
+                    'Records': fees.length,
+                  }];
+                  exportToExcel(overviewData, 'Finance_Overview');
+                  toast.success('Finance overview exported to Excel');
+                }}
+              >
+                <Download className="w-4 h-4" />
+                Export Overview
+              </Button>
+            </div>
+
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Payment Trends Chart */}
@@ -421,10 +453,28 @@ const BurserDashboard = () => {
               whileHover={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}
               className="bg-white p-6 rounded-xl shadow-md border border-gray-100"
             >
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Top Paying Students
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Top Paying Students
+                </h3>
+                <Button
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    const exportData = topStudents.map((s, i) => ({
+                      'Rank': i + 1,
+                      'Student Name': s.name,
+                      'Total Paid (UGX)': s.amount,
+                    }));
+                    exportToExcel(exportData, 'Top_Paying_Students');
+                    toast.success('Top paying students exported to Excel');
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  Export
+                </Button>
+              </div>
               <div className="space-y-3">
                 {topStudents.map((student, index) => (
                   <div
@@ -469,7 +519,21 @@ const BurserDashboard = () => {
                   <Filter className="w-4 h-4" />
                   Filter
                 </Button>
-                <Button className="gap-2">
+                <Button 
+                  className="gap-2"
+                  onClick={() => {
+                    const exportData = filteredTransactions.map(t => ({
+                      'Student Name': t.student,
+                      'Term': t.term,
+                      'Amount (UGX)': t.amount,
+                      'Status': t.status,
+                      'Due Date': t.dueDate,
+                      'Date': t.date,
+                    }));
+                    exportToExcel(exportData, 'Payment_Records');
+                    toast.success('Payment records exported to Excel');
+                  }}
+                >
                   <Download className="w-4 h-4" />
                   Export
                 </Button>
@@ -589,6 +653,23 @@ const BurserDashboard = () => {
                     Save
                   </Button>
                   <Button onClick={printReport}>Print / Export</Button>
+                  <Button 
+                    className="gap-2"
+                    onClick={() => {
+                      const reportData = [{
+                        'Report Type': 'Weekly Report',
+                        'School': 'KIBAALE PARENTS PRIMARY SCHOOL',
+                        'Date Generated': new Date().toLocaleDateString(),
+                        'Prepared By': weeklyReport.prepared_by || 'N/A',
+                        'Approved By': weeklyReport.approved_by || 'N/A',
+                      }];
+                      exportToExcel(reportData, 'Weekly_Report');
+                      toast.success('Weekly report exported to Excel');
+                    }}
+                  >
+                    <Download className="w-4 h-4" />
+                    Export as Excel
+                  </Button>
                 </div>
               </div>
 
@@ -1221,11 +1302,18 @@ const BurserDashboard = () => {
             { id: "overview", icon: Home, label: "Overview" },
             { id: "payments", icon: CreditCard, label: "Payments" },
             { id: "reports", icon: FileText, label: "Reports" },
+            { id: "finances", icon: DollarSign, label: "Finances", route: "/burser/finances" },
             { id: "settings", icon: Settings, label: "Settings" },
           ].map((item) => (
             <motion.button
               key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
+              onClick={() => {
+                if (item.route) {
+                  navigate(item.route);
+                } else {
+                  setActiveTab(item.id as any);
+                }
+              }}
               whileHover={{ x: 5 }}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-colors ${
                 activeTab === item.id

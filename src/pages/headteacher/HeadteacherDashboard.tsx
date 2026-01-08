@@ -211,12 +211,6 @@ const HeadteacherDashboard = () => {
                 color: "bg-secondary",
                 route: "/headteacher/academic",
               },
-              {
-                label: "Financial Overview",
-                icon: DollarSign,
-                color: "bg-warning",
-                route: "/headteacher/finances",
-              },
             ].map((action) => (
               <button
                 key={action.label}

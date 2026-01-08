@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
-import { DollarSign, Loader, Search } from "lucide-react";
+import { DollarSign, Loader, Search, Download } from "lucide-react";
 import DataTable from "@/components/dashboard/DataTable";
 import { useFees, useCreateFee, useUpdateFee, useDeleteFee } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { formatUGX } from "@/lib/utils";
+import { exportToExcel } from "@/lib/exportToExcel";
+import { toast } from "sonner";
 
 const columns = [
   { key: 'student_id', label: 'Student ID' },
@@ -52,11 +54,29 @@ const FinancesPage = () => {
       ) : (
         <>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-4 border border-border shadow-md mb-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Search fees..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
               </div>
+              <Button 
+                className="gap-2"
+                onClick={() => {
+                  const exportData = filtered.map((f: any) => ({
+                    'Student ID': f.student_id,
+                    'Amount (UGX)': f.amount,
+                    'Term': f.term,
+                    'Academic Year': f.academic_year,
+                    'Status': f.payment_status,
+                    'Due Date': f.due_date,
+                  }));
+                  exportToExcel(exportData, 'Finance_Records');
+                  toast.success('Finance records exported to Excel');
+                }}
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
               <div className="text-right">
                 <div className="text-muted-foreground">Revenue collected</div>
                 <div className="text-2xl font-bold">{formatUGX(totalRevenue)}</div>

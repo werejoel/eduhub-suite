@@ -224,9 +224,9 @@ const App = () => (
               }
             />
             <Route
-              path="/headteacher/finances"
+              path="/burser/finances"
               element={
-                <ProtectedRoute allowedRoles={["headteacher"]}>
+                <ProtectedRoute allowedRoles={["burser"]}>
                   <FinancesPage />
                 </ProtectedRoute>
               }
