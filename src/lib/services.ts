@@ -1,4 +1,4 @@
-import { Student, Teacher, Class, Fee, Attendance, Mark, Dormitory, StoreItem } from './types';
+import { Student, Teacher, Class, Fee, Attendance, Mark, Dormitory, StoreItem, TeacherDuty, DutyRating, PaymentRequest } from './types';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:4000';
 
@@ -151,8 +151,8 @@ export const markService = {
   async getAll() { return getAll<Mark>('marks'); },
   async getByStudent(studentId: string) { const res = await fetch(apiUrl(`/api/marks/student/${studentId}`)); return handleResponse(res) as Promise<Mark[]>; },
   async getByClass(classId: string) { const res = await fetch(apiUrl(`/api/marks/class/${classId}`)); return handleResponse(res) as Promise<Mark[]>; },
-  async create(mark: Omit<Mark, 'id' | 'created_at' | 'updated_at'>) { return createItem<Mark>('marks', mark); },
-  async bulkCreate(records: Omit<Mark, 'id' | 'created_at' | 'updated_at'>[]) { const res = await fetch(apiUrl('/api/marks/bulk'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records) }); return handleResponse(res) as Promise<Mark[]>; },
+  async create(mark: Omit<Mark, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Mark>('marks', mark); },
+  async bulkCreate(records: Omit<Mark, 'id' | 'createdAt' | 'updatedAt'>[]) { const res = await fetch(apiUrl('/api/marks/bulk'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records) }); return handleResponse(res) as Promise<Mark[]>; },
   async update(id: string, updates: Partial<Mark>) { return updateItem<Mark>('marks', id, updates); },
   async delete(id: string) { return deleteItem('marks', id); },
   async getById(id: string) { return getById<Mark>('marks', id); },
@@ -162,7 +162,7 @@ export const markService = {
 export const dormitoryService = {
   async getAll() { return getAll<Dormitory>('dormitories'); },
   async getById(id: string) { return getById<Dormitory>('dormitories', id); },
-  async create(dormitory: Omit<Dormitory, 'id' | 'created_at' | 'updated_at'>) { return createItem<Dormitory>('dormitories', dormitory); },
+  async create(dormitory: Omit<Dormitory, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Dormitory>('dormitories', dormitory); },
   async update(id: string, updates: Partial<Dormitory>) { return updateItem<Dormitory>('dormitories', id, updates); },
   async delete(id: string) { return deleteItem('dormitories', id); },
 };
@@ -198,10 +198,61 @@ export const occupancyService = {
 export const storeService = {
   async getAll() { return getAll<StoreItem>('store_items', { _sort: 'item_name' }); },
   async getById(id: string) { return getById<StoreItem>('store_items', id); },
-  async create(item: Omit<StoreItem, 'id' | 'created_at' | 'updated_at'>) { return createItem<StoreItem>('store_items', item); },
+  async create(item: Omit<StoreItem, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<StoreItem>('store_items', item); },
   async update(id: string, updates: Partial<StoreItem>) { return updateItem<StoreItem>('store_items', id, updates); },
   async delete(id: string) { return deleteItem('store_items', id); },
   async getLowStock(threshold: number = 10) { const res = await fetch(apiUrl(`/api/store_items/low-stock/${threshold}`)); return handleResponse(res) as Promise<StoreItem[]>; },
+};
+
+// TEACHER DUTIES
+export const dutyService = {
+  async getAll() {
+    return getAll<TeacherDuty>('duties', { _sort: '-assigned_date' });
+  },
+  async getByTeacherId(teacherId: string) {
+    const res = await fetch(apiUrl(`/api/duties?teacher_id=${teacherId}`));
+    return handleResponse(res) as Promise<TeacherDuty[]>;
+  },
+  async getById(id: string) { return getById<TeacherDuty>('duties', id); },
+  async create(duty: Omit<TeacherDuty, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<TeacherDuty>('duties', duty); },
+  async update(id: string, updates: Partial<TeacherDuty>) { return updateItem<TeacherDuty>('duties', id, updates); },
+  async delete(id: string) { return deleteItem('duties', id); },
+};
+
+// DUTY RATINGS
+export const ratingService = {
+  async getAll() {
+    return getAll<DutyRating>('ratings', { _sort: '-rating_date' });
+  },
+  async getByDutyId(dutyId: string) {
+    const res = await fetch(apiUrl(`/api/ratings?duty_id=${dutyId}`));
+    return handleResponse(res) as Promise<DutyRating[]>;
+  },
+  async getByTeacherId(teacherId: string) {
+    const res = await fetch(apiUrl(`/api/ratings?teacher_id=${teacherId}`));
+    return handleResponse(res) as Promise<DutyRating[]>;
+  },
+  async getById(id: string) { return getById<DutyRating>('ratings', id); },
+  async create(rating: Omit<DutyRating, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<DutyRating>('ratings', rating); },
+  async update(id: string, updates: Partial<DutyRating>) { return updateItem<DutyRating>('ratings', id, updates); },
+  async delete(id: string) { return deleteItem('ratings', id); },
+};
+
+// PAYMENT REQUESTS
+export const paymentRequestService = {
+  async getAll() {
+    return getAll<PaymentRequest>('payment_requests', { _sort: '-request_date' });
+  },
+  async getByTeacherId(teacherId: string) {
+    const res = await fetch(apiUrl(`/api/payment_requests?teacher_id=${teacherId}`));
+    return handleResponse(res) as Promise<PaymentRequest[]>;
+  },
+  async getById(id: string) { return getById<PaymentRequest>('payment_requests', id); },
+  async create(request: Omit<PaymentRequest, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<PaymentRequest>('payment_requests', request); },
+  async update(id: string, updates: Partial<PaymentRequest>) { return updateItem<PaymentRequest>('payment_requests', id, updates); },
+  async approve(id: string, approvedBy: string) { return updateItem<PaymentRequest>('payment_requests', id, { status: 'approved', approved_by: approvedBy, approval_date: new Date().toISOString() }); },
+  async reject(id: string, rejectionReason: string) { return updateItem<PaymentRequest>('payment_requests', id, { status: 'rejected', rejection_reason: rejectionReason }); },
+  async delete(id: string) { return deleteItem('payment_requests', id); },
 };
 
 // AUTH

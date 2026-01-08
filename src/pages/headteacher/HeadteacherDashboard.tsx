@@ -211,6 +211,24 @@ const HeadteacherDashboard = () => {
                 color: "bg-secondary",
                 route: "/headteacher/academic",
               },
+              {
+                label: "Assign Duties",
+                icon: FileText,
+                color: "bg-blue-500",
+                route: "/headteacher/duties",
+              },
+              {
+                label: "Duty Ratings",
+                icon: TrendingUp,
+                color: "bg-yellow-500",
+                route: "/headteacher/ratings",
+              },
+              {
+                label: "Payment Requests",
+                icon: DollarSign,
+                color: "bg-green-500",
+                route: "/headteacher/payment-requests",
+              },
             ].map((action) => (
               <button
                 key={action.label}

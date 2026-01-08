@@ -11,6 +11,9 @@ import {
   assignmentLogService,
   occupancyService,
   storeService,
+  dutyService,
+  ratingService,
+  paymentRequestService,
 } from "@/lib/services";
 import {
   Student,
@@ -21,6 +24,9 @@ import {
   Mark,
   Dormitory,
   StoreItem,
+  TeacherDuty,
+  DutyRating,
+  PaymentRequest,
 } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -53,6 +59,20 @@ const QUERY_KEYS = {
   lowStockItems: ["store_items", "low-stock"],
   itemRequests: ["item_requests"],
   itemRequestsByStatus: (status: string) => ["item_requests", status],
+  duties: ["duties"],
+  dutyById: (id: string) => ["duties", id],
+  dutiesByTeacher: (teacherId: string) => ["duties", "teacher", teacherId],
+  ratings: ["ratings"],
+  ratingById: (id: string) => ["ratings", id],
+  ratingsByDuty: (dutyId: string) => ["ratings", "duty", dutyId],
+  ratingsByTeacher: (teacherId: string) => ["ratings", "teacher", teacherId],
+  paymentRequests: ["payment_requests"],
+  paymentRequestById: (id: string) => ["payment_requests", id],
+  paymentRequestsByTeacher: (teacherId: string) => [
+    "payment_requests",
+    "teacher",
+    teacherId,
+  ],
 };
 
 // STUDENT HOOKS
@@ -947,6 +967,318 @@ export const useRejectItemRequest = () => {
       toast({
         title: "Success",
         description: "Item request rejected",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reject request",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+// TEACHER DUTIES HOOKS
+export const useDuties = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.duties,
+    queryFn: () => dutyService.getAll(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useDuty = (id: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.dutyById(id),
+    queryFn: () => dutyService.getById(id),
+  });
+};
+
+export const useDutiesByTeacher = (teacherId: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.dutiesByTeacher(teacherId),
+    queryFn: () => dutyService.getByTeacherId(teacherId),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useCreateDuty = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (duty: Omit<TeacherDuty, "id" | "createdAt" | "updatedAt">) =>
+      dutyService.create(duty),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.duties });
+      toast({
+        title: "Success",
+        description: "Duty assigned successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign duty",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateDuty = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Partial<TeacherDuty>;
+    }) => dutyService.update(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.duties });
+      toast({
+        title: "Success",
+        description: "Duty updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update duty",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteDuty = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => dutyService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.duties });
+      toast({
+        title: "Success",
+        description: "Duty deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete duty",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+// DUTY RATINGS HOOKS
+export const useRatings = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.ratings,
+    queryFn: () => ratingService.getAll(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useRating = (id: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.ratingById(id),
+    queryFn: () => ratingService.getById(id),
+  });
+};
+
+export const useRatingsByDuty = (dutyId: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.ratingsByDuty(dutyId),
+    queryFn: () => ratingService.getByDutyId(dutyId),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useRatingsByTeacher = (teacherId: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.ratingsByTeacher(teacherId),
+    queryFn: () => ratingService.getByTeacherId(teacherId),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useCreateRating = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (rating: Omit<DutyRating, "id" | "createdAt" | "updatedAt">) =>
+      ratingService.create(rating),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ratings });
+      toast({
+        title: "Success",
+        description: "Rating submitted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit rating",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateRating = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Partial<DutyRating>;
+    }) => ratingService.update(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ratings });
+      toast({
+        title: "Success",
+        description: "Rating updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update rating",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+// PAYMENT REQUESTS HOOKS
+export const usePaymentRequests = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.paymentRequests,
+    queryFn: () => paymentRequestService.getAll(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const usePaymentRequest = (id: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.paymentRequestById(id),
+    queryFn: () => paymentRequestService.getById(id),
+  });
+};
+
+export const usePaymentRequestsByTeacher = (teacherId: string) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.paymentRequestsByTeacher(teacherId),
+    queryFn: () => paymentRequestService.getByTeacherId(teacherId),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useCreatePaymentRequest = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (
+      request: Omit<PaymentRequest, "id" | "createdAt" | "updatedAt">
+    ) => paymentRequestService.create(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.paymentRequests });
+      toast({
+        title: "Success",
+        description: "Payment request submitted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit payment request",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdatePaymentRequest = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Partial<PaymentRequest>;
+    }) => paymentRequestService.update(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.paymentRequests });
+      toast({
+        title: "Success",
+        description: "Payment request updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update payment request",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useApprovePaymentRequest = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      approvedBy,
+    }: {
+      id: string;
+      approvedBy: string;
+    }) => paymentRequestService.approve(id, approvedBy),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.paymentRequests });
+      toast({
+        title: "Success",
+        description: "Payment request approved",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve request",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useRejectPaymentRequest = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      rejectionReason,
+    }: {
+      id: string;
+      rejectionReason: string;
+    }) => paymentRequestService.reject(id, rejectionReason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.paymentRequests });
+      toast({
+        title: "Success",
+        description: "Payment request rejected",
       });
     },
     onError: (error: any) => {

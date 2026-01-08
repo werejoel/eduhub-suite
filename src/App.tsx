@@ -35,6 +35,9 @@ import StudentsPageHead from "./pages/headteacher/StudentsPage";
 import AcademicPage from "./pages/headteacher/AcademicPage";
 import ReportsPage from "./pages/headteacher/ReportsPage";
 import FinancesPage from "./pages/headteacher/FinancesPage";
+import TeacherDutiesPage from "./pages/headteacher/TeacherDutiesPage";
+import TeacherRatingsPage from "./pages/headteacher/TeacherRatingsPage";
+import PaymentRequestsPage from "./pages/headteacher/PaymentRequestsPage";
 // Burser Pages
 import BurserDashboard from "./pages/burser/BurserDashboard";
 // Store / Dormitory Dashboards
@@ -220,6 +223,30 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["headteacher"]}>
                   <ReportsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/headteacher/duties"
+              element={
+                <ProtectedRoute allowedRoles={["headteacher"]}>
+                  <TeacherDutiesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/headteacher/ratings"
+              element={
+                <ProtectedRoute allowedRoles={["headteacher"]}>
+                  <TeacherRatingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/headteacher/payment-requests"
+              element={
+                <ProtectedRoute allowedRoles={["headteacher"]}>
+                  <PaymentRequestsPage />
                 </ProtectedRoute>
               }
             />

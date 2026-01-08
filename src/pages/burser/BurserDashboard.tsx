@@ -160,7 +160,7 @@ const BurserDashboard = () => {
       .slice(0, 15)
       .map((fee) => {
         const student = students.find((s) => s.id === fee.student_id);
-        
+
         // Format dates safely
         const formatDate = (dateStr: any) => {
           if (!dateStr) return "N/A";
@@ -275,13 +275,13 @@ const BurserDashboard = () => {
     if (!newPayment.student_id || !newPayment.amount) {
       return toast.error("Please select a student and enter an amount");
     }
-    
+
     // Format due_date to ISO string if it's just a date
     let dueDate = newPayment.due_date;
     if (dueDate && !dueDate.includes('T')) {
       dueDate = new Date(dueDate + 'T00:00:00').toISOString();
     }
-    
+
     try {
       await createFee.mutateAsync({
         student_id: newPayment.student_id,
@@ -578,7 +578,7 @@ const BurserDashboard = () => {
                   placeholder="Academic year"
                 />
               </div>
-              <Button 
+              <Button
                 onClick={submitNewPayment}
                 className="mt-4 gap-2"
               >
@@ -603,7 +603,7 @@ const BurserDashboard = () => {
                   <Filter className="w-4 h-4" />
                   Filter
                 </Button>
-                <Button 
+                <Button
                   className="gap-2"
                   onClick={() => {
                     const exportData = filteredTransactions.map(t => ({
@@ -637,28 +637,27 @@ const BurserDashboard = () => {
                     label: "Status",
                     render: (value: string) => (
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          value === "paid"
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${value === "paid"
                             ? "bg-success/10 text-success"
                             : value === "pending"
-                            ? "bg-warning/10 text-warning"
-                            : "bg-destructive/10 text-destructive"
-                        }`}
+                              ? "bg-warning/10 text-warning"
+                              : "bg-destructive/10 text-destructive"
+                          }`}
                       >
                         {value.charAt(0).toUpperCase() + value.slice(1)}
                       </span>
                     ),
                   },
-                  { 
-                    key: "dueDate", 
+                  {
+                    key: "dueDate",
                     label: "Due Date",
                     render: (value: any) => {
                       if (!value || value === "N/A") return "N/A";
                       return String(value);
                     },
                   },
-                  { 
-                    key: "date", 
+                  {
+                    key: "date",
                     label: "Created Date",
                     render: (value: any) => {
                       if (!value || value === "N/A") return "N/A";
@@ -698,7 +697,7 @@ const BurserDashboard = () => {
                     Save
                   </Button>
                   <Button onClick={printReport}>Print / Export</Button>
-                  <Button 
+                  <Button
                     className="gap-2"
                     onClick={() => {
                       const reportData = [{
@@ -1360,11 +1359,10 @@ const BurserDashboard = () => {
                 }
               }}
               whileHover={{ x: 5 }}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-colors ${
-                activeTab === item.id
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-colors ${activeTab === item.id
                   ? "bg-white/20 border-l-4 border-white"
                   : "hover:bg-white/10"
-              }`}
+                }`}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
               {sidebarOpen && <span className="font-medium">{item.label}</span>}

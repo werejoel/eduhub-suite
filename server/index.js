@@ -60,7 +60,7 @@ const createFlexibleModel = (name) => {
   }
 };
 
-const collections = ['students','teachers','classes','fees','attendance','marks','dormitories','store_items','users','item_requests','rooms','assignment_logs','occupancy_snapshots'];
+const collections = ['students','teachers','classes','fees','attendance','marks','dormitories','store_items','users','item_requests','rooms','assignment_logs','occupancy_snapshots','duties','ratings'];
 
 // Users model for authentication
 const UserModel = createFlexibleModel('users');

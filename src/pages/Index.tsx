@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { getRoleDashboard} from "@/lib/roleRoutes";
+import { getRoleDashboard } from "@/lib/roleRoutes";
 
 const features = [
   "Complete Student Management",

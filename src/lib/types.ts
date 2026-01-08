@@ -7,10 +7,10 @@ export interface Student {
   email: string;
   phone: string;
   date_of_birth: string;
-  gender: 'male' | 'female';
+  gender: "male" | "female";
   class_id: string;
   enrollment_date: string;
-  status: 'active' | 'inactive' | 'graduated';
+  status: "active" | "inactive" | "graduated";
   createdAt: string;
   updatedAt: string;
 }
@@ -25,7 +25,7 @@ export interface Teacher {
   subject: string;
   qualification: string;
   employment_date: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
 }
@@ -47,7 +47,7 @@ export interface Fee {
   amount: number;
   term: string;
   academic_year: string;
-  payment_status: 'paid' | 'pending' | 'overdue';
+  payment_status: "paid" | "pending" | "overdue";
   due_date: string;
   paid_date?: string;
   createdAt: string;
@@ -59,7 +59,7 @@ export interface Attendance {
   student_id: string;
   class_id: string;
   attendance_date: string;
-  status: 'present' | 'absent' | 'late';
+  status: "present" | "absent" | "late";
   remarks?: string;
   createdAt: string;
   updatedAt: string;
@@ -82,7 +82,7 @@ export interface Mark {
 export interface Dormitory {
   id: string;
   dormitory_name: string;
-  dormitory_type: 'boys' | 'girls';
+  dormitory_type: "boys" | "girls";
   capacity: number;
   current_occupancy: number;
   location: string;
@@ -103,7 +103,57 @@ export interface StoreItem {
   updatedAt: string;
 }
 
-export type UserRole = 'admin' | 'teacher' | 'headteacher' | 'burser' | 'store' | 'dormitory';
+export interface TeacherDuty {
+  id: string;
+  teacher_id: string;
+  duty_name: string;
+  description: string;
+  assigned_date: string;
+  start_date: string;
+  end_date: string;
+  status: "assigned" | "in_progress" | "completed" | "cancelled";
+  assigned_by: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DutyRating {
+  id: string;
+  duty_id: string;
+  teacher_id: string;
+  week_number: number;
+  academic_year: string;
+  term: string;
+  rating: number; // 1-5
+  comments: string;
+  rated_by: string;
+  rating_date: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentRequest {
+  id: string;
+  teacher_id: string;
+  amount: number;
+  reason: string;
+  request_date: string;
+  status: "pending" | "approved" | "rejected" | "processed";
+  approved_by?: string;
+  approval_date?: string;
+  rejection_reason?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UserRole =
+  | "admin"
+  | "teacher"
+  | "headteacher"
+  | "burser"
+  | "store"
+  | "dormitory";
 
 export interface User {
   id: string;
