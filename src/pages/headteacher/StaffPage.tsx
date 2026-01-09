@@ -43,6 +43,7 @@ import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useTeachers,
   useCreateTeacher,
@@ -62,6 +63,9 @@ const StaffPage = () => {
   const deleteMutation = useDeleteTeacher();
   const assignClassMutation = useAssignClassToTeacher();
   const unassignClassMutation = useUnassignClassFromTeacher();
+  const queryClient = useQueryClient();
+  const [pendingAssign, setPendingAssign] = useState<{ teacherId: string; teacherName?: string; classId: string } | null>(null);
+  const [confirmAssignOpen, setConfirmAssignOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSubject, setFilterSubject] = useState<string>("all");
@@ -137,18 +141,36 @@ const StaffPage = () => {
     }
   };
 
-  const handleAssignClass = async () => {
+  const handleAssignClass = () => {
     if (!selectedTeacherForClass || !selectedClassId) return;
+    setPendingAssign({ teacherId: selectedTeacherForClass.id, teacherName: `${selectedTeacherForClass.first_name} ${selectedTeacherForClass.last_name}`, classId: selectedClassId });
+    setConfirmAssignOpen(true);
+  };
 
+  const confirmAssign = async () => {
+    if (!pendingAssign) return;
+    const { teacherId, classId } = pendingAssign;
+    // optimistic update classes cache
+    const prevClasses = queryClient.getQueryData<any>(["classes"]);
     try {
-      await assignClassMutation.mutateAsync({
-        classId: selectedClassId,
-        teacherId: selectedTeacherForClass.id,
-      });
+      if (prevClasses) {
+        const next = (prevClasses as any[]).map((c) => {
+          const cId = c.id || c._id;
+          return cId === classId || String(cId) === String(classId) ? { ...c, teacher_id: teacherId } : c;
+        });
+        queryClient.setQueryData(["classes"], next);
+      }
+      await assignClassMutation.mutateAsync({ classId, teacherId });
+      toast.success("Class assigned to teacher");
+    } catch (err) {
+      if (prevClasses) queryClient.setQueryData(["classes"], prevClasses);
+      toast.error("Failed to assign class");
+      console.error(err);
+    } finally {
+      setConfirmAssignOpen(false);
+      setPendingAssign(null);
       setAssignDialogOpen(false);
       setSelectedClassId("");
-    } catch (err) {
-      console.error(err);
     }
   };
 
@@ -163,7 +185,10 @@ const StaffPage = () => {
   };
 
   const getTeacherClasses = (teacherId: string) => {
-    return classes.filter((c: any) => c.teacher_id === teacherId);
+    return classes.filter((c: any) => {
+      const cTeacherId = c.teacher_id || c.teacher;
+      return String(cTeacherId) === String(teacherId);
+    });
   };
 
   const uniqueSubjects = [
@@ -438,12 +463,25 @@ const StaffPage = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-2">
-                                <Dialog open={assignDialogOpen && selectedTeacherForClass?.id === teacher.id} onOpenChange={setAssignDialogOpen}>
+                                <Dialog 
+                                  open={assignDialogOpen && selectedTeacherForClass?.id === teacher.id} 
+                                  onOpenChange={(open) => {
+                                    setAssignDialogOpen(open);
+                                    if (!open) {
+                                      setSelectedTeacherForClass(null);
+                                      setSelectedClassId("");
+                                    }
+                                  }}
+                                >
                                   <DialogTrigger asChild>
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => setSelectedTeacherForClass(teacher)}
+                                      onClick={() => {
+                                        setSelectedTeacherForClass(teacher);
+                                        setSelectedClassId("");
+                                        setAssignDialogOpen(true);
+                                      }}
                                       className="hover:bg-blue-50"
                                     >
                                       <BookOpen className="w-4 h-4" />
@@ -460,11 +498,11 @@ const StaffPage = () => {
                                       <div>
                                         <Label>Select Class</Label>
                                         <Select
-                                          value={selectedClassId}
-                                          onValueChange={setSelectedClassId}
+                                          value={selectedClassId || ""}
+                                          onValueChange={(value) => setSelectedClassId(value)}
                                         >
                                           <SelectTrigger className="mt-1.5">
-                                            <SelectValue placeholder="Choose class" />
+                                            <SelectValue placeholder="Choose a class to assign" />
                                           </SelectTrigger>
                                           <SelectContent>
                                             {classes
@@ -475,8 +513,8 @@ const StaffPage = () => {
                                               )
                                               .map((cls: any) => (
                                                 <SelectItem
-                                                  key={cls.id}
-                                                  value={cls.id}
+                                                  key={cls.id || cls._id}
+                                                  value={cls.id || cls._id}
                                                 >
                                                   {cls.class_name} (Cap: {cls.capacity})
                                                 </SelectItem>
@@ -489,12 +527,12 @@ const StaffPage = () => {
                                         <div className="mt-2 flex flex-wrap gap-2">
                                           {teacherClasses.length > 0 ? (
                                             teacherClasses.map((cls: any) => (
-                                              <div key={cls.id} className="flex items-center gap-2">
+                                              <div key={cls.id || cls._id} className="flex items-center gap-2">
                                                 <Badge>{cls.class_name}</Badge>
                                                 <Button
                                                   variant="ghost"
                                                   size="sm"
-                                                  onClick={() => handleUnassignClass(cls.id)}
+                                                  onClick={() => handleUnassignClass(cls.id || cls._id)}
                                                   className="h-5 px-1 text-xs hover:bg-red-100"
                                                 >
                                                   ✕
@@ -507,15 +545,31 @@ const StaffPage = () => {
                                         </div>
                                       </div>
                                       <Button
-                                        onClick={handleAssignClass}
-                                        disabled={assignClassMutation.isPending || !selectedClassId}
-                                        className="w-full"
-                                      >
-                                        Assign Class
-                                      </Button>
+                                              onClick={handleAssignClass}
+                                              disabled={assignClassMutation.isPending || !selectedClassId}
+                                              className="w-full"
+                                            >
+                                              Assign Class
+                                            </Button>
                                     </div>
                                   </DialogContent>
                                 </Dialog>
+
+                                      {/* Confirm Assign Dialog */}
+                                      <Dialog open={confirmAssignOpen} onOpenChange={setConfirmAssignOpen}>
+                                        <DialogContent className="sm:max-w-md">
+                                          <DialogHeader>
+                                            <DialogTitle>Confirm Assignment</DialogTitle>
+                                          </DialogHeader>
+                                          <div className="space-y-4 py-2">
+                                            <p>Assign <strong>{pendingAssign?.teacherName}</strong> to the selected class?</p>
+                                            <div className="flex justify-end gap-2">
+                                              <Button variant="secondary" onClick={() => { setConfirmAssignOpen(false); setPendingAssign(null); }}>Cancel</Button>
+                                              <Button onClick={confirmAssign}>Confirm</Button>
+                                            </div>
+                                          </div>
+                                        </DialogContent>
+                                      </Dialog>
 
                                 <Button
                                   variant="outline"

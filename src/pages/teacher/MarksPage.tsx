@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ function MarksPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [searchParams] = useSearchParams();
   const [selectedExam, setSelectedExam] = useState<string>("Mid-Term");
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [editMarks, setEditMarks] = useState(0);
@@ -70,10 +72,15 @@ function MarksPage() {
   }, [classes, user]);
 
   useEffect(() => {
+    const classFromParam = searchParams.get("classId");
+    if (classFromParam) {
+      setSelectedClassId(classFromParam);
+      return;
+    }
     if (selectedClassId === "" && teacherClasses.length > 0) {
       setSelectedClassId(teacherClasses[0].id);
     }
-  }, [teacherClasses, selectedClassId]);
+  }, [teacherClasses, selectedClassId, searchParams]);
 
   const classStudents = useMemo(() => {
     if (!selectedClassId) return [];

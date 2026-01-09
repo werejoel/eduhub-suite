@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ function AttendancePage() {
   const { data: allAttendance = [] } = useAttendance();
 
   const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [searchParams] = useSearchParams();
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -50,10 +52,15 @@ function AttendancePage() {
   }, [classes, user]);
 
   useEffect(() => {
+    const classFromParam = searchParams.get("classId");
+    if (classFromParam) {
+      setSelectedClassId(classFromParam);
+      return;
+    }
     if (selectedClassId === "" && teacherClasses.length > 0) {
       setSelectedClassId(teacherClasses[0].id);
     }
-  }, [teacherClasses, selectedClassId]);
+  }, [teacherClasses, selectedClassId, searchParams]);
 
   const classStudents = useMemo(() => {
     if (!selectedClassId) return [];

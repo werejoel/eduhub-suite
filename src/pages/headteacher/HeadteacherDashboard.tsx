@@ -10,6 +10,7 @@ import {
   DollarSign,
   FileText,
   BookOpen,
+  School,
 } from "lucide-react";
 import {
   BarChart,
@@ -204,6 +205,12 @@ const HeadteacherDashboard = () => {
                 icon: GraduationCap,
                 color: "bg-success",
                 route: "/headteacher/staff",
+              },
+              {
+                label: "Manage Classes",
+                icon: School,
+                color: "bg-blue-600",
+                route: "/headteacher/classes",
               },
               {
                 label: "Academic Calendar",

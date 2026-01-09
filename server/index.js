@@ -217,6 +217,38 @@ collections.forEach((col) => {
         return res.json(updated);
       }
 
+      // Special handling for classes: log teacher assignments
+      if (col === 'classes') {
+        const existing = await Model.findById(req.params.id).lean();
+        if (!existing) return res.status(404).json({ error: 'Not found' });
+
+        const updates = req.body || {};
+        const updated = await Model.findByIdAndUpdate(req.params.id, updates, { new: true });
+
+        const oldTeacher = existing.teacher_id || existing.teacher || null;
+        const newTeacher = typeof updates.teacher_id !== 'undefined' ? updates.teacher_id : (existing.teacher_id || existing.teacher || null);
+
+        if (String(oldTeacher) !== String(newTeacher)) {
+          try {
+            const AssignmentLog = createFlexibleModel('assignment_logs');
+            await AssignmentLog.create({
+              class_id: req.params.id,
+              class_name: updated.class_name || existing.class_name || null,
+              from_teacher_id: oldTeacher || null,
+              to_teacher_id: newTeacher || null,
+              assigned_by: (req.user && req.user.id) || 'system',
+              action: newTeacher ? 'assign_class' : 'unassign_class',
+              timestamp: new Date(),
+            });
+          } catch (e) {
+            console.error('Failed to create assignment log', e && e.message ? e.message : e);
+          }
+        }
+
+        return res.json(updated);
+      }
+
+      
       const updated = await Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
       if (!updated) return res.status(404).json({ error: 'Not found' });
       res.json(updated);

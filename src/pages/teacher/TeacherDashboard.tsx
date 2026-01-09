@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Users, FileText, Clock, CheckCircle } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { useClasses, useStudents, useMarks, useAttendance } from "@/hooks/useDatabase";
+import { useClasses, useStudents, useMarks, useAttendance, useDutiesByTeacher, useUpdateDuty } from "@/hooks/useDatabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMemo } from "react";
 
@@ -33,6 +33,8 @@ function TeacherDashboard() {
   const { data: students = [] } = useStudents();
   const { data: marks = [] } = useMarks();
   const { data: attendance = [] } = useAttendance();
+  const { data: duties = [] } = useDutiesByTeacher(user?.id || "");
+  const updateDutyMutation = useUpdateDuty();
 
   // Filter classes for this teacher
   const teacherClasses = useMemo(() => {
@@ -110,6 +112,22 @@ function TeacherDashboard() {
     });
   }, [teacherClasses, students]);
 
+  const startDuty = async (dutyId: string) => {
+    try {
+      await updateDutyMutation.mutateAsync({ id: dutyId, updates: { status: "in_progress", start_date: new Date().toISOString() } });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const completeDuty = async (dutyId: string) => {
+    try {
+      await updateDutyMutation.mutateAsync({ id: dutyId, updates: { status: "completed", end_date: new Date().toISOString() } });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -124,6 +142,48 @@ function TeacherDashboard() {
           <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
         ))}
       </div>
+
+      {/* Duties Assigned */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="bg-card rounded-2xl p-6 border border-border shadow-md mb-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">My Duties</h3>
+          <span className="text-sm text-muted-foreground">{duties?.length || 0} assigned</span>
+        </div>
+        <div className="space-y-3">
+          {duties && duties.length > 0 ? (
+            duties.map((d: any) => (
+              <div key={d.id} className="flex items-start justify-between gap-4 p-3 rounded-lg border border-border bg-muted/30">
+                <div>
+                  <h4 className="font-semibold">{d.duty_name}</h4>
+                  <p className="text-sm text-muted-foreground">{d.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Due: {d.end_date ? new Date(d.end_date).toLocaleDateString() : "-"}</p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${d.status === 'completed' ? 'bg-green-100 text-green-800' : d.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}`}>
+                    {d.status}
+                  </span>
+                  <div className="flex gap-2">
+                    {d.status === 'assigned' && (
+                      <button onClick={() => startDuty(d.id)} className="px-3 py-1 bg-blue-600 text-white rounded">Start</button>
+                    )}
+                    {d.status === 'in_progress' && (
+                      <button onClick={() => completeDuty(d.id)} className="px-3 py-1 bg-green-600 text-white rounded">Complete</button>
+                    )}
+                    <button onClick={() => navigate(`/teacher/duties/${d.id}`)} className="px-3 py-1 border rounded">Details</button>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center text-muted-foreground py-6">No duties assigned</div>
+          )}
+        </div>
+      </motion.div>
 
       {/* Charts & Classes */}
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
@@ -207,18 +267,22 @@ function TeacherDashboard() {
           { label: "Take Attendance", icon: CheckCircle, color: "bg-success", route: "/teacher/attendance" },
           { label: "View Schedule", icon: Clock, color: "bg-secondary", route: "/teacher/schedule" },
           { label: "Student List", icon: Users, color: "bg-warning", route: "/teacher/students" },
-        ].map((action) => (
-          <button
-            key={action.label}
-            onClick={() => navigate(action.route)}
-            className="flex flex-col items-center gap-3 p-6 bg-card rounded-2xl border border-border hover:shadow-lg transition-all"
-          >
-            <div className={`${action.color} p-3 rounded-xl`}>
-              <action.icon className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="font-medium text-sm">{action.label}</span>
-          </button>
-        ))}
+        ].map((action) => {
+          const firstClassId = teacherClasses && teacherClasses.length > 0 ? teacherClasses[0].id : null;
+          const to = firstClassId ? `${action.route}?classId=${firstClassId}` : action.route;
+          return (
+            <button
+              key={action.label}
+              onClick={() => navigate(to)}
+              className="flex flex-col items-center gap-3 p-6 bg-card rounded-2xl border border-border hover:shadow-lg transition-all"
+            >
+              <div className={`${action.color} p-3 rounded-xl`}>
+                <action.icon className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <span className="font-medium text-sm">{action.label}</span>
+            </button>
+          );
+        })}
       </motion.div>
     </DashboardLayout>
   );
