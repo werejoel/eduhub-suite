@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Users, Search } from "lucide-react";
-import { useStudents, useClasses, useUpdateStudent } from "@/hooks/useDatabase";
+import { useStudents, useClasses, useUpdateStudent, useAttendance } from "@/hooks/useDatabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ function TeacherStudentsPage() {
   const { user } = useAuth();
   const { data: students = [] } = useStudents();
   const { data: classes = [] } = useClasses();
+  const { data: allAttendance = [] } = useAttendance();
   const updateStudent = useUpdateStudent();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -84,6 +85,25 @@ function TeacherStudentsPage() {
   useEffect(() => {
     if (!selectedClass && teacherClasses.length > 0) setSelectedClass(teacherClasses[0].id);
   }, [teacherClasses, selectedClass]);
+
+  // Calculate attendance percentage for each student
+  const getAttendancePercentage = (studentId: string, classId: string): string => {
+    const studentAttendance = allAttendance.filter(
+      (a: any) => a.student_id === studentId && a.class_id === classId
+    );
+    
+    if (studentAttendance.length === 0) return "-";
+    
+    const presentCount = studentAttendance.filter(
+      (a: any) => a.status === "present"
+    ).length;
+    
+    const percentage = Math.round(
+      (presentCount / studentAttendance.length) * 100
+    );
+    
+    return `${percentage}%`;
+  };
 
   const filteredStudents = students
     .filter((s: any) => (searchQuery ? (`${s.first_name} ${s.last_name}`).toLowerCase().includes(searchQuery.toLowerCase()) : true))
@@ -126,9 +146,20 @@ function TeacherStudentsPage() {
             </SelectContent>
           </Select>
           <div className="ml-2">
-            <Dialog open={registerOpen} onOpenChange={setRegisterOpen}>
+            <Dialog 
+              open={registerOpen} 
+              onOpenChange={(open) => {
+                setRegisterOpen(open);
+                if (!open) {
+                  setSelectedStudentToRegister("");
+                }
+              }}
+            >
               <DialogTrigger asChild>
-                <Button onClick={() => setRegisterOpen(true)}>
+                <Button onClick={() => {
+                  setSelectedStudentToRegister("");
+                  setRegisterOpen(true);
+                }}>
                   Register Student
                 </Button>
               </DialogTrigger>
@@ -138,31 +169,78 @@ function TeacherStudentsPage() {
                 </DialogHeader>
                 <div className="space-y-4 py-2">
                   <div>
-                    <Label>Student</Label>
-                    <Select value={selectedStudentToRegister} onValueChange={setSelectedStudentToRegister}>
+                    <Label>Select Class</Label>
+                    <Select 
+                      value={selectedClass || ""} 
+                      onValueChange={setSelectedClass}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select student" />
+                        <SelectValue placeholder="Select a class" />
                       </SelectTrigger>
                       <SelectContent>
-                        {students
-                          .filter((s: any) => !s.class_id || s.class_id === "")
-                          .map((s: any) => (
-                            <SelectItem key={s.id} value={s.id}>
-                              {s.first_name} {s.last_name} ({s.admission_number})
-                            </SelectItem>
-                          ))}
+                        {teacherClasses.map((cls: any) => (
+                          <SelectItem key={cls.id || cls._id} value={cls.id || cls._id}>
+                            {cls.class_name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                          <div className="flex justify-end gap-2">
-                            <Button variant="secondary" onClick={() => setRegisterOpen(false)}>Cancel</Button>
-                            <Button onClick={() => {
-                              if (!selectedStudentToRegister || !selectedClass) return toast.error('Select a student and class');
-                              const student = students.find((s:any) => s.id === selectedStudentToRegister);
-                              setPendingAssign({ studentId: selectedStudentToRegister, studentName: student ? `${student.first_name} ${student.last_name}` : undefined, classId: selectedClass });
-                              setConfirmAssignOpen(true);
-                            }}>Assign</Button>
-                          </div>
+                  <div>
+                    <Label>Student</Label>
+                    <Select 
+                      value={selectedStudentToRegister || ""} 
+                      onValueChange={setSelectedStudentToRegister}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select student to register" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {students.length > 0 ? (
+                          students
+                            .filter((s: any) => {
+                              // Show all students, but prefer unregistered ones
+                              return true;
+                            })
+                            .map((s: any) => (
+                              <SelectItem key={s.id || s._id} value={s.id || s._id}>
+                                {s.first_name} {s.last_name} ({s.admission_number})
+                                {s.class_id ? ` - Class: ${classes.find((c: any) => (c.id || c._id) === s.class_id)?.class_name || 'Unknown'}` : ' - Unregistered'}
+                              </SelectItem>
+                            ))
+                        ) : (
+                          <div className="p-2 text-sm text-muted-foreground text-center">No students available</div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="secondary" onClick={() => {
+                      setRegisterOpen(false);
+                      setSelectedStudentToRegister("");
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button onClick={() => {
+                      if (!selectedStudentToRegister || !selectedClass) {
+                        toast.error('Select a student and class');
+                        return;
+                      }
+                      const student = students.find((s:any) => (s.id || s._id) === selectedStudentToRegister);
+                      if (!student) {
+                        toast.error('Student not found');
+                        return;
+                      }
+                      setPendingAssign({ 
+                        studentId: selectedStudentToRegister, 
+                        studentName: `${student.first_name} ${student.last_name}`, 
+                        classId: selectedClass 
+                      });
+                      setConfirmAssignOpen(true);
+                    }}>
+                      Assign to Class
+                    </Button>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -174,27 +252,36 @@ function TeacherStudentsPage() {
       <DataTable
         columns={columns}
         data={filteredStudents.map((s: any) => ({
-          id: s.id,
+          id: s.id || s._id,
           rollNumber: s.admission_number,
           name: `${s.first_name} ${s.last_name}`,
-          class: classes.find((c: any) => c.id === s.class_id)?.class_name || "-",
+          class: classes.find((c: any) => (c.id || c._id) === s.class_id)?.class_name || "-",
           email: s.email,
-          attendance: "-",
+          attendance: getAttendancePercentage(s.id || s._id, selectedClass),
           avgGrade: "-",
           actions: (
             <div className="flex items-center gap-2">
-              <Select value={s.class_id || ""} onValueChange={(v) => {
-                // open confirm dialog instead of immediate change
-                const studentName = `${s.first_name} ${s.last_name}`;
-                setPendingAssign({ studentId: s.id, studentName, classId: v });
-                setConfirmAssignOpen(true);
-              }}>
+              <Select 
+                value={s.class_id || ""} 
+                onValueChange={(v) => {
+                  if (!v) return;
+                  const studentName = `${s.first_name} ${s.last_name}`;
+                  setPendingAssign({ 
+                    studentId: s.id || s._id, 
+                    studentName, 
+                    classId: v 
+                  });
+                  setConfirmAssignOpen(true);
+                }}
+              >
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder={s.class_id ? classes.find((c:any) => c.id === s.class_id)?.class_name : 'Assign class'} />
+                  <SelectValue placeholder={s.class_id ? classes.find((c:any) => (c.id || c._id) === s.class_id)?.class_name : 'Assign class'} />
                 </SelectTrigger>
                 <SelectContent>
                   {teacherClasses.map((cls: any) => (
-                    <SelectItem key={cls.id} value={cls.id}>{cls.class_name}</SelectItem>
+                    <SelectItem key={cls.id || cls._id} value={cls.id || cls._id}>
+                      {cls.class_name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -224,7 +311,9 @@ function TeacherStudentsPage() {
                 try {
                   let nextStudents = prevStudents;
                   if (prevStudents) {
-                    nextStudents = (prevStudents as any[]).map(s => s.id === studentId ? { ...s, class_id: classId } : s);
+                    nextStudents = (prevStudents as any[]).map(s => 
+                      (s.id || s._id) === studentId ? { ...s, class_id: classId } : s
+                    );
                     queryClient.setQueryData(["students"], nextStudents);
                   }
 
@@ -234,7 +323,10 @@ function TeacherStudentsPage() {
                     (nextStudents as any[]).forEach(s => {
                       if (s.class_id) counts[s.class_id] = (counts[s.class_id] || 0) + 1;
                     });
-                    const nextClasses = (prevClasses as any[]).map(c => ({ ...c, student_count: counts[c.id] || 0 }));
+                    const nextClasses = (prevClasses as any[]).map(c => ({ 
+                      ...c, 
+                      student_count: counts[c.id || c._id] || 0 
+                    }));
                     queryClient.setQueryData(["classes"], nextClasses);
                   }
 
@@ -249,6 +341,7 @@ function TeacherStudentsPage() {
                 } finally {
                   setConfirmAssignOpen(false);
                   setPendingAssign(null);
+                  setSelectedStudentToRegister("");
                 }
               }}>Confirm</Button>
             </div>

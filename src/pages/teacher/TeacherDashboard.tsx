@@ -255,34 +255,145 @@ function TeacherDashboard() {
         </motion.div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - Enhanced */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        className="space-y-6"
       >
-        {[
-          { label: "Add Marks", icon: FileText, color: "bg-primary", route: "/teacher/marks" },
-          { label: "Take Attendance", icon: CheckCircle, color: "bg-success", route: "/teacher/attendance" },
-          { label: "View Schedule", icon: Clock, color: "bg-secondary", route: "/teacher/schedule" },
-          { label: "Student List", icon: Users, color: "bg-warning", route: "/teacher/students" },
-        ].map((action) => {
-          const firstClassId = teacherClasses && teacherClasses.length > 0 ? teacherClasses[0].id : null;
-          const to = firstClassId ? `${action.route}?classId=${firstClassId}` : action.route;
-          return (
-            <button
-              key={action.label}
-              onClick={() => navigate(to)}
-              className="flex flex-col items-center gap-3 p-6 bg-card rounded-2xl border border-border hover:shadow-lg transition-all"
-            >
-              <div className={`${action.color} p-3 rounded-xl`}>
-                <action.icon className="w-6 h-6 text-primary-foreground" />
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "Register Students", description: "Add and manage students", icon: Users, color: "bg-blue-500", route: "/teacher/students" },
+              { label: "Enter Marks", description: "Record student grades", icon: FileText, color: "bg-purple-500", route: "/teacher/marks" },
+              { label: "Mark Attendance", description: "Record daily attendance", icon: CheckCircle, color: "bg-green-500", route: "/teacher/attendance" },
+              { label: "My Classes", description: "View all classes", icon: BookOpen, color: "bg-orange-500", route: "/teacher/classes" },
+            ].map((action) => {
+              const firstClassId = teacherClasses && teacherClasses.length > 0 ? teacherClasses[0].id : null;
+              const to = firstClassId ? `${action.route}?classId=${firstClassId}` : action.route;
+              return (
+                <motion.button
+                  key={action.label}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate(to)}
+                  className="flex flex-col items-center gap-3 p-6 bg-card rounded-2xl border border-border hover:shadow-lg transition-all"
+                >
+                  <div className={`${action.color} p-3 rounded-xl`}>
+                    <action.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium text-sm">{action.label}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Action Cards with more details */}
+        <div className="grid md:grid-cols-2 gap-4 mt-8">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.7 }}
+            className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 shadow-md"
+          >
+            <div className="flex items-start gap-4">
+              <div className="bg-blue-500 p-3 rounded-xl">
+                <Users className="w-6 h-6 text-white" />
               </div>
-              <span className="font-medium text-sm">{action.label}</span>
-            </button>
-          );
-        })}
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 mb-1">Register & Manage Students</h4>
+                <p className="text-sm text-gray-700 mb-3">Register new students to your classes, assign them to different classes, and manage student information.</p>
+                <button
+                  onClick={() => navigate("/teacher/students")}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 underline"
+                >
+                  Go to Student Management →
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.8 }}
+            className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200 shadow-md"
+          >
+            <div className="flex items-start gap-4">
+              <div className="bg-purple-500 p-3 rounded-xl">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 mb-1">Record Marks</h4>
+                <p className="text-sm text-gray-700 mb-3">Enter and track student marks for different exams and assignments. View grades and performance analytics.</p>
+                <button
+                  onClick={() => {
+                    const firstClassId = teacherClasses && teacherClasses.length > 0 ? teacherClasses[0].id : null;
+                    navigate(firstClassId ? `/teacher/marks?classId=${firstClassId}` : "/teacher/marks");
+                  }}
+                  className="text-sm font-medium text-purple-600 hover:text-purple-700 underline"
+                >
+                  Go to Marks Entry →
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.9 }}
+            className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200 shadow-md"
+          >
+            <div className="flex items-start gap-4">
+              <div className="bg-green-500 p-3 rounded-xl">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 mb-1">Mark Attendance</h4>
+                <p className="text-sm text-gray-700 mb-3">Take daily attendance for your classes. Track presence, absence, and generate attendance reports.</p>
+                <button
+                  onClick={() => {
+                    const firstClassId = teacherClasses && teacherClasses.length > 0 ? teacherClasses[0].id : null;
+                    navigate(firstClassId ? `/teacher/attendance?classId=${firstClassId}` : "/teacher/attendance");
+                  }}
+                  className="text-sm font-medium text-green-600 hover:text-green-700 underline"
+                >
+                  Go to Attendance →
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.0 }}
+            className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200 shadow-md"
+          >
+            <div className="flex items-start gap-4">
+              <div className="bg-orange-500 p-3 rounded-xl">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 mb-1">Manage Classes</h4>
+                <p className="text-sm text-gray-700 mb-3">View all your assigned classes, student lists, and class-specific information.</p>
+                <button
+                  onClick={() => navigate("/teacher/classes")}
+                  className="text-sm font-medium text-orange-600 hover:text-orange-700 underline"
+                >
+                  View My Classes →
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </motion.div>
     </DashboardLayout>
   );

@@ -51,7 +51,7 @@ function MarksPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [searchParams] = useSearchParams();
-  const [selectedExam, setSelectedExam] = useState<string>("Mid-Term");
+  const [selectedExam, setSelectedExam] = useState<string>("Beginning-of-Term");
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [editMarks, setEditMarks] = useState(0);
   const [createDialog, setCreateDialog] = useState(false);
@@ -59,7 +59,7 @@ function MarksPage() {
     student_id: "",
     class_id: "",
     subject: "",
-    exam_type: "Mid-Term",
+    exam_type: "Beginning-of-Term",
     marks_obtained: 0,
     total_marks: 100,
     term: "1",
@@ -126,7 +126,7 @@ function MarksPage() {
       student_id: "",
       class_id: "",
       subject: "",
-      exam_type: "Mid-Term",
+      exam_type: "Beginning-of-Term",
       marks_obtained: 0,
       total_marks: 100,
       term: "1",
@@ -206,6 +206,7 @@ function MarksPage() {
               <SelectValue placeholder="Select exam" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="Beginning-of-Term">Beginning-of-Term</SelectItem>
               <SelectItem value="Mid-Term">Mid-Term</SelectItem>
               <SelectItem value="Final">Final Exam</SelectItem>
               <SelectItem value="Quiz">Quiz</SelectItem>
@@ -435,6 +436,7 @@ function MarksPage() {
                   <SelectValue placeholder="Select exam" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Beginning-of-Term">Beginning-of-Term</SelectItem>
                   <SelectItem value="Mid-Term">Mid-Term</SelectItem>
                   <SelectItem value="Final">Final Exam</SelectItem>
                   <SelectItem value="Quiz">Quiz</SelectItem>
