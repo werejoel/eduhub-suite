@@ -48,7 +48,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Store", icon: ShoppingCart, href: "/admin/store" },
     { label: "Item Requests", icon: FileText, href: "/admin/item-requests" },
     { label: "Records", icon: FileText, href: "/admin/records" },
-    { label: "Settings", icon: Settings, href: "/admin/settings" },
+    { label: "Settings", icon: Settings, href: "/settings" },
   ],
   teacher: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/teacher" },
@@ -56,6 +56,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Students", icon: Users, href: "/teacher/students" },
     { label: "Marks", icon: FileText, href: "/teacher/marks" },
     { label: "Attendance", icon: GraduationCap, href: "/teacher/attendance" },
+    { label: "Settings", icon: Settings, href: "/settings" },
   ],
   headteacher: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/headteacher" },
@@ -69,16 +70,19 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Item Requests", icon: FileText, href: "/headteacher/item-requests" },
     { label: "Dormitory Details", icon: FileText, href: "/dormitory/details" },
     { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy" },
+    { label: "Settings", icon: Settings, href: "/settings" },
   ],
   burser: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/burser" },
     { label: "Transactions", icon: DollarSign, href: "/burser" },
     { label: "Fees", icon: FileText, href: "/burser" },
     { label: "Finances", icon: DollarSign, href: "/burser/finances" },
+    { label: "Settings", icon: Settings, href: "/settings" },
   ],
   store: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/store" },
     { label: "Inventory", icon: ShoppingCart, href: "/admin/store" },
+    { label: "Settings", icon: Settings, href: "/settings" },
   ],
   dormitory: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/dormitory" },
@@ -86,6 +90,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Details", icon: FileText, href: "/dormitory/details" },
     { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy" },
     { label: "Assign Students", icon: Users, href: "/dormitory/assignments" },
+    { label: "Settings", icon: Settings, href: "/settings" },
   ],
 };
 
@@ -124,7 +129,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <motion.aside
         initial={false}
         animate={{ width: sidebarOpen ? 280 : 80 }}
-        className="hidden lg:flex flex-col bg-red-900 fixed h-screen z-40"
+        className="hidden lg:flex flex-col bg-red-900 dark:bg-slate-900 fixed h-screen z-40"
       >
         {/* Logo */}
         <div className="p-6 flex items-center gap-3">
@@ -139,10 +144,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 exit={{ opacity: 0, width: 0 }}
                 className="overflow-hidden"
               >
-                <h1 className="text-xl font-bold text-primary-foreground whitespace-nowrap">
+                <h1 className="text-xl font-bold text-white dark:text-white whitespace-nowrap">
                   EduManage
                 </h1>
-                <p className="text-xs text-primary-foreground/70">
+                <p className="text-xs text-white/70 dark:text-white/70">
                   {roleLabels[role]}
                 </p>
               </motion.div>
@@ -162,7 +167,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
                   isActive
                     ? "bg-secondary text-secondary-foreground shadow-lg"
-                    : "text-primary-foreground/80 hover:bg-sidebar-accent hover:text-primary-foreground"
+                    : "text-white/80 dark:text-white/80 hover:bg-white/10 hover:text-white dark:hover:bg-white/10 dark:hover:text-white"
                 )}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -172,7 +177,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       initial={{ opacity: 0, width: 0 }}
                       animate={{ opacity: 1, width: "auto" }}
                       exit={{ opacity: 0, width: 0 }}
-                      className="font-medium whitespace-nowrap overflow-hidden"
+                      className="font-medium whitespace-nowrap overflow-hidden text-white dark:text-white"
                     >
                       {item.label}
                     </motion.span>
@@ -187,17 +192,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="p-3 border-t border-sidebar-border">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-primary-foreground/80 hover:bg-sidebar-accent transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white transition-colors"
           >
             <Menu className="w-5 h-5" />
-            {sidebarOpen && <span className="font-medium">Collapse</span>}
+            {sidebarOpen && <span className="font-medium text-white dark:text-white">Collapse</span>}
           </button>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-primary-foreground/80 hover:bg-destructive/20 hover:text-destructive-foreground transition-colors mt-1"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-red-600/40 hover:text-white dark:text-white/80 dark:hover:bg-red-600/40 dark:hover:text-white transition-colors mt-1"
           >
             <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span className="font-medium">Logout</span>}
+            {sidebarOpen && <span className="font-medium text-white dark:text-white">Logout</span>}
           </button>
         </div>
       </motion.aside>
@@ -218,7 +223,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: "spring", damping: 25 }}
-              className="fixed left-0 top-0 h-full w-72 bg-red-900 z-50 lg:hidden flex flex-col"
+              className="fixed left-0 top-0 h-full w-72 bg-red-900 dark:bg-slate-900 z-50 lg:hidden flex flex-col"
             >
               <div className="p-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">

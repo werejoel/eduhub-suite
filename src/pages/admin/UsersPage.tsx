@@ -120,6 +120,18 @@ const UsersPage = () => {
       ),
     },
     {
+      key: 'status',
+      label: 'Teacher Status',
+      render: (value: string, row: User) => {
+        if (row.role !== 'teacher' && row.role !== 'headteacher') return '-';
+        return (
+          <Badge variant={value === 'active' ? 'default' : 'secondary'}>
+            {value || 'inactive'}
+          </Badge>
+        );
+      },
+    },
+    {
       key: 'created_at',
       label: 'Registered',
       render: (value: string) => new Date(value).toLocaleDateString(),
@@ -171,30 +183,76 @@ const UsersPage = () => {
           );
         };
 
+        const UpdateTeacherStatusControl = ({ userRow }: { userRow: User }) => {
+          const [statusSelected, setStatusSelected] = useState<'active' | 'inactive'>(
+            (userRow.status as 'active' | 'inactive') || 'inactive'
+          );
+          const queryClient = useQueryClient();
+
+          const applyStatus = async () => {
+            try {
+              const res = await fetch(`/api/users/${userRow.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: statusSelected, updated_at: new Date().toISOString() }),
+              });
+              if (!res.ok) throw new Error("Failed to update status");
+              queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+              toast.success("Teacher status updated");
+            } catch (err: any) {
+              toast.error(err.message || "Failed to update status");
+            }
+          };
+
+          if (userRow.role !== 'teacher' && userRow.role !== 'headteacher') {
+            return null;
+          }
+
+          return (
+            <div className="flex items-center gap-2">
+              <Select value={statusSelected} onValueChange={(v) => setStatusSelected(v as 'active' | 'inactive')}>
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={applyStatus} className="whitespace-nowrap">
+                Set
+              </Button>
+            </div>
+          );
+        };
+
         return (
-          <div className="flex gap-2 items-center">
-            {!row.email_confirmed ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => confirmEmail(row.id)}
-                className="text-success hover:text-success"
-              >
-                <Mail className="w-4 h-4 mr-1" />
-                Confirm Email
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => unconfirmEmail(row.id)}
-                className="text-destructive hover:text-destructive"
-              >
-                <XCircle className="w-4 h-4 mr-1" />
-                Revoke
-              </Button>
-            )}
-            <UpdateRoleControl userRow={row} />
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2 items-center">
+              {!row.email_confirmed ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => confirmEmail(row.id)}
+                  className="text-success hover:text-success"
+                >
+                  <Mail className="w-4 h-4 mr-1" />
+                  Confirm Email
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => unconfirmEmail(row.id)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <XCircle className="w-4 h-4 mr-1" />
+                  Revoke
+                </Button>
+              )}
+              <UpdateRoleControl userRow={row} />
+            </div>
+            <UpdateTeacherStatusControl userRow={row} />
           </div>
         );
       },

@@ -5,10 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -22,12 +24,6 @@ import RecordsPage from "./pages/admin/RecordsPage";
 import UsersPage from "./pages/admin/UsersPage";
 import ItemRequestsPage from "./pages/admin/ItemRequestsPage";
 
-// Teacher Pages
-import TeacherDashboard from "./pages/teacher/TeacherDashboard";
-import MarksPage from "./pages/teacher/MarksPage";
-import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
-import AttendancePage from "./pages/teacher/AttendancePage";
-
 // Headteacher Pages
 import HeadteacherDashboard from "./pages/headteacher/HeadteacherDashboard";
 import StaffPage from "./pages/headteacher/StaffPage";
@@ -39,8 +35,7 @@ import FinancesPage from "./pages/headteacher/FinancesPage";
 import TeacherDutiesPage from "./pages/headteacher/TeacherDutiesPage";
 import TeacherRatingsPage from "./pages/headteacher/TeacherRatingsPage";
 import PaymentRequestsPage from "./pages/headteacher/PaymentRequestsPage";
-// Burser Pages
-import BurserDashboard from "./pages/burser/BurserDashboard";
+
 // Store / Dormitory Dashboards
 import StoreDashboard from "./pages/store/StoreDashboard";
 import DormitoryDashboard from "./pages/dormitory/DormitoryDashboard";
@@ -48,8 +43,17 @@ import DormitoryDetails from "./pages/dormitory/DormitoryDetails";
 import OccupancyReport from "./pages/dormitory/OccupancyReport";
 import AssignStudents from "./pages/dormitory/AssignStudents";
 
-const queryClient = new QueryClient();
+// Teacher Pages
+import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import MarksPage from "./pages/teacher/MarksPage";
+import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
+import AttendancePage from "./pages/teacher/AttendancePage";
 
+// Burser Pages
+import BurserDashboard from "./pages/burser/BurserDashboard";
+
+
+const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -61,6 +65,14 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "teacher", "headteacher", "burser", "store", "dormitory"]}>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin Routes */}
             <Route
@@ -337,5 +349,40 @@ const App = () => (
     </AuthProvider>
   </QueryClientProvider>
 );
+
+// Initialize theme on app start
+const initializeTheme = () => {
+  const theme = localStorage.getItem("theme") || "system";
+  const root = document.documentElement;
+
+  if (theme === "dark") {
+    root.classList.add("dark");
+    root.style.colorScheme = "dark";
+  } else if (theme === "light") {
+    root.classList.remove("dark");
+    root.style.colorScheme = "light";
+  } else {
+    // system
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (prefersDark) {
+      root.classList.add("dark");
+      root.style.colorScheme = "dark";
+    } else {
+      root.classList.remove("dark");
+      root.style.colorScheme = "light";
+    }
+  }
+};
+
+// Initialize theme on page load
+initializeTheme();
+
+// Listen for system theme changes
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  const theme = localStorage.getItem("theme") || "system";
+  if (theme === "system") {
+    initializeTheme();
+  }
+});
 
 export default App;

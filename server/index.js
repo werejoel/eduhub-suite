@@ -109,6 +109,26 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) return res.status(400).json({ error: 'Current and new password are required' });
+
+    const user = await UserModel.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const ok = await bcrypt.compare(current_password, user.password);
+    if (!ok) return res.status(400).json({ error: 'Current password is incorrect' });
+
+    const hashed = await bcrypt.hash(new_password, 10);
+    await UserModel.findByIdAndUpdate(req.user.id, { password: hashed }, { new: true });
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -245,6 +265,22 @@ collections.forEach((col) => {
           }
         }
 
+        return res.json(updated);
+      }
+
+      // Special handling for users: set status to "active" when teacher is confirmed
+      if (col === 'users') {
+        const existing = await Model.findById(req.params.id).lean();
+        if (!existing) return res.status(404).json({ error: 'Not found' });
+
+        const updates = req.body || {};
+        
+        // If confirming email for a teacher, automatically set status to "active"
+        if (existing.role === 'teacher' && updates.email_confirmed === true && existing.email_confirmed !== true) {
+          updates.status = 'active';
+        }
+        
+        const updated = await Model.findByIdAndUpdate(req.params.id, updates, { new: true });
         return res.json(updated);
       }
 

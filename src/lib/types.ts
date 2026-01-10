@@ -27,7 +27,7 @@ export interface Teacher {
   qualification?: string;
   employment_date?: string;
   employee_id?: string;
-  status?: "active" | "inactive";
+  status: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
 }
@@ -164,6 +164,9 @@ export interface User {
   last_name: string;
   role: UserRole;
   email_confirmed: boolean;
+  phone?: string;
+  subject?: string;
+  status?: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
 }

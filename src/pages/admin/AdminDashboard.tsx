@@ -1,7 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import PageHeader from "@/components/dashboard/PageHeader";
-import DataTable from "@/components/dashboard/DataTable";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -38,26 +37,6 @@ import { toast } from "sonner";
 import { formatUGX } from "@/lib/utils";
 import { useMemo } from "react";
 
-const columns = [
-  { key: "name", label: "Student Name" },
-  { key: "class", label: "Class" },
-  { key: "admissionDate", label: "Admission Date" },
-  {
-    key: "status",
-    label: "Status",
-    render: (value: string) => (
-      <span
-        className={`px-3 py-1 rounded-full text-xs font-medium ${
-          value === "Active"
-            ? "bg-success/10 text-success"
-            : "bg-warning/10 text-warning"
-        }`}
-      >
-        {value}
-      </span>
-    ),
-  },
-];
 function AdminDashboard() {
   const navigate = useNavigate();
   const { data: students = [], isLoading: studentsLoading } = useStudents();
@@ -460,31 +439,98 @@ function AdminDashboard() {
         </motion.div>
       </div>
 
-      {/* Recent Students Table */}
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-4">Recent Admissions</h3>
+      {/* Pending Fees Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+        className="bg-card rounded-2xl p-6 border border-border shadow-md"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Outstanding Fees</h3>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/admin/fees")}
+          >
+            View All
+          </Button>
+        </div>
         {isLoading ? (
-          <div className="bg-card rounded-2xl p-6 border border-border animate-pulse">
-            <div className="h-4 bg-muted rounded w-1/4 mb-4"></div>
-            <div className="space-y-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-12 bg-muted rounded"></div>
-              ))}
-            </div>
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-12 bg-muted rounded animate-pulse"></div>
+            ))}
           </div>
-        ) : recentStudents.length > 0 ? (
-          <DataTable
-            columns={columns}
-            data={recentStudents}
-            onEdit={(row) => console.log("Edit", row)}
-            onView={(row) => console.log("View", row)}
-          />
         ) : (
-          <div className="bg-card rounded-2xl p-6 border border-border text-center text-muted-foreground">
-            No recent admissions
-          </div>
+          (() => {
+            const outstandingFees = fees
+              .filter((f) => f.payment_status !== "paid")
+              .slice(0, 8)
+              .map((fee) => {
+                const student = students.find((s) => s.id === fee.student_id);
+                const studentClass = student
+                  ? classes.find((c) => c.id === student.class_id)
+                  : undefined;
+                return {
+                  name: student
+                    ? `${student.first_name} ${student.last_name}`
+                    : "Unknown",
+                  class: studentClass?.class_name || "Unassigned",
+                  amount: fee.amount || 0,
+                  dueDate: fee.due_date
+                    ? new Date(fee.due_date).toLocaleDateString()
+                    : "N/A",
+                  status: fee.payment_status,
+                };
+              });
+
+            return outstandingFees.length > 0 ? (
+              <div className="space-y-3">
+                {outstandingFees.map((fee, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{fee.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Class: {fee.class} • Due: {fee.dueDate}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-sm">
+                        {formatUGX(fee.amount)}
+                      </p>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          fee.status === "pending"
+                            ? "bg-warning/10 text-warning"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
+                      >
+                        {fee.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {fees.filter((f) => f.payment_status !== "paid").length > 8 && (
+                  <button
+                    onClick={() => navigate("/admin/fees")}
+                    className="w-full text-sm text-primary hover:underline py-2"
+                  >
+                    View all outstanding fees
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-6">
+                All fees collected!
+              </div>
+            );
+          })()
         )}
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }
