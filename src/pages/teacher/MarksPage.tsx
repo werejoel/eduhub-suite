@@ -44,9 +44,9 @@ const calculateGrade = (marks: number, totalMarks: number) => {
 
 function MarksPage() {
   const { user } = useAuth();
-  const { data: classes = [] } = useClasses();
-  const { data: students = [] } = useStudents();
-  const { data: allMarks = [] } = useMarks();
+  const { data: classes = [], isLoading: classesLoading, isError: classesError, error: classesErrorObj } = useClasses();
+  const { data: students = [], isLoading: studentsLoading, isError: studentsError, error: studentsErrorObj } = useStudents();
+  const { data: allMarks = [], isLoading: marksLoading, isError: marksError, error: marksErrorObj } = useMarks();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClassId, setSelectedClassId] = useState<string>("");
@@ -97,6 +97,25 @@ function MarksPage() {
   const createMutation = useCreateMark();
   const updateMutation = useUpdateMark();
   const deleteMutation = useDeleteMark();
+
+  // Log comprehensive data for debugging
+  useEffect(() => {
+    console.log("=== MarksPage Debug ===");
+    console.log("User:", user);
+    console.log("Loading states:", { classesLoading, studentsLoading, marksLoading });
+    console.log("Error states:", { classesError, studentsError, marksError });
+    console.log("Data loaded:", {
+      classes: classes.length,
+      students: students.length,
+      marks: allMarks.length,
+    });
+    console.log("Classes data:", classes);
+    console.log("Students data:", students);
+    console.log("Marks data:", allMarks);
+    if (classesError) console.error("Classes error:", classesErrorObj);
+    if (studentsError) console.error("Students error:", studentsErrorObj);
+    if (marksError) console.error("Marks error:", marksErrorObj);
+  }, [classesLoading, studentsLoading, marksLoading, classesError, studentsError, marksError, classes.length, students.length, allMarks.length]);
 
   const filteredMarks = useMemo(() => {
     return classMarks.filter((mark) => {

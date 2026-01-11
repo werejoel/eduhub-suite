@@ -54,7 +54,6 @@ const navItems: Record<string, NavItem[]> = {
   ],
   teacher: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/teacher" },
-    { label: "My Classes", icon: BookOpen, href: "/teacher/classes" },
     { label: "Students", icon: Users, href: "/teacher/students" },
     { label: "Marks", icon: FileText, href: "/teacher/marks" },
     { label: "Attendance", icon: GraduationCap, href: "/teacher/attendance" },

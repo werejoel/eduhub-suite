@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { GraduationCap, Save, Calendar, Trash2 } from "lucide-react";
+import { GraduationCap, Save, Calendar, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
@@ -36,14 +36,17 @@ import type { Attendance } from "@/lib/types";
 
 function AttendancePage() {
   const { user } = useAuth();
-  const { data: classes = [] } = useClasses();
-  const { data: students = [] } = useStudents();
-  const { data: allAttendance = [] } = useAttendance();
+  const { data: classes = [], isLoading: classesLoading, isError: classesError, error: classesErrorObj } = useClasses();
+  const { data: students = [], isLoading: studentsLoading, isError: studentsError, error: studentsErrorObj } = useStudents();
+  const { data: allAttendance = [], isLoading: attendanceLoading, isError: attendanceError, error: attendanceErrorObj } = useAttendance();
 
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [searchParams] = useSearchParams();
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
+  );
+  const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">(
+    "all"
   );
 
   const teacherClasses = useMemo(() => {
@@ -64,8 +67,12 @@ function AttendancePage() {
 
   const classStudents = useMemo(() => {
     if (!selectedClassId) return [];
-    return students.filter((s) => s.class_id === selectedClassId);
-  }, [students, selectedClassId]);
+    let filtered = students.filter((s) => s.class_id === selectedClassId);
+    if (genderFilter !== "all") {
+      filtered = filtered.filter((s) => s.gender === genderFilter);
+    }
+    return filtered;
+  }, [students, selectedClassId, genderFilter]);
 
   const classAttendance = useMemo(() => {
     if (!selectedClassId) return [];
@@ -78,6 +85,25 @@ function AttendancePage() {
   const createAttendanceMutation = useCreateAttendance();
   const updateAttendanceMutation = useUpdateAttendance();
   const deleteAttendanceMutation = useDeleteAttendance();
+
+  // Log comprehensive data for debugging
+  useEffect(() => {
+    console.log("=== AttendancePage Debug ===");
+    console.log("User:", user);
+    console.log("Loading states:", { classesLoading, studentsLoading, attendanceLoading });
+    console.log("Error states:", { classesError, studentsError, attendanceError });
+    console.log("Data loaded:", {
+      classes: classes.length,
+      students: students.length,
+      attendance: allAttendance.length,
+    });
+    console.log("Classes data:", classes);
+    console.log("Students data:", students);
+    console.log("Attendance data:", allAttendance);
+    if (classesError) console.error("Classes error:", classesErrorObj);
+    if (studentsError) console.error("Students error:", studentsErrorObj);
+    if (attendanceError) console.error("Attendance error:", attendanceErrorObj);
+  }, [classesLoading, studentsLoading, attendanceLoading, classesError, studentsError, attendanceError, classes.length, students.length, allAttendance.length]);
 
   const [attendanceMap, setAttendanceMap] = useState<
     Record<string, Attendance>
@@ -150,6 +176,12 @@ function AttendancePage() {
 
   const selectedClass = classes.find((c) => c.id === selectedClassId);
 
+  const getGenderLabel = () => {
+    if (genderFilter === "male") return "Boys";
+    if (genderFilter === "female") return "Girls";
+    return "All Students";
+  };
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -187,6 +219,19 @@ function AttendancePage() {
             />
           </div>
           <div className="flex-1" />
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            <Select value={genderFilter} onValueChange={(v: any) => setGenderFilter(v)}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filter by gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                <SelectItem value="male">Boys Only</SelectItem>
+                <SelectItem value="female">Girls Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-success font-medium">
               Present: {presentCount}
@@ -212,7 +257,7 @@ function AttendancePage() {
       >
         <div className="p-4 border-b border-border flex justify-between items-center">
           <h3 className="font-semibold">
-            Student Attendance - {selectedClass?.class_name || "Select a class"}
+            {getGenderLabel()} - {selectedClass?.class_name || "Select a class"}
           </h3>
         </div>
         <div className="divide-y divide-border max-h-96 overflow-y-auto">
@@ -237,7 +282,7 @@ function AttendancePage() {
                         {student.first_name} {student.last_name}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {student.admission_number}
+                        {student.admission_number} • {student.gender === "male" ? "Boy" : "Girl"}
                       </p>
                     </div>
                   </div>
@@ -289,7 +334,7 @@ function AttendancePage() {
             })
           ) : (
             <div className="p-8 text-center text-muted-foreground">
-              No students in this class or select a class
+              No {getGenderLabel().toLowerCase()} in this class or select a class
             </div>
           )}
         </div>

@@ -1057,6 +1057,7 @@ export const useDutiesByTeacher = (teacherId: string) => {
   return useQuery({
     queryKey: QUERY_KEYS.dutiesByTeacher(teacherId),
     queryFn: () => dutyService.getByTeacherId(teacherId),
+    enabled: !!teacherId,
     staleTime: 5 * 60 * 1000,
   });
 };

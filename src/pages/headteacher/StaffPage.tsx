@@ -506,11 +506,15 @@ const StaffPage = () => {
                                           </SelectTrigger>
                                           <SelectContent>
                                             {classes
-                                              .filter(
-                                                (c: any) =>
-                                                  !c.teacher_id ||
-                                                  c.teacher_id === teacher.id
-                                              )
+                                              .filter((c: any) => {
+                                                // show unassigned classes or classes already assigned to this teacher
+                                                if (!c.teacher_id) return true;
+                                                try {
+                                                  return String(c.teacher_id) === String(teacher.id);
+                                                } catch (e) {
+                                                  return false;
+                                                }
+                                              })
                                               .map((cls: any) => (
                                                 <SelectItem
                                                   key={cls.id || cls._id}

@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Users, Search } from "lucide-react";
-import { useStudents, useClasses, useUpdateStudent, useAttendance } from "@/hooks/useDatabase";
+import { useStudents, useClasses, useUpdateStudent, useAttendance, useMarks } from "@/hooks/useDatabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -61,9 +61,10 @@ const columns = [
 ];
 function TeacherStudentsPage() {
   const { user } = useAuth();
-  const { data: students = [] } = useStudents();
-  const { data: classes = [] } = useClasses();
-  const { data: allAttendance = [] } = useAttendance();
+  const { data: students = [], isLoading: studentsLoading, isError: studentsError, error: studentsErrorObj } = useStudents();
+  const { data: classes = [], isLoading: classesLoading, isError: classesError, error: classesErrorObj } = useClasses();
+  const { data: allAttendance = [], isLoading: attendanceLoading, isError: attendanceError, error: attendanceErrorObj } = useAttendance();
+  const { data: allMarks = [], isLoading: marksLoading, isError: marksError, error: marksErrorObj } = useMarks();
   const updateStudent = useUpdateStudent();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -82,9 +83,53 @@ function TeacherStudentsPage() {
     return classes.filter((c) => c.teacher_id === user.id);
   }, [classes, user]);
 
+  // Log comprehensive data for debugging
+  useEffect(() => {
+    console.log("=== TeacherStudentsPage Debug ===");
+    console.log("User:", user);
+    console.log("Loading states:", { studentsLoading, classesLoading, attendanceLoading, marksLoading });
+    console.log("Error states:", { studentsError, classesError, attendanceError, marksError });
+    console.log("Data loaded:", {
+      students: students.length,
+      classes: classes.length,
+      attendance: allAttendance.length,
+      marks: allMarks.length,
+    });
+    console.log("Students data:", students);
+    console.log("Classes data:", classes);
+    if (studentsError) console.error("Students error:", studentsErrorObj);
+    if (classesError) console.error("Classes error:", classesErrorObj);
+    if (attendanceError) console.error("Attendance error:", attendanceErrorObj);
+    if (marksError) console.error("Marks error:", marksErrorObj);
+  }, [studentsLoading, classesLoading, attendanceLoading, marksLoading, studentsError, classesError, attendanceError, marksError, students.length, classes.length, allAttendance.length, allMarks.length]);
+
   useEffect(() => {
     if (!selectedClass && teacherClasses.length > 0) setSelectedClass(teacherClasses[0].id);
   }, [teacherClasses, selectedClass]);
+
+  // Calculate average grade for a student
+  const getAverageGrade = (studentId: string, classId: string): string => {
+    const studentMarks = allMarks.filter(
+      (m: any) => m.student_id === studentId && m.class_id === classId
+    );
+
+    if (studentMarks.length === 0) return "-";
+
+    // Calculate average percentage
+    const totalObtained = studentMarks.reduce((sum, m: any) => sum + m.marks_obtained, 0);
+    const totalMarks = studentMarks.reduce((sum, m: any) => sum + m.total_marks, 0);
+
+    if (totalMarks === 0) return "-";
+
+    const averagePercentage = (totalObtained / totalMarks) * 100;
+
+    // Convert to grade
+    if (averagePercentage >= 90) return "A";
+    if (averagePercentage >= 80) return "B";
+    if (averagePercentage >= 70) return "C";
+    if (averagePercentage >= 60) return "D";
+    return "F";
+  };
 
   // Calculate attendance percentage for each student
   const getAttendancePercentage = (studentId: string, classId: string): string => {
@@ -258,7 +303,7 @@ function TeacherStudentsPage() {
           class: classes.find((c: any) => (c.id || c._id) === s.class_id)?.class_name || "-",
           email: s.email,
           attendance: getAttendancePercentage(s.id || s._id, selectedClass),
-          avgGrade: "-",
+          avgGrade: getAverageGrade(s.id || s._id, selectedClass),
           actions: (
             <div className="flex items-center gap-2">
               <Select 
