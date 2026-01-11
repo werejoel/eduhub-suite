@@ -34,7 +34,6 @@ import {
 } from "recharts";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 const calculateGrade = (marks: number, totalMarks: number) => {
   const percentage = (marks / totalMarks) * 100;
@@ -328,6 +327,8 @@ function TeacherReportsPage() {
         const pdf = new jsPDF("p", "mm", "a4");
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 20;
+        const colWidth = (pageWidth - 2 * margin) / 4;
         let yPosition = 20;
         
         // Title
@@ -337,45 +338,45 @@ function TeacherReportsPage() {
         
         // Summary
         pdf.setFontSize(12);
-        pdf.text(`Class: ${selectedClass?.class_name || "N/A"}`, 20, yPosition);
+        pdf.text(`Class: ${selectedClass?.class_name || "N/A"}`, margin, yPosition);
         yPosition += 8;
-        pdf.text(`Total Students: ${classReportData.studentCount}`, 20, yPosition);
+        pdf.text(`Total Students: ${classReportData.studentCount}`, margin, yPosition);
         yPosition += 8;
-        pdf.text(`Class Average: ${classReportData.averagePercentage}%`, 20, yPosition);
+        pdf.text(`Class Average: ${classReportData.averagePercentage}%`, margin, yPosition);
         yPosition += 8;
-        pdf.text(`Marks Recorded: ${classReportData.totalMarksRecorded}`, 20, yPosition);
+        pdf.text(`Marks Recorded: ${classReportData.totalMarksRecorded}`, margin, yPosition);
         yPosition += 15;
         
-        // Student Performance Table
+        // Student Performance Table Header
         pdf.setFontSize(14);
-        pdf.text("Student Performance", 20, yPosition);
+        pdf.text("Student Performance", margin, yPosition);
         yPosition += 10;
         
+        // Table headers
         pdf.setFontSize(10);
-        const tableData = classReportData.studentPerformance.map((student) => [
-          student.name,
-          `${student.marks}/${student.total}`,
-          `${student.percentage}%`,
-          student.grade,
-        ]);
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFillColor(0, 102, 204);
+        pdf.rect(margin, yPosition - 5, pageWidth - 2 * margin, 7, "F");
+        pdf.text("Student Name", margin + 2, yPosition);
+        pdf.text("Marks", margin + 85, yPosition);
+        pdf.text("Percentage", margin + 105, yPosition);
+        pdf.text("Grade", margin + 155, yPosition);
+        yPosition += 10;
         
-        (pdf as any).autoTable({
-          startY: yPosition,
-          head: [["Student Name", "Marks", "Percentage", "Grade"]],
-          body: tableData,
-          margin: { left: 20, right: 20 },
-          didDrawPage: (data: any) => {
-            const pageSize = pdf.internal.pageSize;
-            const pageHeight = pageSize.getHeight();
-            const footerY = pageHeight - 10;
-            pdf.setFontSize(10);
-            pdf.text(
-              `Page ${data.pageNumber}`,
-              pageWidth / 2,
-              footerY,
-              { align: "center" }
-            );
-          },
+        // Table data
+        pdf.setTextColor(0, 0, 0);
+        let rowCount = 0;
+        classReportData.studentPerformance.forEach((student) => {
+          if (yPosition > pageHeight - 20) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+          pdf.text(student.name, margin + 2, yPosition);
+          pdf.text(`${student.marks}/${student.total}`, margin + 85, yPosition);
+          pdf.text(`${student.percentage}%`, margin + 105, yPosition);
+          pdf.text(student.grade, margin + 155, yPosition);
+          yPosition += 8;
+          rowCount++;
         });
         
         pdf.save(`Class_Report_${selectedClass?.class_name}_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -383,6 +384,8 @@ function TeacherReportsPage() {
       } else if (reportType === "student" && studentReportData) {
         const pdf = new jsPDF("p", "mm", "a4");
         const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 20;
         let yPosition = 20;
         
         // Title
@@ -394,48 +397,47 @@ function TeacherReportsPage() {
         pdf.setFontSize(12);
         pdf.text(
           `Student: ${studentReportData.student.first_name} ${studentReportData.student.last_name}`,
-          20,
+          margin,
           yPosition
         );
         yPosition += 8;
-        pdf.text(`Total Marks: ${studentReportData.totalMarksObtained}/${studentReportData.totalPossible}`, 20, yPosition);
+        pdf.text(`Total Marks: ${studentReportData.totalMarksObtained}/${studentReportData.totalPossible}`, margin, yPosition);
         yPosition += 8;
-        pdf.text(`Overall Percentage: ${studentReportData.overallPercentage}%`, 20, yPosition);
+        pdf.text(`Overall Percentage: ${studentReportData.overallPercentage}%`, margin, yPosition);
         yPosition += 8;
-        pdf.text(`Overall Grade: ${studentReportData.overallGrade}`, 20, yPosition);
+        pdf.text(`Overall Grade: ${studentReportData.overallGrade}`, margin, yPosition);
         yPosition += 15;
         
-        // Exam Performance Table
+        // Exam Performance Table Header
         pdf.setFontSize(14);
-        pdf.text("Exam-wise Performance", 20, yPosition);
+        pdf.text("Exam-wise Performance", margin, yPosition);
         yPosition += 10;
         
+        // Table headers
         pdf.setFontSize(10);
-        const tableData = studentReportData.examSummary.map((exam) => [
-          exam.exam,
-          `${exam.marks}/${exam.total}`,
-          `${exam.percentage}%`,
-          exam.grade,
-          exam.subjects.toString(),
-        ]);
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFillColor(0, 102, 204);
+        pdf.rect(margin, yPosition - 5, pageWidth - 2 * margin, 7, "F");
+        pdf.text("Exam Type", margin + 2, yPosition);
+        pdf.text("Marks", margin + 50, yPosition);
+        pdf.text("Percentage", margin + 80, yPosition);
+        pdf.text("Grade", margin + 130, yPosition);
+        pdf.text("Subjects", margin + 155, yPosition);
+        yPosition += 10;
         
-        (pdf as any).autoTable({
-          startY: yPosition,
-          head: [["Exam Type", "Marks", "Percentage", "Grade", "Subjects"]],
-          body: tableData,
-          margin: { left: 20, right: 20 },
-          didDrawPage: (data: any) => {
-            const pageSize = pdf.internal.pageSize;
-            const pageHeight = pageSize.getHeight();
-            const footerY = pageHeight - 10;
-            pdf.setFontSize(10);
-            pdf.text(
-              `Page ${data.pageNumber}`,
-              pageWidth / 2,
-              footerY,
-              { align: "center" }
-            );
-          },
+        // Table data
+        pdf.setTextColor(0, 0, 0);
+        studentReportData.examSummary.forEach((exam) => {
+          if (yPosition > pageHeight - 20) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+          pdf.text(exam.exam, margin + 2, yPosition);
+          pdf.text(`${exam.marks}/${exam.total}`, margin + 50, yPosition);
+          pdf.text(`${exam.percentage}%`, margin + 80, yPosition);
+          pdf.text(exam.grade, margin + 130, yPosition);
+          pdf.text(exam.subjects.toString(), margin + 155, yPosition);
+          yPosition += 8;
         });
         
         pdf.save(
