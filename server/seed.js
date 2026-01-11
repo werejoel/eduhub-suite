@@ -133,6 +133,40 @@ async function seed() {
     ]);
     console.log(`✓ Created ${classes.length} classes`);
 
+    // Seed Dormitories (before students so we can assign them)
+    console.log('Seeding dormitories...');
+    const dormitories = await Dormitory.insertMany([
+      {
+        dormitory_name: 'Boys Hostel A',
+        dormitory_type: 'boys',
+        capacity: 100,
+        current_occupancy: 87,
+        location: 'East Wing',
+      },
+      {
+        dormitory_name: 'Boys Hostel B',
+        dormitory_type: 'boys',
+        capacity: 80,
+        current_occupancy: 65,
+        location: 'West Wing',
+      },
+      {
+        dormitory_name: 'Girls Hostel A',
+        dormitory_type: 'girls',
+        capacity: 90,
+        current_occupancy: 78,
+        location: 'South Wing',
+      },
+      {
+        dormitory_name: 'Girls Hostel B',
+        dormitory_type: 'girls',
+        capacity: 70,
+        current_occupancy: 62,
+        location: 'North Wing',
+      },
+    ]);
+    console.log(`✓ Created ${dormitories.length} dormitories`);
+
     // Seed Students
     console.log('Seeding students...');
     const students = await Student.insertMany([
@@ -147,6 +181,9 @@ async function seed() {
         class_id: classes[0]._id.toString(),
         enrollment_date: '2023-01-10',
         status: 'active',
+        dormitory_id: dormitories[0]._id.toString(),
+        bed_number: 'A101',
+        dormitory_status: 'present',
       },
       {
         admission_number: 'SMS002',
@@ -159,6 +196,9 @@ async function seed() {
         class_id: classes[0]._id.toString(),
         enrollment_date: '2023-01-10',
         status: 'active',
+        dormitory_id: dormitories[2]._id.toString(),
+        bed_number: 'A201',
+        dormitory_status: 'present',
       },
       {
         admission_number: 'SMS003',
@@ -171,6 +211,9 @@ async function seed() {
         class_id: classes[1]._id.toString(),
         enrollment_date: '2023-01-10',
         status: 'active',
+        dormitory_id: dormitories[0]._id.toString(),
+        bed_number: 'A102',
+        dormitory_status: 'present',
       },
       {
         admission_number: 'SMS004',
@@ -183,6 +226,9 @@ async function seed() {
         class_id: classes[1]._id.toString(),
         enrollment_date: '2023-01-10',
         status: 'active',
+        dormitory_id: dormitories[2]._id.toString(),
+        bed_number: 'A202',
+        dormitory_status: 'absent',
       },
       {
         admission_number: 'SMS005',
@@ -195,6 +241,9 @@ async function seed() {
         class_id: classes[2]._id.toString(),
         enrollment_date: '2022-01-10',
         status: 'active',
+        dormitory_id: dormitories[1]._id.toString(),
+        bed_number: 'B105',
+        dormitory_status: 'sick',
       },
       {
         admission_number: 'SMS006',
@@ -207,6 +256,9 @@ async function seed() {
         class_id: classes[2]._id.toString(),
         enrollment_date: '2022-01-10',
         status: 'active',
+        dormitory_id: dormitories[3]._id.toString(),
+        bed_number: 'B203',
+        dormitory_status: 'present',
       },
       {
         admission_number: 'SMS007',
@@ -219,6 +271,9 @@ async function seed() {
         class_id: classes[3]._id.toString(),
         enrollment_date: '2021-01-10',
         status: 'active',
+        dormitory_id: dormitories[1]._id.toString(),
+        bed_number: 'B106',
+        dormitory_status: 'not-around',
       },
       {
         admission_number: 'SMS008',
@@ -231,6 +286,9 @@ async function seed() {
         class_id: classes[3]._id.toString(),
         enrollment_date: '2021-01-10',
         status: 'active',
+        dormitory_id: dormitories[3]._id.toString(),
+        bed_number: 'B204',
+        dormitory_status: 'present',
       },
     ]);
     console.log(`✓ Created ${students.length} students`);
@@ -334,41 +392,6 @@ async function seed() {
     });
     const marks = await Mark.insertMany(marksData);
     console.log(`✓ Created ${marks.length} marks records`);
-
-    // Seed Dormitories
-    console.log('Seeding dormitories...');
-    const dormitories = await Dormitory.insertMany([
-      {
-        dormitory_name: 'Boys Hostel A',
-        dormitory_type: 'boys',
-        capacity: 100,
-        current_occupancy: 87,
-        location: 'East Wing',
-      },
-      {
-        dormitory_name: 'Boys Hostel B',
-        dormitory_type: 'boys',
-        capacity: 80,
-        current_occupancy: 65,
-        location: 'West Wing',
-      },
-      {
-        dormitory_name: 'Girls Hostel A',
-        dormitory_type: 'girls',
-        capacity: 90,
-        current_occupancy: 78,
-        location: 'South Wing',
-      },
-      {
-        dormitory_name: 'Girls Hostel B',
-        dormitory_type: 'girls',
-        capacity: 70,
-        current_occupancy: 62,
-        location: 'North Wing',
-      },
-    ]);
-    console.log(`✓ Created ${dormitories.length} dormitories`);
-
     // Seed Store Items
     console.log('Seeding store items...');
     const storeItems = await StoreItem.insertMany([

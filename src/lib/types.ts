@@ -11,6 +11,9 @@ export interface Student {
   class_id: string;
   enrollment_date: string;
   status: "active" | "inactive" | "graduated";
+  dormitory_id?: string;
+  bed_number?: string;
+  dormitory_status?: "present" | "absent" | "sick" | "not-around";
   createdAt: string;
   updatedAt: string;
 }

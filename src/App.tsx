@@ -42,6 +42,8 @@ import DormitoryDashboard from "./pages/dormitory/DormitoryDashboard";
 import DormitoryDetails from "./pages/dormitory/DormitoryDetails";
 import OccupancyReport from "./pages/dormitory/OccupancyReport";
 import AssignStudents from "./pages/dormitory/AssignStudents";
+import StudentStatus from "./pages/dormitory/StudentStatus";
+import DormitoryRequirements from "./pages/dormitory/DormitoryRequirements";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -358,14 +360,6 @@ const App = () => (
 
             {/* Dormitory Role Routes */}
             <Route
-              path="/dormitory"
-              element={
-                <ProtectedRoute allowedRoles={["dormitory"]}>
-                  <DormitoryDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/dormitory/details"
               element={
                 <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
@@ -386,6 +380,30 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
                   <AssignStudents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dormitory/student-status"
+              element={
+                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                  <StudentStatus />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dormitory/requirements"
+              element={
+                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                  <DormitoryRequirements />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dormitory"
+              element={
+                <ProtectedRoute allowedRoles={["dormitory"]}>
+                  <DormitoryDashboard />
                 </ProtectedRoute>
               }
             />
