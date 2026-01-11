@@ -3,7 +3,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import PageHeader from "@/components/dashboard/PageHeader";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Users, FileText, CheckCircle, Loader, AlertCircle } from "lucide-react";
+import { BookOpen, Users, FileText, CheckCircle, Loader, AlertCircle, BarChart3 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useClasses, useStudents, useMarks, useAttendance, useDutiesByTeacher, useUpdateDuty } from "@/hooks/useDatabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -446,6 +446,32 @@ function TeacherDashboard() {
                     className="text-sm font-medium text-green-600 hover:text-green-700 underline"
                   >
                     Go to Attendance →
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.0 }}
+              className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl p-6 border border-indigo-200 shadow-md"
+            >
+              <div className="flex items-start gap-4">
+                <div className="bg-indigo-500 p-3 rounded-xl">
+                  <BarChart3 className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 mb-1">Generate Reports</h4>
+                  <p className="text-sm text-gray-700 mb-3">View comprehensive student performance reports with grades, statistics, and analytics across all exams.</p>
+                  <button
+                    onClick={() => {
+                      const firstClassId = teacherClasses && teacherClasses.length > 0 ? teacherClasses[0].id : null;
+                      navigate(firstClassId ? `/teacher/reports?classId=${firstClassId}` : "/teacher/reports");
+                    }}
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-700 underline"
+                  >
+                    View Reports →
                   </button>
                 </div>
               </div>

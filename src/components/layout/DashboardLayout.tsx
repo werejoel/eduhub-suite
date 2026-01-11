@@ -57,6 +57,7 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Students", icon: Users, href: "/teacher/students" },
     { label: "Marks", icon: FileText, href: "/teacher/marks" },
     { label: "Attendance", icon: GraduationCap, href: "/teacher/attendance" },
+    { label: "Reports", icon: FileText, href: "/teacher/reports" },
     { label: "Settings", icon: Settings, href: "/settings" },
   ],
   headteacher: [

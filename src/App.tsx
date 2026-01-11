@@ -50,6 +50,7 @@ import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import MarksPage from "./pages/teacher/MarksPage";
 import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
 import AttendancePage from "./pages/teacher/AttendancePage";
+import TeacherReportsPage from "./pages/teacher/TeacherReportsPage";
 
 // Burser Pages
 import BurserDashboard from "./pages/burser/BurserDashboard";
@@ -202,6 +203,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["teacher"]}>
                   <AttendancePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/reports"
+              element={
+                <ProtectedRoute allowedRoles={["teacher"]}>
+                  <TeacherReportsPage />
                 </ProtectedRoute>
               }
             />
