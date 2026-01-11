@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Search, Save, Edit2, Trash2, Plus } from "lucide-react";
+import { FileText, Search, Save, Edit2, Trash2, Plus, Loader } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
@@ -97,6 +97,9 @@ function MarksPage() {
   const createMutation = useCreateMark();
   const updateMutation = useUpdateMark();
   const deleteMutation = useDeleteMark();
+
+  const loading = classesLoading || studentsLoading || marksLoading;
+  const anyError = classesError || studentsError || marksError;
 
   // Log comprehensive data for debugging
   useEffect(() => {
@@ -191,6 +194,16 @@ function MarksPage() {
         description="Add, edit and manage student marks"
         icon={FileText}
       />
+
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      )}
+
+      {anyError && (
+        <div className="p-4 bg-red-50 rounded-md mb-4 text-sm text-red-700">Some data failed to load from the backend. Check your server or network and refresh.</div>
+      )}
 
       {/* Filters */}
       <motion.div
