@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -21,6 +21,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useItemRequests } from "@/hooks/useDatabase";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface NavItem {
   label: string;
@@ -122,8 +128,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Always fetch item requests (hook must be called unconditionally)
+  const { data: itemRequests = [] } = useItemRequests();
 
   if (!user) {
     return null; // ProtectedRoute should handle this, but just in case
@@ -132,6 +143,39 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const role = user.role;
   const userName = `${user.first_name} ${user.last_name}`;
   const items = navItems[role] || [];
+
+  // Count pending notifications (pending item requests) - only for admin
+  const pendingCount = useMemo(() => {
+    if (role !== 'admin') return 0;
+    return (itemRequests as any[]).filter((r: any) => r.status === 'pending').length;
+  }, [itemRequests, role]);
+
+  // Search through navigation items
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    const results: any[] = [];
+    
+    items.forEach((item) => {
+      if (item.label.toLowerCase().includes(query)) {
+        results.push({ label: item.label, href: item.href });
+      }
+      if (item.children) {
+        item.children.forEach((child) => {
+          if (child.label.toLowerCase().includes(query)) {
+            results.push({ label: `${item.label} > ${child.label}`, href: child.href });
+          }
+        });
+      }
+    });
+    return results;
+  }, [searchQuery, items]);
+
+  const handleNavigate = (href: string) => {
+    navigate(href);
+    setSearchQuery("");
+    setSearchOpen(false);
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -313,20 +357,111 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <div className="hidden sm:flex items-center gap-2 bg-muted rounded-lg px-4 py-2">
-                <Search className="w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="bg-transparent border-none outline-none text-sm w-48"
-                />
+              
+              {/* Search Bar */}
+              <div className="relative hidden sm:block">
+                <div className="flex items-center gap-2 bg-muted rounded-lg px-4 py-2 hover:bg-muted/80 transition">
+                  <Search className="w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search pages..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setSearchOpen(true)}
+                    onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
+                    className="bg-transparent border-none outline-none text-sm w-48 cursor-text"
+                  />
+                </div>
+                {searchOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-lg p-0 z-50">
+                    <div className="space-y-1 p-2">
+                      {searchResults.length > 0 ? (
+                        searchResults.map((result, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleNavigate(result.href)}
+                            className="w-full text-left px-3 py-2 rounded-md hover:bg-muted text-sm transition"
+                          >
+                            {result.label}
+                          </button>
+                        ))
+                      ) : searchQuery.trim() ? (
+                        <p className="px-3 py-2 text-sm text-muted-foreground">No results found</p>
+                      ) : (
+                        <p className="px-3 py-2 text-xs text-muted-foreground">Type to search pages...</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button className="relative p-2 rounded-lg hover:bg-muted">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-              </button>
+              {/* Notifications - Only for Admin */}
+              {role === 'admin' && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="relative p-2 rounded-lg hover:bg-muted transition">
+                      <Bell className="w-5 h-5" />
+                      {pendingCount > 0 && (
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-sm">Notifications</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {pendingCount} pending item request{pendingCount !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      {pendingCount > 0 ? (
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {(itemRequests as any[])
+                            .filter((r) => r.status === 'pending')
+                            .slice(0, 5)
+                            .map((request) => (
+                              <div
+                                key={request._id}
+                                className="p-2 bg-muted rounded-md border-l-2 border-amber-500"
+                              >
+                                <p className="text-sm font-medium">{request.item_name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Requested by: {request.requested_by}
+                                </p>
+                              </div>
+                            ))}
+                          {pendingCount > 5 && (
+                            <p className="text-xs text-muted-foreground text-center py-2">
+                              +{pendingCount - 5} more pending requests
+                            </p>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigate('/admin/item-requests');
+                            }}
+                            className="w-full"
+                          >
+                            View All Requests
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No pending notifications
+                        </p>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+              {role !== 'admin' && (
+                <button className="p-2 rounded-lg hover:bg-muted transition">
+                  <Bell className="w-5 h-5" />
+                </button>
+              )}
+
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
                   {userName

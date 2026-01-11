@@ -32,17 +32,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-
-const calculateGrade = (marks: number, totalMarks: number) => {
-  const percentage = (marks / totalMarks) * 100;
-  if (percentage >= 90) return "A";
-  if (percentage >= 80) return "B";
-  if (percentage >= 70) return "C";
-  if (percentage >= 60) return "D";
-  return "F";
-};
+import { calculateGrade, exportToExcel, exportToPDF } from "@/lib/exportUtils";
 
 const EXAM_TYPES = [
   "Beginning-of-Term",
@@ -214,240 +204,132 @@ function TeacherReportsPage() {
     };
   }, [selectedClassId, classStudents, classMarks, classes]);
 
-  const handleExportPDF = () => {
-    // Placeholder for PDF export functionality
-    toast.success("Exporting report...");
-    // In a real implementation, you would use a library like jsPDF
-    // to generate a PDF report
-  };
-
-  const exportToExcel = () => {
-    try {
-      const selectedClass = classes.find((c) => c.id === selectedClassId);
-      
-      if (reportType === "class" && classReportData) {
-        // Create workbook
-        const wb = XLSX.utils.book_new();
-        
-        // Summary sheet
-        const summaryData = [
-          ["Class Report Summary"],
-          ["Class Name", selectedClass?.class_name || "N/A"],
-          ["Total Students", classReportData.studentCount],
-          ["Marks Recorded", classReportData.totalMarksRecorded],
-          ["Class Average", `${classReportData.averagePercentage}%`],
-          ["Exams Recorded", classReportData.examTypeSummary.length],
-          [],
-          ["Grade Distribution"],
-          ["Grade", "Count"],
-          ...Object.entries(classReportData.gradeDistribution).map(([grade, count]) => [
-            grade,
-            count,
-          ]),
-        ];
-        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
-        
-        // Student Performance sheet
-        const studentData = [
-          ["Student Performance"],
-          ["Student Name", "Marks Obtained", "Total Marks", "Percentage", "Grade"],
-          ...classReportData.studentPerformance.map((student) => [
-            student.name,
-            student.marks,
-            student.total,
-            `${student.percentage}%`,
-            student.grade,
-          ]),
-        ];
-        const studentSheet = XLSX.utils.aoa_to_sheet(studentData);
-        XLSX.utils.book_append_sheet(wb, studentSheet, "Student Performance");
-        
-        // Exam Summary sheet
-        const examData = [
-          ["Exam Performance Summary"],
-          ["Exam Type", "Average Percentage", "Students", "Marks Count"],
-          ...classReportData.examTypeSummary.map((exam) => [
-            exam.exam,
-            `${exam.percentage}%`,
-            exam.studentCount,
-            exam.marksCount,
-          ]),
-        ];
-        const examSheet = XLSX.utils.aoa_to_sheet(examData);
-        XLSX.utils.book_append_sheet(wb, examSheet, "Exam Performance");
-        
-        // Save file
-        XLSX.writeFile(wb, `Class_Report_${selectedClass?.class_name}_${new Date().toISOString().split('T')[0]}.xlsx`);
-        toast.success("Class report exported to Excel");
-      } else if (reportType === "student" && studentReportData) {
-        // Create workbook
-        const wb = XLSX.utils.book_new();
-        
-        // Summary sheet
-        const summaryData = [
-          ["Student Report"],
-          ["Student Name", `${studentReportData.student.first_name} ${studentReportData.student.last_name}`],
-          ["Total Marks", `${studentReportData.totalMarksObtained}/${studentReportData.totalPossible}`],
-          ["Overall Percentage", `${studentReportData.overallPercentage}%`],
-          ["Overall Grade", studentReportData.overallGrade],
-          [],
-          ["Exam-wise Performance"],
-          ["Exam Type", "Marks Obtained", "Total Marks", "Percentage", "Grade", "Subjects"],
-          ...studentReportData.examSummary.map((exam) => [
-            exam.exam,
-            exam.marks,
-            exam.total,
-            `${exam.percentage}%`,
-            exam.grade,
-            exam.subjects,
-          ]),
-        ];
-        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, summarySheet, "Student Report");
-        
-        // Save file
-        XLSX.writeFile(
-          wb,
-          `Student_Report_${studentReportData.student.first_name}_${studentReportData.student.last_name}_${new Date().toISOString().split('T')[0]}.xlsx`
-        );
-        toast.success("Student report exported to Excel");
-      }
-    } catch (error) {
-      console.error("Export error:", error);
-      toast.error("Failed to export report");
+  const handleExportExcel = () => {
+    const selectedClass = classes.find((c) => c.id === selectedClassId);
+    
+    if (reportType === "class" && classReportData) {
+      exportToExcel({
+        filename: `Class_Report_${selectedClass?.class_name}_${new Date().toISOString().split('T')[0]}.xlsx`,
+        sheets: [
+          {
+            name: "Summary",
+            data: [
+              ["Class Report Summary"],
+              ["Class Name", selectedClass?.class_name || "N/A"],
+              ["Total Students", classReportData.studentCount],
+              ["Marks Recorded", classReportData.totalMarksRecorded],
+              ["Class Average", `${classReportData.averagePercentage}%`],
+              ["Exams Recorded", classReportData.examTypeSummary.length],
+              [],
+              ["Grade Distribution"],
+              ["Grade", "Count"],
+              ...Object.entries(classReportData.gradeDistribution).map(([grade, count]) => [
+                grade,
+                count,
+              ]),
+            ],
+          },
+          {
+            name: "Student Performance",
+            data: [
+              ["Student Performance"],
+              ["Student Name", "Marks Obtained", "Total Marks", "Percentage", "Grade"],
+              ...classReportData.studentPerformance.map((student) => [
+                student.name,
+                student.marks,
+                student.total,
+                `${student.percentage}%`,
+                student.grade,
+              ]),
+            ],
+          },
+          {
+            name: "Exam Performance",
+            data: [
+              ["Exam Performance Summary"],
+              ["Exam Type", "Average Percentage", "Students", "Marks Count"],
+              ...classReportData.examTypeSummary.map((exam) => [
+                exam.exam,
+                `${exam.percentage}%`,
+                exam.studentCount,
+                exam.marksCount,
+              ]),
+            ],
+          },
+        ],
+      });
+    } else if (reportType === "student" && studentReportData) {
+      exportToExcel({
+        filename: `Student_Report_${studentReportData.student.first_name}_${studentReportData.student.last_name}_${new Date().toISOString().split('T')[0]}.xlsx`,
+        sheets: [
+          {
+            name: "Student Report",
+            data: [
+              ["Student Report"],
+              ["Student Name", `${studentReportData.student.first_name} ${studentReportData.student.last_name}`],
+              ["Total Marks", `${studentReportData.totalMarksObtained}/${studentReportData.totalPossible}`],
+              ["Overall Percentage", `${studentReportData.overallPercentage}%`],
+              ["Overall Grade", studentReportData.overallGrade],
+              [],
+              ["Exam-wise Performance"],
+              ["Exam Type", "Marks Obtained", "Total Marks", "Percentage", "Grade", "Subjects"],
+              ...studentReportData.examSummary.map((exam) => [
+                exam.exam,
+                exam.marks,
+                exam.total,
+                `${exam.percentage}%`,
+                exam.grade,
+                exam.subjects,
+              ]),
+            ],
+          },
+        ],
+      });
     }
   };
 
-  const exportToPDF = async () => {
-    try {
-      const selectedClass = classes.find((c) => c.id === selectedClassId);
-      
-      if (reportType === "class" && classReportData) {
-        const pdf = new jsPDF("p", "mm", "a4");
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const margin = 20;
-        const colWidth = (pageWidth - 2 * margin) / 4;
-        let yPosition = 20;
-        
-        // Title
-        pdf.setFontSize(18);
-        pdf.text("Class Report", pageWidth / 2, yPosition, { align: "center" });
-        yPosition += 15;
-        
-        // Summary
-        pdf.setFontSize(12);
-        pdf.text(`Class: ${selectedClass?.class_name || "N/A"}`, margin, yPosition);
-        yPosition += 8;
-        pdf.text(`Total Students: ${classReportData.studentCount}`, margin, yPosition);
-        yPosition += 8;
-        pdf.text(`Class Average: ${classReportData.averagePercentage}%`, margin, yPosition);
-        yPosition += 8;
-        pdf.text(`Marks Recorded: ${classReportData.totalMarksRecorded}`, margin, yPosition);
-        yPosition += 15;
-        
-        // Student Performance Table Header
-        pdf.setFontSize(14);
-        pdf.text("Student Performance", margin, yPosition);
-        yPosition += 10;
-        
-        // Table headers
-        pdf.setFontSize(10);
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFillColor(0, 102, 204);
-        pdf.rect(margin, yPosition - 5, pageWidth - 2 * margin, 7, "F");
-        pdf.text("Student Name", margin + 2, yPosition);
-        pdf.text("Marks", margin + 85, yPosition);
-        pdf.text("Percentage", margin + 105, yPosition);
-        pdf.text("Grade", margin + 155, yPosition);
-        yPosition += 10;
-        
-        // Table data
-        pdf.setTextColor(0, 0, 0);
-        let rowCount = 0;
-        classReportData.studentPerformance.forEach((student) => {
-          if (yPosition > pageHeight - 20) {
-            pdf.addPage();
-            yPosition = 20;
-          }
-          pdf.text(student.name, margin + 2, yPosition);
-          pdf.text(`${student.marks}/${student.total}`, margin + 85, yPosition);
-          pdf.text(`${student.percentage}%`, margin + 105, yPosition);
-          pdf.text(student.grade, margin + 155, yPosition);
-          yPosition += 8;
-          rowCount++;
-        });
-        
-        pdf.save(`Class_Report_${selectedClass?.class_name}_${new Date().toISOString().split('T')[0]}.pdf`);
-        toast.success("Class report exported to PDF");
-      } else if (reportType === "student" && studentReportData) {
-        const pdf = new jsPDF("p", "mm", "a4");
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const margin = 20;
-        let yPosition = 20;
-        
-        // Title
-        pdf.setFontSize(18);
-        pdf.text("Student Report", pageWidth / 2, yPosition, { align: "center" });
-        yPosition += 15;
-        
-        // Summary
-        pdf.setFontSize(12);
-        pdf.text(
-          `Student: ${studentReportData.student.first_name} ${studentReportData.student.last_name}`,
-          margin,
-          yPosition
-        );
-        yPosition += 8;
-        pdf.text(`Total Marks: ${studentReportData.totalMarksObtained}/${studentReportData.totalPossible}`, margin, yPosition);
-        yPosition += 8;
-        pdf.text(`Overall Percentage: ${studentReportData.overallPercentage}%`, margin, yPosition);
-        yPosition += 8;
-        pdf.text(`Overall Grade: ${studentReportData.overallGrade}`, margin, yPosition);
-        yPosition += 15;
-        
-        // Exam Performance Table Header
-        pdf.setFontSize(14);
-        pdf.text("Exam-wise Performance", margin, yPosition);
-        yPosition += 10;
-        
-        // Table headers
-        pdf.setFontSize(10);
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFillColor(0, 102, 204);
-        pdf.rect(margin, yPosition - 5, pageWidth - 2 * margin, 7, "F");
-        pdf.text("Exam Type", margin + 2, yPosition);
-        pdf.text("Marks", margin + 50, yPosition);
-        pdf.text("Percentage", margin + 80, yPosition);
-        pdf.text("Grade", margin + 130, yPosition);
-        pdf.text("Subjects", margin + 155, yPosition);
-        yPosition += 10;
-        
-        // Table data
-        pdf.setTextColor(0, 0, 0);
-        studentReportData.examSummary.forEach((exam) => {
-          if (yPosition > pageHeight - 20) {
-            pdf.addPage();
-            yPosition = 20;
-          }
-          pdf.text(exam.exam, margin + 2, yPosition);
-          pdf.text(`${exam.marks}/${exam.total}`, margin + 50, yPosition);
-          pdf.text(`${exam.percentage}%`, margin + 80, yPosition);
-          pdf.text(exam.grade, margin + 130, yPosition);
-          pdf.text(exam.subjects.toString(), margin + 155, yPosition);
-          yPosition += 8;
-        });
-        
-        pdf.save(
-          `Student_Report_${studentReportData.student.first_name}_${studentReportData.student.last_name}_${new Date().toISOString().split('T')[0]}.pdf`
-        );
-        toast.success("Student report exported to PDF");
-      }
-    } catch (error) {
-      console.error("PDF export error:", error);
-      toast.error("Failed to export report to PDF");
+  const handleExportPDF = () => {
+    const selectedClass = classes.find((c) => c.id === selectedClassId);
+
+    if (reportType === "class" && classReportData) {
+      exportToPDF({
+        filename: `Class_Report_${selectedClass?.class_name}_${new Date().toISOString().split('T')[0]}.pdf`,
+        title: "Class Report",
+        summaryItems: [
+          { label: "Class", value: selectedClass?.class_name || "N/A" },
+          { label: "Total Students", value: classReportData.studentCount },
+          { label: "Class Average", value: `${classReportData.averagePercentage}%` },
+          { label: "Marks Recorded", value: classReportData.totalMarksRecorded },
+        ],
+        tableTitle: "Student Performance",
+        tableHeaders: ["Student Name", "Marks", "Percentage", "Grade"],
+        tableData: classReportData.studentPerformance.map((student) => [
+          student.name,
+          `${student.marks}/${student.total}`,
+          `${student.percentage}%`,
+          student.grade,
+        ]),
+      });
+    } else if (reportType === "student" && studentReportData) {
+      exportToPDF({
+        filename: `Student_Report_${studentReportData.student.first_name}_${studentReportData.student.last_name}_${new Date().toISOString().split('T')[0]}.pdf`,
+        title: "Student Report",
+        summaryItems: [
+          { label: "Student", value: `${studentReportData.student.first_name} ${studentReportData.student.last_name}` },
+          { label: "Total Marks", value: `${studentReportData.totalMarksObtained}/${studentReportData.totalPossible}` },
+          { label: "Overall Percentage", value: `${studentReportData.overallPercentage}%` },
+          { label: "Overall Grade", value: studentReportData.overallGrade },
+        ],
+        tableTitle: "Exam-wise Performance",
+        tableHeaders: ["Exam Type", "Marks", "Percentage", "Grade", "Subjects"],
+        tableData: studentReportData.examSummary.map((exam) => [
+          exam.exam,
+          `${exam.marks}/${exam.total}`,
+          `${exam.percentage}%`,
+          exam.grade,
+          String(exam.subjects),
+        ]),
+      });
     }
   };
 
@@ -619,11 +501,11 @@ function TeacherReportsPage() {
                 <div className="p-6 border-b border-border flex justify-between items-center">
                   <h3 className="text-lg font-semibold">Student Performance</h3>
                   <div className="flex gap-2">
-                    <Button onClick={exportToExcel} variant="outline" size="sm">
+                    <Button onClick={handleExportExcel} variant="outline" size="sm">
                       <Download className="w-4 h-4 mr-2" />
                       Export Excel
                     </Button>
-                    <Button onClick={exportToPDF} variant="outline" size="sm">
+                    <Button onClick={handleExportPDF} variant="outline" size="sm">
                       <Download className="w-4 h-4 mr-2" />
                       Export PDF
                     </Button>
@@ -758,11 +640,11 @@ function TeacherReportsPage() {
                 <div className="p-6 border-b border-border flex justify-between items-center">
                   <h3 className="text-lg font-semibold">Detailed Exam Results</h3>
                   <div className="flex gap-2">
-                    <Button onClick={exportToExcel} variant="outline" size="sm">
+                    <Button onClick={handleExportExcel} variant="outline" size="sm">
                       <Download className="w-4 h-4 mr-2" />
                       Export Excel
                     </Button>
-                    <Button onClick={exportToPDF} variant="outline" size="sm">
+                    <Button onClick={handleExportPDF} variant="outline" size="sm">
                       <Download className="w-4 h-4 mr-2" />
                       Export PDF
                     </Button>
