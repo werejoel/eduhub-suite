@@ -47,7 +47,6 @@ function TeacherReportsPage() {
   const { data: classes = [], isLoading: classesLoading, isError: classesError } = useClasses();
   const { data: students = [], isLoading: studentsLoading, isError: studentsError } = useStudents();
   const { data: allMarks = [], isLoading: marksLoading, isError: marksError } = useMarks();
-
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [searchParams] = useSearchParams();
@@ -708,5 +707,4 @@ function TeacherReportsPage() {
     </DashboardLayout>
   );
 }
-
 export default TeacherReportsPage;
