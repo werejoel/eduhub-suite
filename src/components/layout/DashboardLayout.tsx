@@ -72,6 +72,14 @@ const navItems: Record<string, NavItem[]> = {
     { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy" },
     { label: "Settings", icon: Settings, href: "/settings" },
   ],
+  dos: [
+    { label: "Dashboard", icon: LayoutDashboard, href: "/dos" },
+    { label: "Manage Classes", icon: BookOpen, href: "/dos/classes" },
+    { label: "Brief Notes", icon: FileText, href: "/dos/notes" },
+    { label: "Termly Reports", icon: FileText, href: "/dos/reports" },
+    { label: "Monitor Teachers", icon: Users, href: "/dos/teachers" },
+    { label: "Settings", icon: Settings, href: "/settings" },
+  ],
   burser: [
     { label: "Dashboard", icon: LayoutDashboard, href: "/burser" },
     { label: "Transactions", icon: DollarSign, href: "/burser" },
@@ -101,6 +109,7 @@ const roleLabels = {
   burser: "Burser",
   store: "Store Manager",
   dormitory: "Dormitory Manager",
+  dos: "Director of Studies",
 };
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {

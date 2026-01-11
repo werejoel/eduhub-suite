@@ -51,6 +51,12 @@ import AttendancePage from "./pages/teacher/AttendancePage";
 
 // Burser Pages
 import BurserDashboard from "./pages/burser/BurserDashboard";
+// Director of Studies
+import DosDashboard from "./pages/dos/DosDashboard";
+import DosClasses from "./pages/dos/ClassesPage";
+import DosNotes from "./pages/dos/NotesPage";
+import DosReports from "./pages/dos/ReportsPage";
+import DosTeachers from "./pages/dos/TeachersPage";
 
 
 const queryClient = new QueryClient();
@@ -68,7 +74,7 @@ const App = () => (
             <Route
               path="/settings"
               element={
-                <ProtectedRoute allowedRoles={["admin", "teacher", "headteacher", "burser", "store", "dormitory"]}>
+                <ProtectedRoute allowedRoles={["admin", "teacher", "headteacher", "dos", "burser", "store", "dormitory"]}>
                   <Settings />
                 </ProtectedRoute>
               }
@@ -294,6 +300,48 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["burser"]}>
                   <BurserDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Director of Studies Routes */}
+            <Route
+              path="/dos"
+              element={
+                <ProtectedRoute allowedRoles={["dos"]}>
+                  <DosDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dos/classes"
+              element={
+                <ProtectedRoute allowedRoles={["dos"]}>
+                  <DosClasses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dos/notes"
+              element={
+                <ProtectedRoute allowedRoles={["dos"]}>
+                  <DosNotes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dos/reports"
+              element={
+                <ProtectedRoute allowedRoles={["dos"]}>
+                  <DosReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dos/teachers"
+              element={
+                <ProtectedRoute allowedRoles={["dos"]}>
+                  <DosTeachers />
                 </ProtectedRoute>
               }
             />

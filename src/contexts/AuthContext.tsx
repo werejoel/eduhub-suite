@@ -61,6 +61,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       setLoading(false);
+
+      // Development helper: seed a test Director of Studies user for local testing
+      if (process.env.NODE_ENV === "development") {
+        const alreadySeeded = localStorage.getItem("eduhub_dev_dos_seeded");
+        if (!alreadySeeded && !token) {
+          // Create an in-memory dev user (no token) so UI can be tested quickly
+          setUser({
+            id: "dev-dos",
+            email: "dos@local.test",
+            first_name: "Director",
+            last_name: "Studies",
+            role: "dos",
+            email_confirmed: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          } as any);
+          localStorage.setItem("eduhub_dev_dos_seeded", "1");
+        }
+      }
     };
     init();
   }, []);

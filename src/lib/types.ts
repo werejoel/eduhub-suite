@@ -20,7 +20,7 @@ export interface Teacher {
   email: string;
   first_name: string;
   last_name: string;
-  role: "teacher" | "headteacher";
+  role: "teacher" | "headteacher" | "dos";
   email_confirmed: boolean;
   phone?: string;
   subject?: string;
@@ -153,6 +153,7 @@ export type UserRole =
   | "admin"
   | "teacher"
   | "headteacher"
+  | "dos"
   | "burser"
   | "store"
   | "dormitory";

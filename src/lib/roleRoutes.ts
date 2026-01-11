@@ -6,6 +6,7 @@ import { UserRole } from './types';
  */
 export const roleRoutes: Record<UserRole, string> = {
   admin: '/admin',
+  dos: '/dos',
   teacher: '/teacher',
   headteacher: '/headteacher',
   burser: '/burser',
