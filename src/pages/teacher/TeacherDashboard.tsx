@@ -7,7 +7,7 @@ import { BookOpen, Users, FileText, CheckCircle, Loader, AlertCircle, BarChart3 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useClasses, useStudents, useMarks, useAttendance, useDutiesByTeacher, useUpdateDuty } from "@/hooks/useDatabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMemo,useEffect } from "react";
+import { useMemo, useEffect } from "react";
 
 
 const gradeDistribution = [
@@ -25,7 +25,7 @@ const columns = [
   { key: "nextClass", label: "Next Class" },
   { key: "room", label: "Room" },
 ];
-function TeacherDashboard() {
+const TeacherDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: classes = [], isLoading: classesLoading, isError: classesError, error: classesErrorObj } = useClasses();
@@ -80,15 +80,15 @@ function TeacherDashboard() {
     return filtered;
   }, [classes, user]);
 
-  // Calculate stats from real data
+  // Calculate stats
   const stats = useMemo(() => {
     const myClassIds = teacherClasses.map(c => c.id);
     const myStudents = students.filter(s => myClassIds.includes(s.class_id));
     const totalStudents = myStudents.length;
-    
+
     // Get today's attendance
     const today = new Date().toISOString().split('T')[0];
-    const todayAttendance = attendance.filter(a => 
+    const todayAttendance = attendance.filter(a =>
       a.attendance_date === today && myClassIds.includes(a.class_id)
     );
     const presentToday = todayAttendance.filter(a => a.status === 'present').length;
@@ -97,40 +97,40 @@ function TeacherDashboard() {
     const absentToday = totalToday - presentToday;
 
     // Pending grades (marks not yet entered for recent exams)
-    const pendingGrades = 0; // This would need more complex logic
+    const pendingGrades = 0;
 
     return [
-      { 
-        title: "My Classes", 
-        value: teacherClasses.length.toString(), 
-        change: "Active classes", 
-        changeType: "neutral" as const, 
-        icon: BookOpen, 
-        iconColor: "bg-primary" 
+      {
+        title: "My Classes",
+        value: teacherClasses.length.toString(),
+        change: "Active classes",
+        changeType: "neutral" as const,
+        icon: BookOpen,
+        iconColor: "bg-primary"
       },
-      { 
-        title: "Total Students", 
-        value: totalStudents.toString(), 
-        change: "Across all classes", 
-        changeType: "neutral" as const, 
-        icon: Users, 
-        iconColor: "bg-success" 
+      {
+        title: "Total Students",
+        value: totalStudents.toString(),
+        change: "Across all classes",
+        changeType: "neutral" as const,
+        icon: Users,
+        iconColor: "bg-success"
       },
-      { 
-        title: "Pending Grades", 
-        value: pendingGrades.toString(), 
-        change: "Awaiting entry", 
-        changeType: "negative" as const, 
-        icon: FileText, 
-        iconColor: "bg-warning" 
+      {
+        title: "Pending Grades",
+        value: pendingGrades.toString(),
+        change: "Awaiting entry",
+        changeType: "negative" as const,
+        icon: FileText,
+        iconColor: "bg-warning"
       },
-      { 
-        title: "Attendance Today", 
-        value: `${attendanceRate}%`, 
-        change: `${absentToday} absent`, 
-        changeType: "positive" as const, 
-        icon: CheckCircle, 
-        iconColor: "bg-secondary" 
+      {
+        title: "Attendance Today",
+        value: `${attendanceRate}%`,
+        change: `${absentToday} absent`,
+        changeType: "positive" as const,
+        icon: CheckCircle,
+        iconColor: "bg-secondary"
       },
     ];
   }, [teacherClasses, students, attendance]);
@@ -142,10 +142,10 @@ function TeacherDashboard() {
       return {
         id: cls.id,
         name: cls.class_name,
-        subject: cls.class_name, // You might want to add subject to classes table
+        subject: cls.class_name,
         students: classStudents.length,
-        nextClass: "Today 9:00 AM", // This would come from a timetable table
-        room: "Room 301", // This would come from classes table
+        nextClass: "Today 9:00 AM",
+        room: "Room 301",
       };
     });
   }, [teacherClasses, students]);
@@ -241,12 +241,12 @@ function TeacherDashboard() {
                     <p className="text-xs text-muted-foreground mt-1">Due: {d.end_date ? new Date(d.end_date).toLocaleDateString() : "-"}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${d.status === 'completed' ? 'bg-green-100 text-green-800' : d.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${d.status === 'completed' ? 'bg-green-100 text-green-800' : d.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 'bg-sidebar text-sidebar-foreground'}`}>
                       {d.status}
                     </span>
                     <div className="flex gap-2">
                       {d.status === 'assigned' && (
-                        <button onClick={() => startDuty(d.id)} className="px-3 py-1 bg-blue-600 text-white rounded">Start</button>
+                        <button onClick={() => startDuty(d.id)} className="px-3 py-1 bg-sidebar text-sidebar-foreground rounded">Start</button>
                       )}
                       {d.status === 'in_progress' && (
                         <button onClick={() => completeDuty(d.id)} className="px-3 py-1 bg-green-600 text-white rounded">Complete</button>
@@ -335,7 +335,7 @@ function TeacherDashboard() {
         </div>
       )}
 
-      {/* Quick Actions - Enhanced - Only show if has classes */}
+      {/* Quick Actions  */}
       {teacherClasses.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -347,7 +347,7 @@ function TeacherDashboard() {
             <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Register Students", description: "Add and manage students", icon: Users, color: "bg-blue-500", route: "/teacher/students" },
+                { label: "Register Students", description: "Add and manage students", icon: Users, color: "bg-sidebar", route: "/teacher/students" },
                 { label: "Enter Marks", description: "Record student grades", icon: FileText, color: "bg-purple-500", route: "/teacher/marks" },
                 { label: "Mark Attendance", description: "Record daily attendance", icon: CheckCircle, color: "bg-green-500", route: "/teacher/attendance" },
               ].map((action) => {
@@ -374,24 +374,24 @@ function TeacherDashboard() {
             </div>
           </div>
 
-          {/* Action Cards with more details */}
+          {/* Action Cards */}
           <div className="grid md:grid-cols-2 gap-4 mt-8">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.7 }}
-              className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 shadow-md"
+              className="bg-sidebar/10 rounded-2xl p-6 border border-sidebar/20 shadow-md"
             >
               <div className="flex items-start gap-4">
-                <div className="bg-blue-500 p-3 rounded-xl">
-                  <Users className="w-6 h-6 text-white" />
+                <div className="bg-sidebar p-3 rounded-xl">
+                  <Users className="w-6 h-6 text-sidebar-foreground" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900 mb-1">Register & Manage Students</h4>
                   <p className="text-sm text-gray-700 mb-3">Register new students to your classes, assign them to different classes, and manage student information.</p>
                   <button
                     onClick={() => navigate("/teacher/students")}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700 underline"
+                    className="text-sm font-medium text-sidebar hover:opacity-75 underline"
                   >
                     Go to Student Management →
                   </button>

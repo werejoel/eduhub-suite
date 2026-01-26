@@ -16,9 +16,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
+/*import {
   Select,
   SelectContent,
   SelectItem,
@@ -26,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+*/
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -48,7 +48,6 @@ const PaymentRequestsPage = () => {
   const { data: teachers = [] } = useTeachers();
   const approveMutation = useApprovePaymentRequest();
   const rejectMutation = useRejectPaymentRequest();
-
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<PaymentRequest | null>(
     null
@@ -329,8 +328,8 @@ const PaymentRequestsPage = () => {
                             Approved{" "}
                             {request.approval_date
                               ? new Date(
-                                  request.approval_date
-                                ).toLocaleDateString()
+                                request.approval_date
+                              ).toLocaleDateString()
                               : ""}
                           </p>
                         </div>

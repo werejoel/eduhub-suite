@@ -26,7 +26,6 @@ import {
   useClasses,
   useStudents,
   useAttendance,
-  useAttendanceByClass,
   useCreateAttendance,
   useUpdateAttendance,
   useDeleteAttendance,
@@ -288,13 +287,12 @@ function AttendancePage() {
                   </div>
                   <div className="flex items-center gap-4">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        status === "present"
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${status === "present"
                           ? "bg-success/10 text-success"
                           : status === "late"
-                          ? "bg-warning/10 text-warning"
-                          : "bg-destructive/10 text-destructive"
-                      }`}
+                            ? "bg-warning/10 text-warning"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </span>

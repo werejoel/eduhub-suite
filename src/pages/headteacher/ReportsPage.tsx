@@ -462,17 +462,16 @@ const HeadteacherReportsPage = () => {
                       <td className="p-3 text-center font-medium">{student.percentage}%</td>
                       <td className="p-3 text-center">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            student.grade === "A"
+                          className={`px-2 py-1 rounded text-xs font-medium ${student.grade === "A"
                               ? "bg-green-100 text-green-800"
                               : student.grade === "B"
-                              ? "bg-blue-100 text-blue-800"
-                              : student.grade === "C"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : student.grade === "D"
-                              ? "bg-orange-100 text-orange-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
+                                ? "bg-blue-100 text-blue-800"
+                                : student.grade === "C"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : student.grade === "D"
+                                    ? "bg-orange-100 text-yellow-800"
+                                    : "bg-red-100 text-red-800"
+                            }`}
                         >
                           {student.grade}
                         </span>

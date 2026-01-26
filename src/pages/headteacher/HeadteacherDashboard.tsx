@@ -36,7 +36,7 @@ const HeadteacherDashboard = () => {
   const { data: marks = [] } = useMarks();
   const { data: fees = [] } = useFees();
 
-  // Calculate stats from real data
+  // Calculate stats
   const stats = useMemo(() => {
     const totalStudents = students.length;
     const totalTeachers = teachers.length;
@@ -51,8 +51,8 @@ const HeadteacherDashboard = () => {
     const passRate =
       totalMarks > 0 ? Math.round((passingMarks / totalMarks) * 100) : 0;
 
-    // Calculate revenue (fees collected)
-    const totalRevenue = fees
+    // Calculate Totalfees (fees collected)
+    const totalFees = fees
       .filter((f) => f.payment_status === "paid")
       .reduce((sum, f) => sum + (f.amount || 0), 0);
 
@@ -100,7 +100,7 @@ const HeadteacherDashboard = () => {
       },
       {
         title: "Revenue",
-        value: formatUGX(totalRevenue, { decimals: 0 }),
+        value: formatUGX(totalFees, { decimals: 0 }),
         change: "This quarter",
         changeType: "neutral" as const,
         icon: DollarSign,

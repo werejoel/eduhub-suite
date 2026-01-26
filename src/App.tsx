@@ -60,6 +60,7 @@ import DosClasses from "./pages/dos/ClassesPage";
 import DosNotes from "./pages/dos/NotesPage";
 import DosReports from "./pages/dos/ReportsPage";
 import DosTeachers from "./pages/dos/TeachersPage";
+import DosCirculars from "./pages/dos/CircularsPage";
 
 
 const queryClient = new QueryClient();
@@ -356,6 +357,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/dos/circulars"
+              element={
+                <ProtectedRoute allowedRoles={["dos"]}>
+                  <DosCirculars />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Store Role Routes */}
             <Route
@@ -371,7 +380,7 @@ const App = () => (
             <Route
               path="/dormitory/details"
               element={
-                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
                   <DormitoryDetails />
                 </ProtectedRoute>
               }
@@ -379,7 +388,7 @@ const App = () => (
             <Route
               path="/dormitory/occupancy"
               element={
-                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
                   <OccupancyReport />
                 </ProtectedRoute>
               }
@@ -387,7 +396,7 @@ const App = () => (
             <Route
               path="/dormitory/assignments"
               element={
-                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
                   <AssignStudents />
                 </ProtectedRoute>
               }
@@ -395,7 +404,7 @@ const App = () => (
             <Route
               path="/dormitory/student-status"
               element={
-                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
                   <StudentStatus />
                 </ProtectedRoute>
               }
@@ -403,7 +412,7 @@ const App = () => (
             <Route
               path="/dormitory/requirements"
               element={
-                <ProtectedRoute allowedRoles={["dormitory","admin","headteacher"]}>
+                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
                   <DormitoryRequirements />
                 </ProtectedRoute>
               }

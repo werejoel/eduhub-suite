@@ -49,7 +49,7 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      // Redirect authenticated users to their dashboard
+      // Redirect authenticated users to their dashboards
       const dashboardRoute = getRoleDashboard(user.role);
       navigate(dashboardRoute, { replace: true });
     }

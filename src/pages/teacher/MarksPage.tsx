@@ -360,13 +360,11 @@ function MarksPage() {
                 <p className="text-sm text-muted-foreground">Student</p>
                 <p className="font-semibold">
                   {students.find((s) => s.id === editingMark.student_id)
-                    ? `${
-                        students.find((s) => s.id === editingMark.student_id)!
-                          .first_name
-                      } ${
-                        students.find((s) => s.id === editingMark.student_id)!
-                          .last_name
-                      }`
+                    ? `${students.find((s) => s.id === editingMark.student_id)!
+                      .first_name
+                    } ${students.find((s) => s.id === editingMark.student_id)!
+                      .last_name
+                    }`
                     : "Unknown"}
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">Exam</p>

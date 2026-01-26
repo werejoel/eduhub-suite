@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileText, Download, Loader, BarChart3 } from "lucide-react";
-import { toast } from "sonner";
+//import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
   useClasses,
@@ -42,7 +42,7 @@ const EXAM_TYPES = [
   "Monthly",
 ];
 
-function TeacherReportsPage() {
+const TeacherReportsPage = () => {
   const { user } = useAuth();
   const { data: classes = [], isLoading: classesLoading, isError: classesError } = useClasses();
   const { data: students = [], isLoading: studentsLoading, isError: studentsError } = useStudents();
@@ -82,12 +82,12 @@ function TeacherReportsPage() {
   // Student report data
   const studentReportData = useMemo(() => {
     if (!selectedStudentId) return null;
-    
+
     const student = students.find((s) => s.id === selectedStudentId);
     if (!student) return null;
 
     const studentMarks = allMarks.filter((m) => m.student_id === selectedStudentId);
-    
+
     // Group marks by exam type
     const marksByExam: Record<string, typeof studentMarks> = {};
     EXAM_TYPES.forEach((exam) => {
@@ -98,12 +98,12 @@ function TeacherReportsPage() {
     const examSummary = EXAM_TYPES.map((exam) => {
       const marks = marksByExam[exam];
       if (marks.length === 0) return null;
-      
+
       const total = marks.reduce((sum, m) => sum + m.marks_obtained, 0);
       const maxTotal = marks.reduce((sum, m) => sum + m.total_marks, 0);
       const percentage = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
       const grade = calculateGrade(total, maxTotal);
-      
+
       return {
         exam,
         marks: total,
@@ -205,7 +205,7 @@ function TeacherReportsPage() {
 
   const handleExportExcel = () => {
     const selectedClass = classes.find((c) => c.id === selectedClassId);
-    
+
     if (reportType === "class" && classReportData) {
       exportToExcel({
         filename: `Class_Report_${selectedClass?.class_name}_${new Date().toISOString().split('T')[0]}.xlsx`,
@@ -530,17 +530,16 @@ function TeacherReportsPage() {
                           <td className="p-4 text-center font-medium">{student.percentage}%</td>
                           <td className="p-4 text-center">
                             <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                student.grade === "A"
+                              className={`px-3 py-1 rounded-full text-sm font-medium ${student.grade === "A"
                                   ? "bg-green-100 text-green-800"
                                   : student.grade === "B"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : student.grade === "C"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : student.grade === "D"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
+                                    ? "bg-sidebar/20 text-sidebar"
+                                    : student.grade === "C"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : student.grade === "D"
+                                        ? "bg-orange-100 text-orange-800"
+                                        : "bg-red-100 text-red-800"
+                                }`}
                             >
                               {student.grade}
                             </span>
@@ -585,17 +584,16 @@ function TeacherReportsPage() {
                 <Card className="p-6 border border-border">
                   <div className="text-sm text-muted-foreground mb-1">Overall Grade</div>
                   <div
-                    className={`text-3xl font-bold ${
-                      studentReportData.overallGrade === "A"
+                    className={`text-3xl font-bold ${studentReportData.overallGrade === "A"
                         ? "text-green-600"
                         : studentReportData.overallGrade === "B"
-                        ? "text-blue-600"
-                        : studentReportData.overallGrade === "C"
-                        ? "text-yellow-600"
-                        : studentReportData.overallGrade === "D"
-                        ? "text-orange-600"
-                        : "text-red-600"
-                    }`}
+                          ? "text-sidebar"
+                          : studentReportData.overallGrade === "C"
+                            ? "text-yellow-600"
+                            : studentReportData.overallGrade === "D"
+                              ? "text-orange-600"
+                              : "text-red-600"
+                      }`}
                   >
                     {studentReportData.overallGrade}
                   </div>
@@ -670,17 +668,16 @@ function TeacherReportsPage() {
                           <td className="p-4 text-center font-medium">{exam.percentage}%</td>
                           <td className="p-4 text-center">
                             <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                exam.grade === "A"
+                              className={`px-3 py-1 rounded-full text-sm font-medium ${exam.grade === "A"
                                   ? "bg-green-100 text-green-800"
                                   : exam.grade === "B"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : exam.grade === "C"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : exam.grade === "D"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
+                                    ? "bg-sidebar/20 text-sidebar"
+                                    : exam.grade === "C"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : exam.grade === "D"
+                                        ? "bg-orange-100 text-orange-800"
+                                        : "bg-red-100 text-red-800"
+                                }`}
                             >
                               {exam.grade}
                             </span>

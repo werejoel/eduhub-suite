@@ -45,7 +45,7 @@ const AcademicPage = () => {
   const createClass = useCreateClass();
   const updateClass = useUpdateClass();
   const deleteClass = useDeleteClass();
-
+  
   const { data: marks = [], isLoading: marksLoading } = useMarks();
   const createMark = useCreateMark();
   const updateMark = useUpdateMark();

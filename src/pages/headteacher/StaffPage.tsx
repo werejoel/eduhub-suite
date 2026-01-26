@@ -1,16 +1,16 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
-import { 
-  GraduationCap, 
-  Search, 
-  Filter, 
-  Loader, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Users, 
-  BookOpen, 
-  Award 
+import {
+  GraduationCap,
+  Search,
+  Filter,
+  Loader,
+  Plus,
+  Edit2,
+  Trash2,
+  Users,
+  BookOpen,
+  Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -463,8 +463,8 @@ const StaffPage = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-2">
-                                <Dialog 
-                                  open={assignDialogOpen && selectedTeacherForClass?.id === teacher.id} 
+                                <Dialog
+                                  open={assignDialogOpen && selectedTeacherForClass?.id === teacher.id}
                                   onOpenChange={(open) => {
                                     setAssignDialogOpen(open);
                                     if (!open) {
@@ -549,31 +549,31 @@ const StaffPage = () => {
                                         </div>
                                       </div>
                                       <Button
-                                              onClick={handleAssignClass}
-                                              disabled={assignClassMutation.isPending || !selectedClassId}
-                                              className="w-full"
-                                            >
-                                              Assign Class
-                                            </Button>
+                                        onClick={handleAssignClass}
+                                        disabled={assignClassMutation.isPending || !selectedClassId}
+                                        className="w-full"
+                                      >
+                                        Assign Class
+                                      </Button>
                                     </div>
                                   </DialogContent>
                                 </Dialog>
 
-                                      {/* Confirm Assign Dialog */}
-                                      <Dialog open={confirmAssignOpen} onOpenChange={setConfirmAssignOpen}>
-                                        <DialogContent className="sm:max-w-md">
-                                          <DialogHeader>
-                                            <DialogTitle>Confirm Assignment</DialogTitle>
-                                          </DialogHeader>
-                                          <div className="space-y-4 py-2">
-                                            <p>Assign <strong>{pendingAssign?.teacherName}</strong> to the selected class?</p>
-                                            <div className="flex justify-end gap-2">
-                                              <Button variant="secondary" onClick={() => { setConfirmAssignOpen(false); setPendingAssign(null); }}>Cancel</Button>
-                                              <Button onClick={confirmAssign}>Confirm</Button>
-                                            </div>
-                                          </div>
-                                        </DialogContent>
-                                      </Dialog>
+                                {/* Confirm Assign Dialog */}
+                                <Dialog open={confirmAssignOpen} onOpenChange={setConfirmAssignOpen}>
+                                  <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                      <DialogTitle>Confirm Assignment</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-2">
+                                      <p>Assign <strong>{pendingAssign?.teacherName}</strong> to the selected class?</p>
+                                      <div className="flex justify-end gap-2">
+                                        <Button variant="secondary" onClick={() => { setConfirmAssignOpen(false); setPendingAssign(null); }}>Cancel</Button>
+                                        <Button onClick={confirmAssign}>Confirm</Button>
+                                      </div>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
 
                                 <Button
                                   variant="outline"

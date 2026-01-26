@@ -394,9 +394,9 @@ export default function SettingsPage() {
                   <CardDescription>Keep your account secure</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-4 mb-6">
-                    <p className="text-sm flex items-start gap-2 text-blue-800 dark:text-blue-200">
-                      <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="bg-sidebar/10 dark:bg-sidebar/20 border border-sidebar/30 dark:border-sidebar/40 rounded-lg p-4 mb-6">
+                    <p className="text-sm flex items-start gap-2 text-sidebar dark:text-sidebar-foreground">
+                      <AlertCircle className="w-5 h-5 text-sidebar dark:text-sidebar-foreground mt-0.5 flex-shrink-0" />
                       Use a strong password (min. 6 characters, mix of letters, numbers & symbols recommended)
                     </p>
                   </div>

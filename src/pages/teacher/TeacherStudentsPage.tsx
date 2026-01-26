@@ -122,12 +122,12 @@ function TeacherStudentsPage() {
     if (totalMarks === 0) return "-";
 
     const averagePercentage = (totalObtained / totalMarks) * 100;
-
     // Convert to grade
     if (averagePercentage >= 90) return "A";
     if (averagePercentage >= 80) return "B";
     if (averagePercentage >= 70) return "C";
     if (averagePercentage >= 60) return "D";
+    if(averagePercentage  >= 50) return "E";
     return "F";
   };
 
