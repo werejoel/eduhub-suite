@@ -30,7 +30,7 @@ interface Circular {
     fileData: string;
 }
 
-export default function CircularsPage() {
+const CircularsPage = () => {
     const [circulars, setCirculars] = useState<Circular[]>(() => {
         const stored = localStorage.getItem("dos_circulars");
         return stored ? JSON.parse(stored) : [];
@@ -41,7 +41,6 @@ export default function CircularsPage() {
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
-
     const allowedFormats = [".pdf", ".doc", ".docx"];
     const maxFileSize = 10 * 1024 * 1024;
 
@@ -54,7 +53,7 @@ export default function CircularsPage() {
             .substring(selectedFile.name.lastIndexOf("."))
             .toLowerCase();
         if (!allowedFormats.includes(fileExtension)) {
-            toast.error("Only PDF and Word documents are allowed");
+            toast.error("Only upload PDF and Word documents are allowed");
             setFile(null);
             return;
         }
@@ -83,9 +82,7 @@ export default function CircularsPage() {
             toast.error("Please select a file");
             return;
         }
-
         setIsUploading(true);
-
         try {
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -175,8 +172,8 @@ export default function CircularsPage() {
             render: (value: string) => (
                 <span
                     className={`px-3 py-1 rounded-full text-sm font-medium ${value === "pdf"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-blue-100 text-blue-800"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-blue-100 text-blue-800"
                         }`}
                 >
                     {value.toUpperCase()}
@@ -413,3 +410,4 @@ export default function CircularsPage() {
         </DashboardLayout>
     );
 }
+export default CircularsPage;

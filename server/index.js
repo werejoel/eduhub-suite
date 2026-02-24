@@ -46,10 +46,10 @@ const pushSubscriptions = [];
 async function connectWithRetry() {
   try {
     await mongoose.connect(MONGODB_URI);
-    console.log("Connected to MongoDB");
+    console.log("Successfully Connected");
   } catch (err) {
-    console.error("MongoDB connection error:", err && err.message ? err : err);
-    console.error("Retrying MongoDB connection in 5 seconds...");
+    console.error("connection error:", err && err.message ? err : err);
+    console.error("Retrying connection in 5 seconds...");
     setTimeout(connectWithRetry, 5000);
   }
 }
@@ -145,7 +145,6 @@ app.post("/api/auth/login", async (req, res) => {
 
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: "Invalid credentials" });
-
     const payload = { id: user._id, role: user.role };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
     const safeUser = {

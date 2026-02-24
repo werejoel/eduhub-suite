@@ -157,7 +157,7 @@ const SignUp = () => {
                     <Input
                       id="firstName"
                       type="text"
-                      placeholder="John"
+                      placeholder="fname"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
@@ -170,7 +170,7 @@ const SignUp = () => {
                     <Input
                       id="lastName"
                       type="text"
-                      placeholder="Doe"
+                      placeholder="lname"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
@@ -256,7 +256,7 @@ const SignUp = () => {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
+                      Creating account....
                     </>
                   ) : (
                     "Create Account"
@@ -282,5 +282,4 @@ const SignUp = () => {
     </div>
   );
 };
-
 export default SignUp;

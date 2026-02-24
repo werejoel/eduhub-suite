@@ -8,18 +8,16 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Search, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export default function ClassesPage() {
+ const ClassesPage=()=> {
   const { data: classes = [], isLoading } = useClasses();
   const { data: teachers = [] } = useTeachers();
   const createClass = useCreateClass();
   const updateClass = useUpdateClass();
   const deleteClass = useDeleteClass();
-
   const [dialogOpen, setDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newClass, setNewClass] = useState({ class_name: "", class_code: "", form_number: 1, capacity: 30, teacher_id: "" });
-
   const filtered = classes.filter((c: any) => c.class_name.toLowerCase().includes(search.toLowerCase()) || c.class_code.toLowerCase().includes(search.toLowerCase()));
 
   const handleCreate = async () => {
@@ -68,7 +66,6 @@ export default function ClassesPage() {
   return (
     <DashboardLayout>
       <PageHeader title="Manage Classes" description="Create and manage classes" icon={BookOpen} />
-
       <div className="bg-card rounded-2xl border border-border p-6 shadow-md">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3 flex-1">
@@ -195,3 +192,4 @@ export default function ClassesPage() {
     </DashboardLayout>
   );
 }
+export default ClassesPage;
