@@ -22,6 +22,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -78,6 +87,8 @@ const ClassesPage = () => {
     form_number: 1,
     capacity: 50,
   });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<any | null>(null);
 
   const filtered = (classes || []).filter((c: any) => {
     const q = searchQuery.toLowerCase();
@@ -104,13 +115,21 @@ const ClassesPage = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (row: any) => {
-    if (!window.confirm("Delete this class? This cannot be undone.")) return;
-    try {
-      await deleteMutation.mutateAsync(row.id || row._id);
-      toast.success("Class deleted successfully");
-    } catch (err) {
-      console.error(err);
+  const handleDelete = (row: any) => {
+    setDeleteItem(row);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteItem) {
+      try {
+        await deleteMutation.mutateAsync(deleteItem.id || deleteItem._id);
+        toast.success("Class deleted successfully");
+        setDeleteConfirmOpen(false);
+        setDeleteItem(null);
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -176,14 +195,24 @@ const ClassesPage = () => {
     }
   };
 
-  const handleUnassignClass = async (classId: string) => {
-    if (window.confirm("Remove this class assignment?")) {
+  const [unassignConfirmOpen, setUnassignConfirmOpen] = useState(false);
+  const [unassignClassId, setUnassignClassId] = useState<string | null>(null);
+
+  const handleUnassignClass = (classId: string) => {
+    setUnassignClassId(classId);
+    setUnassignConfirmOpen(true);
+  };
+
+  const confirmUnassign = async () => {
+    if (unassignClassId) {
       try {
-        await unassignClassMutation.mutateAsync(classId);
+        await unassignClassMutation.mutateAsync(unassignClassId);
         toast.success("Class unassigned successfully");
       } catch (err) {
         console.error(err);
       }
+      setUnassignConfirmOpen(false);
+      setUnassignClassId(null);
     }
   };
 
@@ -586,6 +615,40 @@ const ClassesPage = () => {
           </>
         )}
       </motion.div>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Delete Class</AlertDialogTitle>
+            <AlertDialogDescription className="mt-3">
+              Are you sure you want to delete the class "{deleteItem?.class_name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={unassignConfirmOpen} onOpenChange={setUnassignConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-warning">Unassign Class</AlertDialogTitle>
+            <AlertDialogDescription className="mt-3">
+              Are you sure you want to remove this class assignment from the teacher? This will not delete the class.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUnassign} className="bg-warning hover:bg-warning/90">
+              Unassign
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

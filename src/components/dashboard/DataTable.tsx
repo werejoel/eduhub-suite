@@ -94,7 +94,12 @@ export default function DataTable<T extends { id: string | number }>({
               });
 
               const status = (row as any).status;
-              const rowClass = status === 'Low Stock' ? 'bg-warning/10' : status === 'Out of Stock' ? 'bg-destructive/10' : 'hover:bg-muted/30';
+              // default hover background is more pronounced for better visibility
+              const rowClass = status === 'Low Stock'
+                ? 'bg-warning/10'
+                : status === 'Out of Stock'
+                ? 'bg-destructive/10'
+                : 'hover:bg-muted/50 dark:hover:bg-muted/40';
               return (
                 <TableRow key={rowKey} className={`${rowClass} transition-colors`}>
                   {cells}

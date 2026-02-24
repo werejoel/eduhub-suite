@@ -5,6 +5,15 @@ import DataTable from "@/components/dashboard/DataTable";
 import { useFees, useCreateFee, useUpdateFee, useDeleteFee } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
@@ -32,6 +41,8 @@ const FinancesPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<any>({ student_id: '', amount: 0, term: '', academic_year: '', payment_status: 'pending', due_date: '' });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<any | null>(null);
 
   const filtered = (fees || []).filter((f: any) => {
     const q = searchQuery.toLowerCase();
@@ -40,7 +51,17 @@ const FinancesPage = () => {
 
   const handleAdd = () => { setEditing(null); setForm({ student_id: '', amount: 0, term: '', academic_year: '', payment_status: 'pending', due_date: '' }); setDialogOpen(true); };
   const handleEdit = (row: any) => { setEditing(row); setForm({ ...row }); setDialogOpen(true); };
-  const handleDelete = async (row: any) => { if (!window.confirm('Delete this fee record?')) return; await deleteFee.mutateAsync(row.id || row._id); };
+  const handleDelete = (row: any) => {
+    setDeleteItem(row);
+    setDeleteConfirmOpen(true);
+  };
+  const confirmDelete = async () => {
+    if (deleteItem) {
+      await deleteFee.mutateAsync(deleteItem.id || deleteItem._id);
+      setDeleteConfirmOpen(false);
+      setDeleteItem(null);
+    }
+  };
   const submit = async () => { if (editing) { await updateFee.mutateAsync({ id: editing.id || editing._id, updates: form }); } else { await createFee.mutateAsync(form); } setDialogOpen(false); };
 
   const totalRevenue = (fees || []).filter((f: any) => f.payment_status === 'paid').reduce((s: number, f: any) => s + (f.amount || 0), 0);
@@ -99,6 +120,26 @@ const FinancesPage = () => {
               </div>
             </DialogContent>
           </Dialog>
+
+          <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+            <AlertDialogContent className="sm:max-w-md">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-destructive">Delete Fee Record</AlertDialogTitle>
+                <AlertDialogDescription className="mt-3">
+                  Are you sure you want to delete this fee record for student {deleteItem?.student_id}? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex justify-end gap-3 mt-6">
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDelete}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </div>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
     </DashboardLayout>

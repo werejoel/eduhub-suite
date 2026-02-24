@@ -33,6 +33,15 @@ import { Input } from "@/components/ui/input";
 import DataTable from "@/components/dashboard/DataTable";
 import StatCard from "@/components/dashboard/StatCard";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   LineChart,
   Line,
   BarChart,
@@ -309,13 +318,24 @@ const BurserDashboard = () => {
     }
   };
 
-  const handleDeletePayment = async (row: any) => {
-    if (!window.confirm("Delete this payment?")) return;
-    try {
-      await deleteFee.mutateAsync(String(row.id));
-      toast.success("Payment deleted");
-    } catch {
-      toast.error("Failed to delete payment");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletePaymentRow, setDeletePaymentRow] = useState<any | null>(null);
+
+  const handleDeletePayment = (row: any) => {
+    setDeletePaymentRow(row);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeletePayment = async () => {
+    if (deletePaymentRow) {
+      try {
+        await deleteFee.mutateAsync(String(deletePaymentRow.id));
+        toast.success("Payment deleted");
+      } catch {
+        toast.error("Failed to delete payment");
+      }
+      setDeleteConfirmOpen(false);
+      setDeletePaymentRow(null);
     }
   };
 
@@ -1420,6 +1440,23 @@ const BurserDashboard = () => {
           </div>
 
           {renderContent()}
+
+          <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+            <AlertDialogContent className="sm:max-w-md">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-destructive">Delete Payment</AlertDialogTitle>
+                <AlertDialogDescription className="mt-3">
+                  Are you sure you want to delete this payment record? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex justify-end gap-3 mt-6">
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDeletePayment} className="bg-destructive hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </div>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </main>
     </div>

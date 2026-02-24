@@ -24,6 +24,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -83,6 +92,8 @@ const StaffPage = () => {
     qualification: "",
     status: "active",
   });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<any | null>(null);
 
   const filtered = (teachers || []).filter((t: any) => {
     const q = searchQuery.toLowerCase();
@@ -116,12 +127,20 @@ const StaffPage = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (row: any) => {
-    if (!window.confirm("Delete this staff member?")) return;
-    try {
-      await deleteMutation.mutateAsync(row.id || row._id);
-    } catch (err) {
-      console.error(err);
+  const handleDelete = (row: any) => {
+    setDeleteItem(row);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteItem) {
+      try {
+        await deleteMutation.mutateAsync(deleteItem.id || deleteItem._id);
+        setDeleteConfirmOpen(false);
+        setDeleteItem(null);
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -174,13 +193,23 @@ const StaffPage = () => {
     }
   };
 
-  const handleUnassignClass = async (classId: string) => {
-    if (window.confirm("Remove this class assignment?")) {
+  const [unassignConfirmOpen, setUnassignConfirmOpen] = useState(false);
+  const [unassignClassId, setUnassignClassId] = useState<string | null>(null);
+
+  const handleUnassignClass = (classId: string) => {
+    setUnassignClassId(classId);
+    setUnassignConfirmOpen(true);
+  };
+
+  const confirmUnassign = async () => {
+    if (unassignClassId) {
       try {
-        await unassignClassMutation.mutateAsync(classId);
+        await unassignClassMutation.mutateAsync(unassignClassId);
       } catch (err) {
         console.error(err);
       }
+      setUnassignConfirmOpen(false);
+      setUnassignClassId(null);
     }
   };
 
@@ -654,6 +683,40 @@ const StaffPage = () => {
           </>
         )}
       </motion.div>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Delete Staff Member</AlertDialogTitle>
+            <AlertDialogDescription className="mt-3">
+              Are you sure you want to delete {deleteItem?.first_name} {deleteItem?.last_name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={unassignConfirmOpen} onOpenChange={setUnassignConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-warning">Remove Class Assignment</AlertDialogTitle>
+            <AlertDialogDescription className="mt-3">
+              Are you sure you want to unassign this class from the teacher? This will not delete the class.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUnassign} className="bg-warning hover:bg-warning/90">
+              Unassign
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

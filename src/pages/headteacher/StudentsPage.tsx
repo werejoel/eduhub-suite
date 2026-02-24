@@ -11,6 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -47,6 +56,8 @@ const StudentsPage = () => {
     phone: "",
     status: "active",
   });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<any | null>(null);
 
   const filtered = (students || []).filter((s: any) => {
     const q = searchQuery.toLowerCase();
@@ -75,12 +86,20 @@ const StudentsPage = () => {
     setForm({ ...row });
     setDialogOpen(true);
   };
-  const handleDelete = async (row: any) => {
-    if (!window.confirm("Delete this student?")) return;
-    try {
-      await deleteMutation.mutateAsync(row.id || row._id);
-    } catch (err) {
-      console.error(err);
+  const handleDelete = (row: any) => {
+    setDeleteItem(row);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteItem) {
+      try {
+        await deleteMutation.mutateAsync(deleteItem.id || deleteItem._id);
+        setDeleteConfirmOpen(false);
+        setDeleteItem(null);
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -210,6 +229,26 @@ const StudentsPage = () => {
               </div>
             </DialogContent>
           </Dialog>
+
+          <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+            <AlertDialogContent className="sm:max-w-md">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-destructive">Delete Student</AlertDialogTitle>
+                <AlertDialogDescription className="mt-3">
+                  Are you sure you want to delete {deleteItem?.first_name} {deleteItem?.last_name}? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex justify-end gap-3 mt-6">
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDelete}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </div>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
     </DashboardLayout>

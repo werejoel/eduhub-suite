@@ -11,6 +11,8 @@ import {
   useCreateMark,
   useUpdateMark,
   useDeleteMark,
+  useTeachers,
+  useStudents,
 } from "@/hooks/useDatabase";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,37 +21,153 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-const classColumns = [
-  { key: "class_name", label: "Class" },
-  { key: "class_code", label: "Code" },
-  { key: "form_number", label: "Form" },
-  { key: "teacher_id", label: "Teacher ID" },
-  { key: "capacity", label: "Capacity" },
-];
-
-const markColumns = [
-  { key: "student_id", label: "Student ID" },
-  { key: "class_id", label: "Class ID" },
-  { key: "subject", label: "Subject" },
-  { key: "marks_obtained", label: "Marks" },
-  { key: "total_marks", label: "Total" },
-];
-
 const AcademicPage = () => {
   const { data: classes = [], isLoading: classesLoading } = useClasses();
+  const { data: teachers = [] } = useTeachers();
+  const { data: students = [] } = useStudents();
   const createClass = useCreateClass();
   const updateClass = useUpdateClass();
   const deleteClass = useDeleteClass();
-  
+
   const { data: marks = [], isLoading: marksLoading } = useMarks();
   const createMark = useCreateMark();
   const updateMark = useUpdateMark();
   const deleteMark = useDeleteMark();
+
+  // Create teacher name lookup
+  const teacherMap = teachers.reduce((acc: any, teacher: any) => {
+    acc[teacher.id] = `${teacher.first_name} ${teacher.last_name}`;
+    return acc;
+  }, {});
+
+  // Create student name lookup
+  const studentMap = students.reduce((acc: any, student: any) => {
+    acc[student.id] = `${student.first_name} ${student.last_name}`;
+    return acc;
+  }, {});
+
+  // Transform classes data to include teacher names
+  const classesWithTeacherNames = classes.map((cls: any) => ({
+    ...cls,
+    teacher_name: teacherMap[cls.teacher_id] || cls.teacher_id,
+  }));
+
+  // Transform marks data to include student names
+  const marksWithStudentNames = marks.map((mark: any) => ({
+    ...mark,
+    student_name: studentMap[mark.student_id] || mark.student_id,
+  }));
+
+  // Column definitions with custom renders
+  const classColumns = [
+    {
+      key: "class_name",
+      label: "Class Name",
+      render: (value: string) => (
+        <span className="font-semibold text-foreground">{value}</span>
+      ),
+    },
+    {
+      key: "class_code",
+      label: "Code",
+      render: (value: string) => (
+        <Badge variant="outline">{value}</Badge>
+      ),
+    },
+    {
+      key: "form_number",
+      label: "Form",
+      render: (value: number) => (
+        <div className="flex items-center justify-center">
+          <Badge className="bg-blue-100 text-blue-800">Form {value}</Badge>
+        </div>
+      ),
+    },
+    {
+      key: "teacher_name",
+      label: "Teacher",
+      render: (value: string) => (
+        <span className="text-muted-foreground">{value || "Unassigned"}</span>
+      ),
+    },
+    {
+      key: "capacity",
+      label: "Capacity",
+      render: (value: number) => (
+        <div className="flex items-center gap-2">
+          <div className="w-16 bg-muted rounded-full h-2">
+            <div className="bg-primary h-2 rounded-full" style={{ width: "70%" }}></div>
+          </div>
+          <span className="text-sm font-medium">{value}</span>
+        </div>
+      ),
+    },
+  ];
+
+  const markColumns = [
+    {
+      key: "student_name",
+      label: "Student Name",
+      render: (value: string) => (
+        <span className="font-semibold text-foreground">{value}</span>
+      ),
+    },
+    {
+      key: "subject",
+      label: "Subject",
+      render: (value: string) => (
+        <Badge variant="secondary">{value}</Badge>
+      ),
+    },
+    {
+      key: "marks_obtained",
+      label: "Marks Obtained",
+      render: (value: number, row: any) => {
+        const percentage = ((value / (row.total_marks || 100)) * 100).toFixed(1);
+        const numPercentage = parseFloat(percentage);
+        let badgeClass = "bg-green-100 text-green-800";
+        if (numPercentage < 50) badgeClass = "bg-red-100 text-red-800";
+        else if (numPercentage < 70) badgeClass = "bg-yellow-100 text-yellow-800";
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{value}</span>
+            <Badge className={badgeClass}>{percentage}%</Badge>
+          </div>
+        );
+      },
+    },
+    {
+      key: "total_marks",
+      label: "Total Marks",
+      render: (value: number) => (
+        <span className="text-muted-foreground">{value}</span>
+      ),
+    },
+    {
+      key: "exam_type",
+      label: "Exam Type",
+      render: (value: string) => (
+        <Badge variant="outline" className="text-xs">
+          {value || "Assignment"}
+        </Badge>
+      ),
+    },
+  ];
 
   const [classDialogOpen, setClassDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<any | null>(null);
@@ -71,14 +189,20 @@ const AcademicPage = () => {
     total_marks: 100,
   });
 
+  // Delete confirmation state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteType, setDeleteType] = useState<"class" | "mark" | null>(null);
+  const [deleteItem, setDeleteItem] = useState<any | null>(null);
+
   const handleEditClass = (row: any) => {
     setEditingClass(row);
     setClassForm({ ...row });
     setClassDialogOpen(true);
   };
-  const handleDeleteClass = async (row: any) => {
-    if (!window.confirm("Delete this class?")) return;
-    await deleteClass.mutateAsync(row.id || row._id);
+  const handleDeleteClass = (row: any) => {
+    setDeleteType("class");
+    setDeleteItem(row);
+    setDeleteConfirmOpen(true);
   };
   const submitClass = async () => {
     if (editingClass) {
@@ -97,9 +221,21 @@ const AcademicPage = () => {
     setMarkForm({ ...row });
     setMarkDialogOpen(true);
   };
-  const handleDeleteMark = async (row: any) => {
-    if (!window.confirm("Delete this mark?")) return;
-    await deleteMark.mutateAsync(row.id || row._id);
+  const handleDeleteMark = (row: any) => {
+    setDeleteType("mark");
+    setDeleteItem(row);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteType === "class" && deleteItem) {
+      await deleteClass.mutateAsync(deleteItem.id || deleteItem._id);
+    } else if (deleteType === "mark" && deleteItem) {
+      await deleteMark.mutateAsync(deleteItem.id || deleteItem._id);
+    }
+    setDeleteConfirmOpen(false);
+    setDeleteType(null);
+    setDeleteItem(null);
   };
   const submitMark = async () => {
     if (editingMark) {
@@ -121,17 +257,26 @@ const AcademicPage = () => {
         icon={BookOpen}
       />
 
-      <div className="grid lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-card rounded-2xl p-6 border border-border shadow-md">
-          {classesLoading ? (
-            <p className="text-muted-foreground">Loading classes...</p>
-          ) : (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">
-                  Classes ({classes.length})
-                </h3>
-                <div className="flex gap-2">
+      <div className="grid lg:grid-cols-2 gap-8 mb-8">
+        {/* Classes Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex flex-col"
+        >
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/20 rounded-2xl p-6 border border-border shadow-md flex flex-col h-full">
+            {classesLoading ? (
+              <p className="text-muted-foreground">Loading classes...</p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold">Classes</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {classes.length} classes configured
+                    </p>
+                  </div>
                   <Button
                     onClick={() => {
                       setEditingClass(null);
@@ -144,31 +289,43 @@ const AcademicPage = () => {
                       });
                       setClassDialogOpen(true);
                     }}
+                    className="bg-green-600 hover:bg-green-700"
                   >
-                    Add Class
+                    + Add Class
                   </Button>
                 </div>
-              </div>
-              <DataTable
-                columns={classColumns}
-                data={classes}
-                onEdit={handleEditClass}
-                onDelete={handleDeleteClass}
-              />
-            </>
-          )}
-        </div>
+                <div className="flex-1 overflow-auto">
+                  <DataTable
+                    columns={classColumns}
+                    data={classesWithTeacherNames}
+                    onEdit={handleEditClass}
+                    onDelete={handleDeleteClass}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </motion.div>
 
-        <div className="bg-card rounded-2xl p-6 border border-border shadow-md">
-          {marksLoading ? (
-            <p className="text-muted-foreground">Loading marks...</p>
-          ) : (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">
-                  Marks ({marks.length})
-                </h3>
-                <div>
+        {/* Marks Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-col"
+        >
+          <div className="bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/20 rounded-2xl p-6 border border-border shadow-md flex flex-col h-full">
+            {marksLoading ? (
+              <p className="text-muted-foreground">Loading marks...</p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold">Student Marks</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {marks.length} marks recorded
+                    </p>
+                  </div>
                   <Button
                     onClick={() => {
                       setEditingMark(null);
@@ -181,20 +338,23 @@ const AcademicPage = () => {
                       });
                       setMarkDialogOpen(true);
                     }}
+                    className="bg-green-600 hover:bg-green-700"
                   >
-                    Add Mark
+                    + Add Mark
                   </Button>
                 </div>
-              </div>
-              <DataTable
-                columns={markColumns}
-                data={marks}
-                onEdit={handleEditMark}
-                onDelete={handleDeleteMark}
-              />
-            </>
-          )}
-        </div>
+                <div className="flex-1 overflow-auto">
+                  <DataTable
+                    columns={markColumns}
+                    data={marksWithStudentNames}
+                    onEdit={handleEditMark}
+                    onDelete={handleDeleteMark}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </motion.div>
       </div>
 
       <Dialog open={classDialogOpen} onOpenChange={setClassDialogOpen}>
@@ -350,6 +510,30 @@ const AcademicPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">
+              Delete {deleteType === "class" ? "Class" : "Mark"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mt-3">
+              {deleteType === "class"
+                ? `Are you sure you want to delete the class "${deleteItem?.class_name}"? This action cannot be undone.`
+                : `Are you sure you want to delete the mark for "${deleteItem?.student_name}" in ${deleteItem?.subject}? This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

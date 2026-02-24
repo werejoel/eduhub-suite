@@ -35,6 +35,15 @@ import { useTeachers, useDuties, useCreateDuty, useUpdateDuty, useDeleteDuty } f
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { TeacherDuty } from "@/lib/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const TeacherDutiesPage = () => {
   const { user } = useAuth();
@@ -53,6 +62,8 @@ const TeacherDutiesPage = () => {
     start_date: "",
     end_date: "",
   });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteDutyId, setDeleteDutyId] = useState<string | null>(null);
 
   const statusColors: Record<string, string> = {
     assigned: "bg-blue-100 text-blue-800",
@@ -118,9 +129,16 @@ const TeacherDutiesPage = () => {
     setEditingDuty(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this duty?")) {
-      await deleteDutyMutation.mutateAsync(id);
+  const handleDelete = (id: string) => {
+    setDeleteDutyId(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteDutyId) {
+      await deleteDutyMutation.mutateAsync(deleteDutyId);
+      setDeleteConfirmOpen(false);
+      setDeleteDutyId(null);
     }
   };
 
@@ -423,6 +441,23 @@ const TeacherDutiesPage = () => {
           </Card>
         )}
       </motion.div>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Delete Duty</AlertDialogTitle>
+            <AlertDialogDescription className="mt-3">
+              Are you sure you want to delete this duty? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

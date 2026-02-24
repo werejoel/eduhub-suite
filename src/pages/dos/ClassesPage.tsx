@@ -5,6 +5,15 @@ import { useClasses, useCreateClass, useTeachers, useUpdateClass, useDeleteClass
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { BookOpen, Plus, Search, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,14 +55,24 @@ import { toast } from "sonner";
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this class?")) {
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const handleDelete = (id: string) => {
+    setDeleteId(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteId) {
       try {
-        await deleteClass.mutateAsync(id);
+        await deleteClass.mutateAsync(deleteId);
         toast.success("Class deleted");
       } catch (err) {
         toast.error("Error deleting class");
       }
+      setDeleteConfirmOpen(false);
+      setDeleteId(null);
     }
   };
 
@@ -189,6 +208,23 @@ import { toast } from "sonner";
           )}
         </div>
       </div>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Delete Class</AlertDialogTitle>
+            <AlertDialogDescription className="mt-3">
+              Are you sure you want to delete this class? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
