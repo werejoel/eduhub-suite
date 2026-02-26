@@ -334,7 +334,7 @@ const ClassesPage = () => {
                         <div className="space-y-2">
                           <Label>Class Name</Label>
                           <Input
-                            placeholder="e.g. Form 1A"
+                            placeholder="e.g. P1"
                             value={form.class_name}
                             onChange={(e) =>
                               setForm({ ...form, class_name: e.target.value })

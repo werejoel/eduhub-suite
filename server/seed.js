@@ -94,42 +94,15 @@ async function seed() {
 
     // Seed Classes
     console.log('Seeding classes...');
+    // create seven primary classes named P1 through P7
     const classes = await Class.insertMany([
-      {
-        class_name: 'Form 1A',
-        class_code: 'F1A',
-        form_number: 1,
-        teacher_id: teachers[0]._id.toString(),
-        capacity: 50,
-      },
-      {
-        class_name: 'Form 1B',
-        class_code: 'F1B',
-        form_number: 1,
-        teacher_id: teachers[1]._id.toString(),
-        capacity: 48,
-      },
-      {
-        class_name: 'Form 2A',
-        class_code: 'F2A',
-        form_number: 2,
-        teacher_id: teachers[2]._id.toString(),
-        capacity: 50,
-      },
-      {
-        class_name: 'Form 3A',
-        class_code: 'F3A',
-        form_number: 3,
-        teacher_id: teachers[3]._id.toString(),
-        capacity: 45,
-      },
-      {
-        class_name: 'Form 4A',
-        class_code: 'F4A',
-        form_number: 4,
-        teacher_id: teachers[0]._id.toString(),
-        capacity: 42,
-      },
+      { class_name: 'P1', class_code: 'P1', form_number: 1, teacher_id: teachers[0]._id.toString(), capacity: 50 },
+      { class_name: 'P2', class_code: 'P2', form_number: 2, teacher_id: teachers[1]._id.toString(), capacity: 50 },
+      { class_name: 'P3', class_code: 'P3', form_number: 3, teacher_id: teachers[2]._id.toString(), capacity: 50 },
+      { class_name: 'P4', class_code: 'P4', form_number: 4, teacher_id: teachers[3]._id.toString(), capacity: 50 },
+      { class_name: 'P5', class_code: 'P5', form_number: 5, teacher_id: teachers[0]._id.toString(), capacity: 50 },
+      { class_name: 'P6', class_code: 'P6', form_number: 6, teacher_id: teachers[1]._id.toString(), capacity: 50 },
+      { class_name: 'P7', class_code: 'P7', form_number: 7, teacher_id: teachers[2]._id.toString(), capacity: 50 },
     ]);
     console.log(`✓ Created ${classes.length} classes`);
 
@@ -169,128 +142,38 @@ async function seed() {
 
     // Seed Students
     console.log('Seeding students...');
-    const students = await Student.insertMany([
-      {
-        admission_number: 'SMS001',
-        first_name: 'Peter',
-        last_name: 'Mwesigwa',
-        email: 'peter.mwesigwa@student.sms.com',
-        phone: '+256701234567',
-        date_of_birth: '2007-03-15',
-        gender: 'male',
-        class_id: classes[0]._id.toString(),
+    // generate 50 students with some randomised data
+    const studentsData = [];
+    const firstNames = ['Peter','Amina','David','Grace','Charles','Stella','Robert','Rachel','Samuel','Esther','Brian','Janet','Luke','Faith','Brian','Joy','Victor','Susan','Kevin','Maria'];
+    const lastNames = ['Mwesigwa','Nakimuli','Kyaliwajja','Ssemwanga','Okello','Bwebwa','Nabwire','Kabugho','Kato','Nankya','Wamala','Mutebi','Kajubi','Nabirye','Ssekandi','Tumusiime','Byaruhanga','Kaggwa','Lubega','Nabaggala'];
+    const genders = ['male','female'];
+    const dormStatuses = ['present','absent','sick','not-around'];
+    for (let i = 1; i <= 50; i++) {
+      const idx = Math.floor(Math.random() * firstNames.length);
+      const gender = genders[Math.floor(Math.random() * genders.length)];
+      const dorm = dormitories[Math.floor(Math.random() * dormitories.length)];
+      const cls = classes[Math.floor(Math.random() * classes.length)];
+      const bed = `B${100 + i}`;
+      const admission = `SMS${String(i).padStart(3,'0')}`;
+      const dob = new Date(2003 + Math.floor(Math.random() * 5), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+      const dobStr = dob.toISOString().split('T')[0];
+      studentsData.push({
+        admission_number: admission,
+        first_name: firstNames[idx],
+        last_name: lastNames[idx],
+        email: `${firstNames[idx].toLowerCase()}.${lastNames[idx].toLowerCase()}@student.sms.com`,
+        phone: `+2567${Math.floor(10000000 + Math.random() * 90000000)}`,
+        date_of_birth: dobStr,
+        gender,
+        class_id: cls._id.toString(),
         enrollment_date: '2023-01-10',
         status: 'active',
-        dormitory_id: dormitories[0]._id.toString(),
-        bed_number: 'A101',
-        dormitory_status: 'present',
-      },
-      {
-        admission_number: 'SMS002',
-        first_name: 'Amina',
-        last_name: 'Nakimuli',
-        email: 'amina.nakimuli@student.sms.com',
-        phone: '+256702234567',
-        date_of_birth: '2007-05-22',
-        gender: 'female',
-        class_id: classes[0]._id.toString(),
-        enrollment_date: '2023-01-10',
-        status: 'active',
-        dormitory_id: dormitories[2]._id.toString(),
-        bed_number: 'A201',
-        dormitory_status: 'present',
-      },
-      {
-        admission_number: 'SMS003',
-        first_name: 'David',
-        last_name: 'Kyaliwajja',
-        email: 'david.kyaliwajja@student.sms.com',
-        phone: '+256703234567',
-        date_of_birth: '2006-11-08',
-        gender: 'male',
-        class_id: classes[1]._id.toString(),
-        enrollment_date: '2023-01-10',
-        status: 'active',
-        dormitory_id: dormitories[0]._id.toString(),
-        bed_number: 'A102',
-        dormitory_status: 'present',
-      },
-      {
-        admission_number: 'SMS004',
-        first_name: 'Grace',
-        last_name: 'Ssemwanga',
-        email: 'grace.ssemwanga@student.sms.com',
-        phone: '+256704234567',
-        date_of_birth: '2006-07-14',
-        gender: 'female',
-        class_id: classes[1]._id.toString(),
-        enrollment_date: '2023-01-10',
-        status: 'active',
-        dormitory_id: dormitories[2]._id.toString(),
-        bed_number: 'A202',
-        dormitory_status: 'absent',
-      },
-      {
-        admission_number: 'SMS005',
-        first_name: 'Charles',
-        last_name: 'Okello',
-        email: 'charles.okello@student.sms.com',
-        phone: '+256705234567',
-        date_of_birth: '2005-09-20',
-        gender: 'male',
-        class_id: classes[2]._id.toString(),
-        enrollment_date: '2022-01-10',
-        status: 'active',
-        dormitory_id: dormitories[1]._id.toString(),
-        bed_number: 'B105',
-        dormitory_status: 'sick',
-      },
-      {
-        admission_number: 'SMS006',
-        first_name: 'Stella',
-        last_name: 'Bwebwa',
-        email: 'stella.bwebwa@student.sms.com',
-        phone: '+256706234567',
-        date_of_birth: '2005-12-05',
-        gender: 'female',
-        class_id: classes[2]._id.toString(),
-        enrollment_date: '2022-01-10',
-        status: 'active',
-        dormitory_id: dormitories[3]._id.toString(),
-        bed_number: 'B203',
-        dormitory_status: 'present',
-      },
-      {
-        admission_number: 'SMS007',
-        first_name: 'Robert',
-        last_name: 'Nabwire',
-        email: 'robert.nabwire@student.sms.com',
-        phone: '+256707234567',
-        date_of_birth: '2004-04-10',
-        gender: 'male',
-        class_id: classes[3]._id.toString(),
-        enrollment_date: '2021-01-10',
-        status: 'active',
-        dormitory_id: dormitories[1]._id.toString(),
-        bed_number: 'B106',
-        dormitory_status: 'not-around',
-      },
-      {
-        admission_number: 'SMS008',
-        first_name: 'Rachel',
-        last_name: 'Kabugho',
-        email: 'rachel.kabugho@student.sms.com',
-        phone: '+256708234567',
-        date_of_birth: '2004-06-18',
-        gender: 'female',
-        class_id: classes[3]._id.toString(),
-        enrollment_date: '2021-01-10',
-        status: 'active',
-        dormitory_id: dormitories[3]._id.toString(),
-        bed_number: 'B204',
-        dormitory_status: 'present',
-      },
-    ]);
+        dormitory_id: dorm._id.toString(),
+        bed_number: bed,
+        dormitory_status: dormStatuses[Math.floor(Math.random() * dormStatuses.length)],
+      });
+    }
+    const students = await Student.insertMany(studentsData);
     console.log(`✓ Created ${students.length} students`);
 
     // Seed Fees
