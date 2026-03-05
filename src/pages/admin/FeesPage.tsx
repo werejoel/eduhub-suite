@@ -43,7 +43,7 @@ import { Fee } from "@/lib/types";
 import { formatUGX } from "@/lib/utils";
 
 const columns = [
-  { key: "student_id", label: "Student ID" },
+  { key: "student_name", label: "Student Name" },
   {
     key: "amount",
     label: "Amount",
@@ -93,10 +93,19 @@ export default function FeesPage() {
     payment_status: "pending" as const,
   });
 
+  const getStudentName = (studentId: string) => {
+    const student = students?.find(
+      (s) => (s as any).id === studentId || (s as any)._id === studentId
+    );
+    return student
+      ? `${student.first_name} ${student.last_name}`
+      : "Unknown Student";
+  };
+
   const filteredFees = (fees || []).filter((fee) => {
     const matchesSearch =
       searchQuery === "" ||
-      fee.student_id.toLowerCase().includes(searchQuery.toLowerCase());
+      getStudentName(fee.student_id).toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       filterStatus === "all" || fee.payment_status === filterStatus;
     return matchesSearch && matchesStatus;
@@ -343,6 +352,7 @@ export default function FeesPage() {
           columns={columns}
           data={(filteredFees || []).map((fee) => ({
             ...fee,
+            student_name: getStudentName(fee.student_id),
             actions: (
               <div className="flex gap-2">
                 {fee.payment_status !== "paid" ? (
