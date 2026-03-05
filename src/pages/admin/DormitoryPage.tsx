@@ -86,7 +86,7 @@ function DormitoryPage() {
 
   const handleAddDormitory = async () => {
     if (!newDormitory.dormitory_name || newDormitory.capacity <= 0) {
-      toast.error("Please fill in all required fields");
+      toast.error("All required fields must be completed.");
       return;
     }
     try {

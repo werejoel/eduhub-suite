@@ -120,7 +120,7 @@ export default function FeesPage() {
       !newFee.academic_year ||
       !newFee.due_date
     ) {
-      toast.error("Please fill in all required fields");
+      toast.error("All required fields must be completed.");
       return;
     }
     try {

@@ -90,7 +90,7 @@ function StudentsPage() {
       !newStudent.email ||
       !newStudent.class_id
     ) {
-      toast.error("Please fill in all required fields");
+      toast.error("All required fields must be completed.");
       return;
     }
     try {
@@ -190,11 +190,11 @@ function StudentsPage() {
             columns={columns}
             data={filteredStudents}
             onEdit={(row) =>
-              toast.info(`Edit ${row.first_name} ${row.last_name}`)
+              toast.info(`Editing record for ${row.first_name} ${row.last_name}`)
             }
             onDelete={handleDelete}
             onView={(row) =>
-              toast.info(`View ${row.first_name} ${row.last_name}`)
+              toast.info(`Viewing record for ${row.first_name} ${row.last_name}`)
             }
           />
 

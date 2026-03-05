@@ -49,9 +49,9 @@ const UsersPage = () => {
       if (!res.ok) throw new Error('Failed to confirm email');
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      toast.success('Email confirmed successfully. User can now login.');
+      toast.success('Email has been confirmed successfully. The user may now log in.');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to confirm email');
+      toast.error(error.message || 'Unable to confirm email. Please try again.');
     }
   };
 
@@ -65,9 +65,9 @@ const UsersPage = () => {
       if (!res.ok) throw new Error('Failed to revoke confirmation');
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      toast.success('Email confirmation revoked');
+      toast.success('Email confirmation has been revoked.');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to revoke confirmation');
+      toast.error(error.message || 'Unable to revoke email confirmation.');
     }
   };
 
@@ -155,9 +155,9 @@ const UsersPage = () => {
               });
               if (!res.ok) throw new Error("Failed to update role");
               queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-              toast.success("User role updated");
+              toast.success("User role has been updated.");
             } catch (err: any) {
-              toast.error(err.message || "Failed to update role");
+              toast.error(err.message || "Unable to update user role.");
             }
           };
 
@@ -198,9 +198,9 @@ const UsersPage = () => {
               });
               if (!res.ok) throw new Error("Failed to update status");
               queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-              toast.success("Teacher status updated");
+              toast.success("Teacher status has been updated.");
             } catch (err: any) {
-              toast.error(err.message || "Failed to update status");
+              toast.error(err.message || "Unable to update teacher status.");
             }
           };
 

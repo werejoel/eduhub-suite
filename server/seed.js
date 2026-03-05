@@ -342,7 +342,7 @@ async function seed() {
     
     const users = await User.insertMany([
       {
-        email: 'admin@sms.com',
+        email: 'admin@kpsms.com',
         password: hashedPassword,
         first_name: 'Admin',
         last_name: 'User',
@@ -350,7 +350,7 @@ async function seed() {
         email_confirmed: true,
       },
       {
-        email: 'teacher@sms.com',
+        email: 'teacher@kpsms.com',
         password: hashedPassword,
         first_name: 'Teacher',
         last_name: 'Account',
@@ -358,7 +358,7 @@ async function seed() {
         email_confirmed: true,
       },
       {
-        email: 'headteacher@sms.com',
+        email: 'headteacher@kpsms.com',
         password: hashedPassword,
         first_name: 'Head',
         last_name: 'Teacher',
@@ -366,7 +366,7 @@ async function seed() {
         email_confirmed: true,
       },
       {
-        email: 'burser@sms.com',
+        email: 'burser@kpsms.com',
         password: hashedPassword,
         first_name: 'Burser',
         last_name: 'Account',
@@ -378,10 +378,10 @@ async function seed() {
 
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\nTest Credentials:');
-    console.log('- Admin: admin@sms.com / password123');
-    console.log('- Teacher: teacher@sms.com / password123');
-    console.log('- Head Teacher: headteacher@sms.com / password123');
-    console.log('- Burser: burser@sms.com / password123');
+    console.log('- Admin: admin@kpsms.com / password123');
+    console.log('- Teacher: teacher@kpsms.com / password123');
+    console.log('- Head Teacher: headteacher@kpsms.com / password123');
+    console.log('- Burser: burser@kpsms.com / password123');
 
     process.exit(0);
   } catch (error) {

@@ -88,7 +88,7 @@ function TeachersPage() {
       !newTeacher.email ||
       !newTeacher.subject
     ) {
-      toast.error("Please fill in all required fields");
+      toast.error("All required fields must be completed.");
       return;
     }
     try {
@@ -217,7 +217,7 @@ function TeachersPage() {
             data={filteredTeachers}
             onEdit={(row) => handleEdit(row)}
             onView={(row) =>
-              toast.info(`View ${row.first_name} ${row.last_name}`)
+              toast.info(`Viewing record for ${row.first_name} ${row.last_name}`)
             }
             onDelete={handleDelete}
           />

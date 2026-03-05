@@ -29,8 +29,9 @@ const columns = [
   { key: "class_code", label: "Code" },
   { key: "form_number", label: "Form" },
   { key: "capacity", label: "Capacity" },
-  { key: "teacher_id", label: "Teacher ID" },
+  { key: "teacher_name", label: "Teacher" },
 ];
+
 function ClassesPage() {
   const { data: classes, isLoading } = useClasses();
   const { data: teachers } = useTeachers();
@@ -63,7 +64,7 @@ function ClassesPage() {
       !newClass.teacher_id ||
       newClass.capacity <= 0
     ) {
-      toast.error("Please fill in all required fields");
+      toast.error("All required fields must be completed.");
       return;
     }
     try {
@@ -120,6 +121,15 @@ function ClassesPage() {
     if (confirm("Are you sure you want to delete this class?")) {
       await deleteMutation.mutateAsync(id);
     }
+  };
+
+  const getTeacherName = (teacherId: string) => {
+    const teacher = teachers?.find(
+      (t) => (t as any).id === teacherId || (t as any)._id === teacherId
+    );
+    return teacher
+      ? `${teacher.first_name} ${teacher.last_name}`
+      : "Unassigned";
   };
 
   if (isLoading) {
@@ -268,6 +278,7 @@ function ClassesPage() {
           columns={columns}
           data={(filteredClasses || []).map((cls) => ({
             ...cls,
+            teacher_name: getTeacherName(cls.teacher_id),
             actions: (
               <div className="flex gap-2">
                 <Button

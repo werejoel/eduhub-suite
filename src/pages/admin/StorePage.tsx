@@ -126,7 +126,7 @@ export default function StorePage() {
 
   const handleAddItem = async () => {
     if (!newItem.item_name || !newItem.category || !newItem.item_code) {
-      toast.error("Please fill in all required fields");
+      toast.error("All required fields must be completed.");
       return;
     }
     try {

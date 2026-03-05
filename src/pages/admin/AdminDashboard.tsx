@@ -202,11 +202,11 @@ function AdminDashboard() {
           onClick={async () => {
             try {
               await subscribeToPush();
-              toast.success("Push notifications enabled");
+              toast.success("Push notifications have been enabled.");
             } catch (err) {
               console.error("Push subscribe error", err);
               toast.error(
-                "Failed to enable push: " + (err as any).message || ""
+                "Unable to enable push notifications. Please try again later."
               );
             }
           }}

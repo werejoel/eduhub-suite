@@ -128,7 +128,7 @@ const columns = [
         icon={FileText}
         action={{
           label: "Generate Report",
-          onClick: () => toast.info("Report generation feature"),
+          onClick: () => toast.info("Report generation is not yet available."),
         }}
       />
 
@@ -180,7 +180,7 @@ const columns = [
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  toast.success(`Downloading ${record.title}...`);
+                  toast.success(`Preparing download for ${record.title}...`);
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
