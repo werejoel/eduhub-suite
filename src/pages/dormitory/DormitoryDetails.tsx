@@ -82,7 +82,7 @@ export default function DormitoryDetails() {
     setRoomDialogOpen(false);
   };
 
-  const startEditRoom = (r:any) => {
+  const startEditRoom = (r: any) => {
     setEditingRoom(r);
     setRoomForm({ room_name: r.room_name || '', bed_count: r.bed_count || 0 });
     setRoomDialogOpen(true);
@@ -143,12 +143,12 @@ export default function DormitoryDetails() {
               ]}
               data={dormitories}
               onEdit={startEdit}
-              onDelete={(row:any) => {
+              onDelete={(row: any) => {
                 const id = row.id;
                 if (selectedDormId === id) setSelectedDormId(null);
                 if (canManage) deleteDorm.mutate(id);
               }}
-              onView={(row:any) => setSelectedDormId(row.id)}
+              onView={(row: any) => setSelectedDormId(row.id)}
               isLoading={isLoading}
             />
           )}
@@ -184,7 +184,7 @@ export default function DormitoryDetails() {
                 ]}
                 data={rooms}
                 onEdit={startEditRoom}
-                onDelete={(row:any) => canManage && deleteRoom.mutate(row.id || row._id)}
+                onDelete={(row: any) => canManage && deleteRoom.mutate(row.id || row._id)}
                 isLoading={roomsLoading}
               />
             )}
@@ -203,7 +203,7 @@ export default function DormitoryDetails() {
               <Label>Dormitory Name</Label>
               <Input
                 value={form.dormitory_name}
-                onChange={(e:any) => setForm({ ...form, dormitory_name: e.target.value })}
+                onChange={(e: any) => setForm({ ...form, dormitory_name: e.target.value })}
               />
             </div>
             <div>
@@ -211,7 +211,7 @@ export default function DormitoryDetails() {
               <select
                 className="w-full p-2 border rounded"
                 value={form.dormitory_type}
-                onChange={(e:any) => setForm({ ...form, dormitory_type: e.target.value })}
+                onChange={(e: any) => setForm({ ...form, dormitory_type: e.target.value })}
               >
                 <option value="boys">Boys</option>
                 <option value="girls">Girls</option>
@@ -221,7 +221,7 @@ export default function DormitoryDetails() {
               <Label>Location</Label>
               <Input
                 value={form.location}
-                onChange={(e:any) => setForm({ ...form, location: e.target.value })}
+                onChange={(e: any) => setForm({ ...form, location: e.target.value })}
               />
             </div>
             <div>
@@ -229,7 +229,7 @@ export default function DormitoryDetails() {
               <Input
                 type="number"
                 value={form.capacity}
-                onChange={(e:any) =>
+                onChange={(e: any) =>
                   setForm({ ...form, capacity: parseInt(e.target.value || '0') })
                 }
               />
@@ -257,7 +257,7 @@ export default function DormitoryDetails() {
               <Label>Room Name</Label>
               <Input
                 value={roomForm.room_name}
-                onChange={(e:any) => setRoomForm({ ...roomForm, room_name: e.target.value })}
+                onChange={(e: any) => setRoomForm({ ...roomForm, room_name: e.target.value })}
               />
             </div>
             <div>
@@ -265,7 +265,7 @@ export default function DormitoryDetails() {
               <Input
                 type="number"
                 value={roomForm.bed_count}
-                onChange={(e:any) =>
+                onChange={(e: any) =>
                   setRoomForm({ ...roomForm, bed_count: parseInt(e.target.value || '0') })
                 }
               />

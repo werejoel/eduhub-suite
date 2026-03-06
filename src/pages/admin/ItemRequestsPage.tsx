@@ -1,3 +1,4 @@
+//imports
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageHeader from '@/components/dashboard/PageHeader';
@@ -29,7 +30,6 @@ import {
   XCircle,
   Package,
   Clock,
-  CheckCheck,
   TrendingUp,
   Search,
   Filter,
@@ -41,7 +41,8 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useItemRequests, useApproveItemRequest, useRejectItemRequest } from '@/hooks/useDatabase';
 
-export default function ItemRequestsPage() {
+//Main Function
+const ItemRequestsPage = () =>{
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -82,6 +83,7 @@ export default function ItemRequestsPage() {
 
   const categories = Array.from(new Set(requests.map((r: any) => r.category))).filter(Boolean) as string[];
 
+  //handleApprove
   const handleApprove = () => {
     if (selectedRequest) {
       approveRequest(
@@ -101,6 +103,7 @@ export default function ItemRequestsPage() {
     }
   };
 
+//handleReject
   const handleReject = () => {
     if (selectedRequest && rejectionReason.trim()) {
       rejectRequest(
@@ -120,6 +123,7 @@ export default function ItemRequestsPage() {
     }
   };
 
+  //getStatusBadge
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -148,6 +152,7 @@ export default function ItemRequestsPage() {
     }
   };
 
+  //getStatusIcon
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -161,6 +166,7 @@ export default function ItemRequestsPage() {
     }
   };
 
+//totalAmount
   const totalAmount = filteredRequests.reduce(
     (sum: number, r: any) => sum + (r.unit_price * r.quantity_requested),
     0
@@ -575,3 +581,4 @@ export default function ItemRequestsPage() {
     </DashboardLayout>
   );
 }
+export default ItemRequestsPage;

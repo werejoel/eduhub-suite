@@ -19,37 +19,30 @@ import {
   AlertCircle,
   TrendingUp,
   Search,
-  Filter,
   MoreVertical,
-  Plus,
   Eye,
   FileText,
   Loader,
   CheckCircle2,
   AlertTriangle,
   MapPin,
-  Bed,
-  User,
-  Phone,
+  Bed
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, BarChart, Bar } from "recharts";
 import { motion } from "framer-motion";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-export default function DormitoryDashboard() {
+
+
+
+
+function DormitoryDashboard() {
   const navigate = useNavigate();
   const { data: dormitories = [], isLoading } = useDormitories();
   const { data: students = [] } = useStudents();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterGender, setFilterGender] = useState<string>("all");
+ //const [filterGender, setFilterGender] = useState<string>("all");
   const [selectedDorm, setSelectedDorm] = useState<any>(null);
 
   const stats = useMemo(() => {
@@ -492,3 +485,4 @@ export default function DormitoryDashboard() {
     </DashboardLayout>
   );
 }
+export default DormitoryDashboard;

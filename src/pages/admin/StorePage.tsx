@@ -74,7 +74,8 @@ const columns = [
   },
 ];
 
-export default function StorePage() {
+//Main Function
+const StorePage = () => {
   const { data: items, isLoading } = useStoreItems();
   const createMutation = useCreateStoreItem();
   const updateMutation = useUpdateStoreItem();
@@ -95,6 +96,7 @@ export default function StorePage() {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  //filteredItems
   const filteredItems = (items || []).filter((item) => {
     const matchesSearch = item.item_name
       .toLowerCase()
@@ -173,6 +175,7 @@ export default function StorePage() {
     }
   };
 
+  //handleEdit
   const handleEdit = (it: StoreItem) => {
     setEditingId(it.id as string);
     setNewItem({
@@ -187,6 +190,7 @@ export default function StorePage() {
     setDialogOpen(true);
   };
 
+  //handleDelete
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this item?")) {
       await deleteMutation.mutateAsync(id);
@@ -456,3 +460,4 @@ export default function StorePage() {
     </DashboardLayout>
   );
 }
+export default StorePage;

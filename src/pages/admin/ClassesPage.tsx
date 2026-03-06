@@ -266,8 +266,8 @@ function ClassesPage() {
                       ? "Saving..."
                       : "Save Changes"
                     : createMutation.isPending
-                    ? "Creating..."
-                    : "Create Class"}
+                      ? "Creating..."
+                      : "Create Class"}
                 </Button>
               </div>
             </DialogContent>

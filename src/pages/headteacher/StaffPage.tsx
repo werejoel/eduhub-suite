@@ -83,7 +83,9 @@ const StaffPage = () => {
   const [editing, setEditing] = useState<any | null>(null);
   const [selectedTeacherForClass, setSelectedTeacherForClass] = useState<Teacher | null>(null);
   const [selectedClassId, setSelectedClassId] = useState("");
-  const [form, setForm] = useState<any>({
+  const [form, setForm] = useState<Partial<
+    Omit<Teacher, "id" | "createdAt" | "updatedAt">
+  >>({
     first_name: "",
     last_name: "",
     email: "",
@@ -151,8 +153,16 @@ const StaffPage = () => {
           id: editing.id || editing._id,
           updates: form,
         });
-      } else {
-        await createMutation.mutateAsync(form);
+      } 
+      else {
+        await createMutation.mutateAsync(
+          {
+            ...form,
+            role: "teacher",
+            email_confirmed: false,
+            status: form.status || "active",
+          } as Omit<Teacher, "id" | "createdAt" | "updatedAt">
+        );
       }
       setDialogOpen(false);
     } catch (err) {

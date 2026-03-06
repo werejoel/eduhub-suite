@@ -1,3 +1,4 @@
+//Imports
 import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
@@ -38,6 +39,7 @@ import {
 } from "@/hooks/useDatabase";
 import { Dormitory } from "@/lib/types";
 
+//Columns
 const columns = [
   { key: "dormitory_name", label: "Dormitory Name" },
   { key: "dormitory_type", label: "Type" },
@@ -46,6 +48,7 @@ const columns = [
   { key: "location", label: "Location" },
 ];
 
+//Main Function
 function DormitoryPage() {
   const { data: dormitories, isLoading } = useDormitories();
   const createMutation = useCreateDormitory();
@@ -127,6 +130,7 @@ function DormitoryPage() {
     }
   };
 
+//HandleEdit
   const handleEdit = (dorm: Dormitory) => {
     setEditingId(dorm.id as string);
     setNewDormitory({
@@ -149,6 +153,7 @@ function DormitoryPage() {
     );
   }
 
+//handleDelete
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this dormitory?")) {
       await deleteMutation.mutateAsync(id);

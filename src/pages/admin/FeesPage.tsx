@@ -1,3 +1,4 @@
+//imports
 import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
@@ -74,7 +75,8 @@ const columns = [
   },
 ];
 
-export default function FeesPage() {
+//Main Function
+const FeesPage =()=> {
   const { data: fees, isLoading } = useFees();
   const { data: students } = useStudents();
   const createMutation = useCreateFee();
@@ -381,3 +383,4 @@ export default function FeesPage() {
     </DashboardLayout>
   );
 }
+export default FeesPage;

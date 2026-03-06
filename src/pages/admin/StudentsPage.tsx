@@ -54,7 +54,7 @@ const columns = [
   },
 ];
 
-function StudentsPage() {
+const  StudentsPage = () => {
   const { data: students, isLoading } = useStudents();
   const createMutation = useCreateStudent();
   const updateMutation = useUpdateStudent();
@@ -73,6 +73,7 @@ function StudentsPage() {
     admission_number: "",
   });
 
+  //filteredStudents
   const filteredStudents = (students || []).filter((student) => {
     const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
     const matchesSearch =
@@ -122,6 +123,7 @@ function StudentsPage() {
     }
   };
 
+  //handleDelete
   const handleDelete = async (student: Student) => {
     try {
       await deleteMutation.mutateAsync(student.id);

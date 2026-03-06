@@ -80,8 +80,8 @@ function AdminDashboard() {
     const studentGrowth =
       lastMonthStudents > 0
         ? `+${Math.round(
-            (thisMonthStudents / lastMonthStudents) * 100
-          )}% this month`
+          (thisMonthStudents / lastMonthStudents) * 100
+        )}% this month`
         : `${thisMonthStudents} new this month`;
 
     // Calculate teacher growth
@@ -114,9 +114,8 @@ function AdminDashboard() {
       {
         title: "Fees Collected",
         value: formatUGX(totalFeesCollected),
-        change: `${
-          fees.filter((f) => f.payment_status === "paid").length
-        } paid`,
+        change: `${fees.filter((f) => f.payment_status === "paid").length
+          } paid`,
         changeType: "neutral" as const,
         icon: DollarSign,
         iconColor: "bg-secondary",
@@ -152,8 +151,8 @@ function AdminDashboard() {
           student.status === "active"
             ? "Active"
             : student.status === "inactive"
-            ? "Inactive"
-            : "Graduated",
+              ? "Inactive"
+              : "Graduated",
       }));
   }, [students, classes]);
 
@@ -219,17 +218,17 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {isLoading
           ? Array.from({ length: 4 }).map((_, idx) => (
-              <div
-                key={idx}
-                className="bg-card rounded-2xl p-6 border border-border animate-pulse"
-              >
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-muted rounded w-1/2"></div>
-              </div>
-            ))
+            <div
+              key={idx}
+              className="bg-card rounded-2xl p-6 border border-border animate-pulse"
+            >
+              <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-muted rounded w-1/2"></div>
+            </div>
+          ))
           : stats.map((stat, idx) => (
-              <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
-            ))}
+            <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
+          ))}
       </div>
 
       {/* Charts & Quick Actions */}
@@ -503,11 +502,10 @@ function AdminDashboard() {
                         {formatUGX(fee.amount)}
                       </p>
                       <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          fee.status === "pending"
+                        className={`text-xs px-2 py-1 rounded-full ${fee.status === "pending"
                             ? "bg-warning/10 text-warning"
                             : "bg-destructive/10 text-destructive"
-                        }`}
+                          }`}
                       >
                         {fee.status}
                       </span>

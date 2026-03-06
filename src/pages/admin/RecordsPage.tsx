@@ -105,11 +105,14 @@ const columns = [
   },
 ];
 
- function RecordsPage() {
+
+//Main Function
+ const RecordsPage = () => {
   const [records] = useState<Record[]>(initialRecords);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
 
+  //filteredRecords
   const filteredRecords = records.filter((record) => {
     const matchesSearch = record.title
       .toLowerCase()
@@ -117,7 +120,6 @@ const columns = [
     const matchesType = filterType === "all" || record.type === filterType;
     return matchesSearch && matchesType;
   });
-
   const uniqueTypes = [...new Set(records.map((r) => r.type))];
 
   return (

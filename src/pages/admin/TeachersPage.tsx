@@ -52,6 +52,7 @@ const columns = [
   },
 ];
 
+//Main Function
 function TeachersPage() {
   const { data: teachers, isLoading } = useTeachers();
   const createMutation = useCreateTeacher();
@@ -61,7 +62,11 @@ function TeachersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSubject, setFilterSubject] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newTeacher, setNewTeacher] = useState({
+  
+
+  const [newTeacher, setNewTeacher] = useState<Partial<
+    Omit<Teacher, "id" | "createdAt" | "updatedAt">
+  >>({
     first_name: "",
     last_name: "",
     email: "",
@@ -116,6 +121,8 @@ function TeachersPage() {
           employee_id: newTeacher.employee_id,
           employment_date: new Date().toISOString(),
           status: "active",
+          role: "teacher",
+          email_confirmed: false,
         });
       }
       setNewTeacher({
