@@ -84,8 +84,9 @@ export default function OccupancyReport() {
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
 
+  // always fetch full snapshot list; we apply dorm/date filters on client
   const { data: snapshots = [], isLoading: snapsLoading } =
-    useOccupancySnapshots(selectedDorm || undefined);
+    useOccupancySnapshots();
 
   const loading = dormLoading || snapsLoading;
 
@@ -194,14 +195,15 @@ export default function OccupancyReport() {
     }));
   }, [dormitories]);
 
+  // recent list reflects the current filters (dorm and date range)
   const recentSnapshots = useMemo(() => {
-    return [...(snapshots || [])]
+    return [...filteredSnapshots]
       .sort(
         (a: any, b: any) =>
           new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime(),
       )
       .slice(0, 10);
-  }, [snapshots]);
+  }, [filteredSnapshots]);
 
   return (
     <DashboardLayout>
