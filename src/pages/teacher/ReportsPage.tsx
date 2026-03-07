@@ -15,16 +15,28 @@ import { FileText, Download, Loader, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
-// export helpers
-import jsPDF from "jspdf";
-import "jspdf-autotable"; // plugin adds autoTable to jsPDF
-import { exportToExcel } from "@/lib/exportUtils";
 import {
   useClasses,
   useStudents,
   useMarks,
+  useMarksByClass,
+  useMarksByStudent,
 } from "@/hooks/useDatabase";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Types for attendance and behavior (adjust based on your schema)
+interface StudentAttendance {
+  student_id: string;
+  total_days: number;
+  present_days: number;
+  attendance_percentage: number;
+}
+
+interface StudentBehavior {
+  student_id: string;
+  behavior_rating: number; // 1-5 scale
+  behavior_notes?: string;
+}
 import {
   BarChart,
   Bar,
@@ -60,14 +72,47 @@ function ReportsPage() {
   const { data: classes = [], isLoading: classesLoading, isError: classesError } = useClasses();
   const { data: students = [], isLoading: studentsLoading, isError: studentsError } = useStudents();
   const { data: allMarks = [], isLoading: marksLoading, isError: marksError } = useMarks();
-
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+
+  const { data: marksByClass = [], isLoading: marksClassLoading } = useMarksByClass(selectedClassId);
+  const { data: marksByStudent = [], isLoading: marksStudentLoading } = useMarksByStudent(selectedStudentId);
   const [searchParams] = useSearchParams();
   const [reportType, setReportType] = useState<"class" | "student">("class");
 
-  const loading = classesLoading || studentsLoading || marksLoading;
+  const loading = classesLoading || studentsLoading || marksLoading || marksClassLoading || marksStudentLoading;
   const anyError = classesError || studentsError || marksError;
+
+  // TODO: Replace with real hooks when available
+  // const { data: attendanceData = [] } = useAttendance();
+  // const { data: behaviorData = [] } = useBehavior();
+  
+  // Mock attendance data - REPLACE THIS with real data from your database
+  const attendanceData: StudentAttendance[] = useMemo(() => {
+    return students.map(s => ({
+      student_id: s.id,
+      total_days: 100,
+      present_days: Math.floor(Math.random() * 20) + 80, // Random 80-100
+      attendance_percentage: Math.floor(Math.random() * 20) + 80
+    }));
+  }, [students]);
+
+  // Mock behavior data - REPLACE THIS with real data from your database
+  const behaviorData: StudentBehavior[] = useMemo(() => {
+    return students.map(s => ({
+      student_id: s.id,
+      behavior_rating: Math.floor(Math.random() * 2) + 4, // Random 4-5
+      behavior_notes: "Good conduct"
+    }));
+  }, [students]);
+
+  const getStudentAttendance = (studentId: string) => {
+    return attendanceData.find(a => a.student_id === studentId);
+  };
+
+  const getStudentBehavior = (studentId: string) => {
+    return behaviorData.find(b => b.student_id === studentId);
+  };
 
   const teacherClasses = useMemo(() => {
     if (!user) return [];
@@ -89,9 +134,13 @@ function ReportsPage() {
   }, [students, selectedClassId]);
 
   const classMarks = useMemo(() => {
+    // prefer server-fetched marks by class when available
+    if (reportType === "class" && selectedClassId && marksByClass.length > 0) {
+      return marksByClass;
+    }
     if (!selectedClassId) return [];
     return allMarks.filter((m) => m.class_id === selectedClassId);
-  }, [allMarks, selectedClassId]);
+  }, [allMarks, selectedClassId, marksByClass, reportType]);
 
   // Student report data
   const studentReportData = useMemo(() => {
@@ -100,7 +149,11 @@ function ReportsPage() {
     const student = students.find((s) => s.id === selectedStudentId);
     if (!student) return null;
 
-    const studentMarks = allMarks.filter((m) => m.student_id === selectedStudentId);
+    // prefer server marks by student when available
+    const studentMarks =
+      reportType === "student" && marksByStudent.length > 0
+        ? marksByStudent
+        : allMarks.filter((m) => m.student_id === selectedStudentId);
     
     // Group marks by exam type
     const examSummary = EXAM_TYPES.map((exam) => {
@@ -132,6 +185,12 @@ function ReportsPage() {
         })
         .filter(Boolean);
 
+      // Get specific subject data
+      const getSubjectData = (subjectName: string) => {
+        const sub = subjects.find(s => s.subject === subjectName);
+        return sub ? `${sub.total}/${sub.maxTotal}` : "N/A";
+      };
+
       return {
         exam,
         marks: total,
@@ -140,6 +199,10 @@ function ReportsPage() {
         grade,
         subjects: marks.length,
         subjectDetails: subjects,
+        mathsMarks: getSubjectData("Maths"),
+        scienceMarks: getSubjectData("Science"),
+        sstMarks: getSubjectData("SST"),
+        englishMarks: getSubjectData("English"),
       };
     }).filter(Boolean);
 
@@ -174,24 +237,45 @@ function ReportsPage() {
       })
       .filter(Boolean);
 
+    // Get specific subject summaries
+    const getSubjectSummary = (subjectName: string) => {
+      return subjectSummary.find(s => s.subject === subjectName) || null;
+    };
+
+    const mathsSummary = getSubjectSummary("Maths");
+    const scienceSummary = getSubjectSummary("Science");
+    const sstSummary = getSubjectSummary("SST");
+    const englishSummary = getSubjectSummary("English");
+
+    // Get attendance and behavior
+    const attendance = getStudentAttendance(student.id);
+    const behavior = getStudentBehavior(student.id);
+
     return {
       student,
       examSummary,
       examCount: examSummary.length,
       subjectCount: new Set(studentMarks.map((m) => m.subject)).size,
-      examDetails: examSummary, // same structure with details
+      examDetails: examSummary,
       totalMarksObtained,
       totalPossible,
       overallPercentage: Math.round(overallPercentage),
       overallGrade,
       subjectSummary,
+      mathsSummary,
+      scienceSummary,
+      sstSummary,
+      englishSummary,
+      attendance: attendance?.attendance_percentage || 0,
+      attendanceDays: attendance ? `${attendance.present_days}/${attendance.total_days}` : "N/A",
+      behavior: behavior?.behavior_rating || 0,
+      behaviorNotes: behavior?.behavior_notes || "",
     };
-  }, [selectedStudentId, students, allMarks]);
+  }, [selectedStudentId, students, allMarks, getStudentAttendance, getStudentBehavior]);
 
   // Class report data
   const classReportData = useMemo(() => {
     if (!selectedClassId) return null;
-
     const classStudentsList = classStudents;
     const marks = classMarks;
 
@@ -227,6 +311,28 @@ function ReportsPage() {
         })
         .filter(Boolean);
 
+      // Get specific subject data for Maths, Science, SST, English
+      const getSubjectData = (subjectName: string) => {
+        const sub = subjectSummary.find(s => s.subject === subjectName);
+        return sub ? `${sub.total}/${sub.maxTotal}` : "N/A";
+      };
+
+      const mathsMarks = getSubjectData("Maths");
+      const scienceMarks = getSubjectData("Science");
+      const sstMarks = getSubjectData("SST");
+      const englishMarks = getSubjectData("English");
+      
+      const average = Math.round(percentage);
+
+      // Get attendance and behavior for this student
+      const attendance = getStudentAttendance(student.id);
+      const behavior = getStudentBehavior(student.id);
+
+      // create simple summary string for overview table
+      const subjectInfo = subjectSummary
+        .map((s) => `${s.subject}: ${s.total}/${s.maxTotal} (${s.percentage}%)`)
+        .join("; ");
+
       return {
         name: `${student.first_name} ${student.last_name}`,
         studentId: student.id,
@@ -235,6 +341,16 @@ function ReportsPage() {
         percentage: Math.round(percentage),
         grade,
         subjectSummary,
+        subjectInfo,
+        mathsMarks,
+        scienceMarks,
+        sstMarks,
+        englishMarks,
+        average,
+        attendance: attendance?.attendance_percentage || 0,
+        attendanceDays: attendance ? `${attendance.present_days}/${attendance.total_days}` : "N/A",
+        behavior: behavior?.behavior_rating || 0,
+        behaviorNotes: behavior?.behavior_notes || "",
       };
     }).filter(Boolean);
 
@@ -290,183 +406,93 @@ function ReportsPage() {
     );
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
+    // when we switched to server generation we just POST and download the response
+    const token = typeof window !== 'undefined' ? localStorage.getItem('eduhub_token') : null;
+    if (!token) {
+      toast.error("You must be logged in to generate reports");
+      return;
+    }
+
     try {
-      const doc = new jsPDF();
-      if (reportType === "class" && classReportData) {
-        const title = `Class Report – ${classReportData.classInfo?.class_name || ""}`;
-        doc.setFontSize(16);
-        doc.text(title, 14, 20);
+      const response = await fetch(`/api/reports/${reportType}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reportType,
+          classId: selectedClassId,
+          studentId: selectedStudentId,
+        }),
+      });
 
-        const studentRows = classReportData.studentPerformance.map((p) => [
-          p.name,
-          `${p.marks}/${p.total}`,
-          `${p.percentage}%`,
-          p.grade,
-        ]);
-        (doc as any).autoTable({ head: [["Student", "Marks", "%", "Grade"]], body: studentRows, startY: 30 });
-
-        classReportData.studentPerformance.forEach((p) => {
-          if (p.subjectSummary && p.subjectSummary.length > 0) {
-            doc.addPage();
-            doc.setFontSize(14);
-            doc.text(`Subjects – ${p.name}`, 14, 20);
-            const subRows = p.subjectSummary.map((s) => [
-              s.subject,
-              `${s.total}/${s.maxTotal}`,
-              s.average,
-              `${s.percentage}%`,
-              s.grade,
-              s.tests,
-            ]);
-            (doc as any).autoTable({
-              head: [["Subject", "Total", "Avg", "%", "Grade", "Tests"]],
-              body: subRows,
-              startY: 28,
-            });
-          }
-          const studentMarks = allMarks.filter((m) => m.student_id === p.studentId);
-          if (studentMarks.length > 0) {
-            doc.addPage();
-            doc.setFontSize(14);
-            doc.text(`Raw Marks – ${p.name}`, 14, 20);
-            const rawRows = studentMarks.map((m) => [
-              m.subject,
-              m.exam_type,
-              m.marks_obtained,
-              m.total_marks,
-            ]);
-            (doc as any).autoTable({ head: [["Subject", "Exam", "Obtained", "Total"]], body: rawRows, startY: 28 });
-          }
-        });
-
-        doc.save("class-report.pdf");
-        toast.success("Class report PDF generated");
-      } else if (reportType === "student" && studentReportData) {
-        const name = `${studentReportData.student.first_name} ${studentReportData.student.last_name}`;
-        doc.setFontSize(16);
-        doc.text(`Student Report – ${name}`, 14, 20);
-
-        const examRows = studentReportData.examSummary.map((e) => [
-          e.exam,
-          `${e.marks}/${e.total}`,
-          `${e.percentage}%`,
-          e.grade,
-          e.subjects,
-        ]);
-        (doc as any).autoTable({ head: [["Exam", "Marks", "%", "Grade", "Subjects"]], body: examRows, startY: 30 });
-
-        if (studentReportData.subjectSummary.length > 0) {
-          doc.addPage();
-          doc.setFontSize(14);
-          doc.text("Subject Breakdown", 14, 20);
-          const subRows = studentReportData.subjectSummary.map((s) => [
-            s.subject,
-            `${s.total}/${s.maxTotal}`,
-            s.average,
-            `${s.percentage}%`,
-            s.grade,
-            s.tests,
-          ]);
-          (doc as any).autoTable({ head: [["Subject", "Total", "Avg", "%", "Grade", "Tests"]], body: subRows, startY: 28 });
-        }
-
-        const rawRows = allMarks
-          .filter((m) => m.student_id === studentReportData.student.id)
-          .map((m) => [m.subject, m.exam_type, m.marks_obtained, m.total_marks]);
-        if (rawRows.length > 0) {
-          doc.addPage();
-          doc.setFontSize(14);
-          doc.text("Raw Marks", 14, 20);
-          (doc as any).autoTable({ head: [["Subject", "Exam", "Obtained", "Total"]], body: rawRows, startY: 28 });
-        }
-
-        doc.save("student-report.pdf");
-        toast.success("Student report PDF generated");
-      } else {
-        toast.error("No data available for PDF export");
+      if (!response.ok) {
+        const text = await response.text().catch(() => null);
+        const msg = text || response.statusText;
+        throw new Error(`Server error ${response.status}: ${msg}`);
       }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${reportType}-report-${new Date().toISOString()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      toast.success("Report downloaded successfully");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to generate PDF");
+      toast.error("Error generating PDF report");
     }
   };
 
-  const handleExportExcel = () => {
-    if (reportType === "class" && classReportData) {
-      // build sheets: overview + raw marks per student
-      const overview = [
-        ["Student", "Marks", "%", "Grade"],
-        ...classReportData.studentPerformance.map((p) => [
-          p.name,
-          `${p.marks}/${p.total}`,
-          `${p.percentage}%`,
-          p.grade,
-        ]),
-      ];
-      const rawRows: (string | number)[][] = [
-        ["Student", "Subject", "Exam Type", "Obtained", "Total"],
-      ];
-      classReportData.studentPerformance.forEach((p) => {
-        const studentMarks = allMarks.filter((m) => m.student_id === p.studentId);
-        studentMarks.forEach((m) => {
-          rawRows.push([
-            p.name,
-            m.subject,
-            m.exam_type,
-            m.marks_obtained,
-            m.total_marks,
-          ]);
-        });
+  const handleExportExcel = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('eduhub_token') : null;
+    if (!token) {
+      toast.error("You must be logged in to generate reports");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/reports/${reportType}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reportType,
+          classId: selectedClassId,
+          studentId: selectedStudentId,
+          format: "excel",
+        }),
       });
 
-      exportToExcel({
-        filename: `class_${classReportData.classInfo?.class_name || "report"}.xlsx`,
-        sheets: [
-          { name: "Overview", data: overview },
-          { name: "Raw Marks", data: rawRows },
-        ],
-      });
-    } else if (reportType === "student" && studentReportData) {
-      const examSheet = [
-        ["Exam", "Marks", "%", "Grade", "Subjects"],
-        ...studentReportData.examSummary.map((e) => [
-          e.exam,
-          `${e.marks}/${e.total}`,
-          `${e.percentage}%`,
-          e.grade,
-          e.subjects,
-        ]),
-      ];
-      const subjectSheet = [
-        ["Subject", "Total", "Max", "Avg", "%", "Grade", "Tests"],
-        ...studentReportData.subjectSummary.map((s) => [
-          s.subject,
-          s.total,
-          s.maxTotal,
-          s.average,
-          `${s.percentage}%`,
-          s.grade,
-          s.tests,
-        ]),
-      ];
-      const rawRows = [
-        ["Subject", "Exam Type", "Obtained", "Total"],
-        ...allMarks
-          .filter((m) => m.student_id === studentReportData.student.id)
-          .map((m) => [m.subject, m.exam_type, m.marks_obtained, m.total_marks]),
-      ];
+      if (!response.ok) {
+        const text = await response.text().catch(() => null);
+        const msg = text || response.statusText;
+        throw new Error(`Server error ${response.status}: ${msg}`);
+      }
 
-      exportToExcel({
-        filename: `${studentReportData.student.first_name}_${studentReportData.student.last_name}.xlsx`,
-        sheets: [
-          { name: "Exams", data: examSheet },
-          { name: "Subjects", data: subjectSheet },
-          { name: "Raw Marks", data: rawRows },
-        ],
-      });
-    } else {
-      toast.error("No data available for Excel export");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${reportType}-report-${new Date().toISOString()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      toast.success("Report downloaded successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error generating Excel report");
     }
   };
 
@@ -486,7 +512,7 @@ function ReportsPage() {
 
       {anyError && (
         <div className="p-4 bg-red-50 rounded-md mb-4 text-sm text-red-700">
-          Some data failed to load from the backend. Check your server or network and refresh.
+          Check your server or network and refresh.
         </div>
       )}
 
@@ -653,9 +679,15 @@ function ReportsPage() {
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="text-left p-4 font-semibold">Student Name</th>
-                        <th className="text-center p-4 font-semibold">Marks</th>
-                        <th className="text-center p-4 font-semibold">Percentage</th>
+                        <th className="text-center p-4 font-semibold">Maths</th>
+                        <th className="text-center p-4 font-semibold">Science</th>
+                        <th className="text-center p-4 font-semibold">SST</th>
+                        <th className="text-center p-4 font-semibold">English</th>
+                        <th className="text-center p-4 font-semibold">Total Marks</th>
+                        <th className="text-center p-4 font-semibold">Average</th>
                         <th className="text-center p-4 font-semibold">Grade</th>
+                        <th className="text-center p-4 font-semibold">Attendance</th>
+                        <th className="text-center p-4 font-semibold">Behavior</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -667,10 +699,14 @@ function ReportsPage() {
                             onClick={() => handleToggleStudent(student.studentId)}
                           >
                             <td className="p-4 font-medium">{student.name}</td>
+                            <td className="p-4 text-center text-muted-foreground">{student.mathsMarks}</td>
+                            <td className="p-4 text-center text-muted-foreground">{student.scienceMarks}</td>
+                            <td className="p-4 text-center text-muted-foreground">{student.sstMarks}</td>
+                            <td className="p-4 text-center text-muted-foreground">{student.englishMarks}</td>
                             <td className="p-4 text-center text-muted-foreground">
                               {student.marks}/{student.total}
                             </td>
-                            <td className="p-4 text-center font-medium">{student.percentage}%</td>
+                            <td className="p-4 text-center font-medium">{student.average}%</td>
                             <td className="p-4 text-center">
                               <span
                                 className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -688,10 +724,27 @@ function ReportsPage() {
                                 {student.grade}
                               </span>
                             </td>
+                            <td className="p-4 text-center">
+                              <div className="flex flex-col items-center">
+                                <span className={`font-medium ${student.attendance >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                                  {student.attendance}%
+                                </span>
+                                <span className="text-xs text-muted-foreground">{student.attendanceDays}</span>
+                              </div>
+                            </td>
+                            <td className="p-4 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <span key={star} className={star <= student.behavior ? 'text-yellow-500' : 'text-gray-300'}>
+                                    ★
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
                           </tr>
                           {expandedStudents.includes(student.studentId) && (
                             <tr className="bg-muted/20">
-                              <td colSpan={4} className="p-4">
+                              <td colSpan={10} className="p-4">
                                 <div className="overflow-x-auto">
                                   <table className="w-full">
                                     <thead className="bg-muted/50">
@@ -752,7 +805,7 @@ function ReportsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
               >
                 <Card className="p-6 border border-border">
                   <div className="text-sm text-muted-foreground mb-1">Student Name</div>
@@ -789,6 +842,26 @@ function ReportsPage() {
                   >
                     {studentReportData.overallGrade}
                   </div>
+                </Card>
+                <Card className="p-6 border border-border">
+                  <div className="text-sm text-muted-foreground mb-1">Attendance</div>
+                  <div className={`text-2xl font-bold ${studentReportData.attendance >= 80 ? 'text-green-600' : 'text-orange-600'}`}>
+                    {studentReportData.attendance}%
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">{studentReportData.attendanceDays}</div>
+                </Card>
+                <Card className="p-6 border border-border">
+                  <div className="text-sm text-muted-foreground mb-1">Behavior Rating</div>
+                  <div className="flex items-center gap-1 mt-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span key={star} className={`text-2xl ${star <= studentReportData.behavior ? 'text-yellow-500' : 'text-gray-300'}`}>
+                        ★
+                      </span>
+                    ))}
+                  </div>
+                  {studentReportData.behaviorNotes && (
+                    <div className="text-xs text-muted-foreground mt-2">{studentReportData.behaviorNotes}</div>
+                  )}
                 </Card>
               </motion.div>
 
@@ -844,10 +917,13 @@ function ReportsPage() {
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="text-left p-4 font-semibold">Exam Type</th>
-                        <th className="text-center p-4 font-semibold">Marks</th>
+                        <th className="text-center p-4 font-semibold">Maths</th>
+                        <th className="text-center p-4 font-semibold">Science</th>
+                        <th className="text-center p-4 font-semibold">SST</th>
+                        <th className="text-center p-4 font-semibold">English</th>
+                        <th className="text-center p-4 font-semibold">Total</th>
                         <th className="text-center p-4 font-semibold">Percentage</th>
                         <th className="text-center p-4 font-semibold">Grade</th>
-                        <th className="text-center p-4 font-semibold">Subjects</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -856,9 +932,13 @@ function ReportsPage() {
                           <tr
                             key={exam.exam}
                             className="border-t border-border hover:bg-muted/30 cursor-pointer"
-                            onClick={() => setExpandedExam(exam.exam)}
+                            onClick={() => setExpandedExam(expandedExam === exam.exam ? null : exam.exam)}
                           >
                             <td className="p-4 font-medium">{exam.exam}</td>
+                            <td className="p-4 text-center text-muted-foreground">{exam.mathsMarks}</td>
+                            <td className="p-4 text-center text-muted-foreground">{exam.scienceMarks}</td>
+                            <td className="p-4 text-center text-muted-foreground">{exam.sstMarks}</td>
+                            <td className="p-4 text-center text-muted-foreground">{exam.englishMarks}</td>
                             <td className="p-4 text-center text-muted-foreground">
                               {exam.marks}/{exam.total}
                             </td>
@@ -880,11 +960,10 @@ function ReportsPage() {
                                 {exam.grade}
                               </span>
                             </td>
-                            <td className="p-4 text-center">{exam.subjects}</td>
                           </tr>
                           {expandedExam === exam.exam && (
                             <tr className="bg-muted/20">
-                              <td colSpan={5} className="p-4">
+                              <td colSpan={8} className="p-4">
                                 <div className="overflow-x-auto">
                                   <table className="w-full">
                                     <thead className="bg-muted/50">
@@ -942,16 +1021,6 @@ function ReportsPage() {
               >
                 <div className="p-6 border-b border-border flex justify-between items-center">
                   <h3 className="text-lg font-semibold">Subject-wise Performance</h3>
-                  <div className="flex gap-2">
-                    <Button onClick={handleExportPDF} variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export PDF
-                    </Button>
-                    <Button onClick={handleExportExcel} variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export Excel
-                    </Button>
-                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">

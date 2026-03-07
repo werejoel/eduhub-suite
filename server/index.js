@@ -12,6 +12,11 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET || "change_this_secret";
 const webpush = require("web-push");
+const XLSX = require("xlsx");
+const PDFDocument = require("pdfkit");
+
+// allow school name to be set via env for reports; default to generic name if not set
+const SCHOOL_NAME = process.env.SCHOOL_NAME || "KIBAALE PARENTS PRIMARY SCHOOL";
 
 // Setup VAPID keys for Web Push. Prefer env values, otherwise generate temporary keys.
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || null;
@@ -709,6 +714,233 @@ app.get("/api/assignments/export", async (req, res) => {
       'attachment; filename="assignment_logs.csv"'
     );
     res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// REPORT GENERATION
+// returns either pdf or excel document depending on body.format
+app.post("/api/reports/class", authenticateToken, async (req, res) => {
+  try {
+    console.log("/api/reports/class body", req.body);
+    const { classId, format = "pdf" } = req.body;
+    if (!classId) return res.status(400).json({ error: "classId required" });
+
+    const ClassModel = createFlexibleModel("classes");
+    const StudentModel = createFlexibleModel("students");
+    const MarkModel = createFlexibleModel("marks");
+
+    const classInfo = await ClassModel.findById(classId).lean();
+    const students = await StudentModel.find({ class_id: classId }).lean();
+    const marks = await MarkModel.find({ class_id: classId }).lean();
+
+    // map marks by student
+    const marksByStudent = {};
+    marks.forEach((m) => {
+      marksByStudent[m.student_id] = marksByStudent[m.student_id] || [];
+      marksByStudent[m.student_id].push(m);
+    });
+
+    const applyBorders = (ws) => {
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cell_address = { c: C, r: R };
+          const cell_ref = XLSX.utils.encode_cell(cell_address);
+          if (!ws[cell_ref]) continue;
+          ws[cell_ref].s = ws[cell_ref].s || {};
+          ws[cell_ref].s.border = {
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } },
+          };
+        }
+      }
+    };
+
+    if (format === "excel") {
+      const wb = XLSX.utils.book_new();
+
+      // info sheet
+      const info = [
+        ["School", SCHOOL_NAME],
+        ["Class", classInfo?.class_name || ""],
+        ["Generated", new Date().toLocaleDateString()],
+      ];
+      const wsInfo = XLSX.utils.aoa_to_sheet(info);
+      applyBorders(wsInfo);
+      XLSX.utils.book_append_sheet(wb, wsInfo, "Info");
+
+      // overview sheet
+      const overview = [
+        ["Student", "Marks", "%", "Grade", "Subjects"],
+      ];
+      for (const s of students) {
+        const sm = marksByStudent[s._id] || [];
+        const total = sm.reduce((a, m) => a + m.marks_obtained, 0);
+        const max = sm.reduce((a, m) => a + m.total_marks, 0);
+        const perc = max > 0 ? Math.round((total / max) * 100) : 0;
+        const grade = calculateGrade(total, max);
+        const subj = [...new Set(sm.map((m) => m.subject))].join(",");
+        overview.push([`${s.first_name} ${s.last_name}`, `${total}/${max}`, `${perc}%`, grade, subj]);
+      }
+      const ws1 = XLSX.utils.aoa_to_sheet(overview);
+      applyBorders(ws1);
+      XLSX.utils.book_append_sheet(wb, ws1, "Overview");
+
+      // raw marks sheet
+      const raw = [["Student", "Subject", "Exam", "Obtained", "Total"]];
+      marks.forEach((m) => raw.push([``, m.subject, m.exam_type, m.marks_obtained, m.total_marks]));
+      const ws2 = XLSX.utils.aoa_to_sheet(raw);
+      applyBorders(ws2);
+      XLSX.utils.book_append_sheet(wb, ws2, "Raw Marks");
+
+      const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+      res.setHeader("Content-Disposition", "attachment; filename=class-report.xlsx");
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      return res.send(buf);
+    }
+
+    // default to pdf
+    res.setHeader("Content-Disposition", "attachment; filename=class-report.pdf");
+    res.setHeader("Content-Type", "application/pdf");
+    const doc = new PDFDocument({ autoFirstPage: false });
+    doc.pipe(res);
+    doc.addPage();
+    doc.fontSize(18).text(SCHOOL_NAME, { align: "center" });
+    doc.moveDown(0.5);
+    doc.fontSize(16).text(`Class Report: ${classInfo?.class_name || ""}`, { align: "center" });
+    doc.moveDown();
+
+    // draw bordered, centered table
+    const tableTop = doc.y + 10;
+    const margin = 40;
+    const usableWidth = doc.page.width - margin * 2;
+    const colWidths = [usableWidth * 0.4, usableWidth * 0.2, usableWidth * 0.2, usableWidth * 0.2];
+    const totalWidth = colWidths.reduce((a, b) => a + b, 0);
+    const startX = (doc.page.width - totalWidth) / 2;
+    const rowHeight = 20;
+
+    // header row
+    doc.rect(startX, tableTop, totalWidth, rowHeight).stroke();
+    doc.fontSize(10).text("Student", startX + 2, tableTop + 5);
+    doc.text("Marks", startX + colWidths[0] + 2, tableTop + 5);
+    doc.text("%", startX + colWidths[0] + colWidths[1] + 2, tableTop + 5);
+    doc.text("Grade", startX + colWidths[0] + colWidths[1] + colWidths[2] + 2, tableTop + 5);
+
+    let y = tableTop + rowHeight;
+    students.forEach((s) => {
+      const sm = marksByStudent[s._id] || [];
+      const total = sm.reduce((a, m) => a + m.marks_obtained, 0);
+      const max = sm.reduce((a, m) => a + m.total_marks, 0);
+      const perc = max > 0 ? Math.round((total / max) * 100) : 0;
+      const grade = calculateGrade(total, max);
+
+      doc.rect(startX, y, totalWidth, rowHeight).stroke();
+      doc.fontSize(10).text(`${s.first_name} ${s.last_name}`, startX + 2, y + 5);
+      doc.text(`${total}/${max}`, startX + colWidths[0] + 2, y + 5);
+      doc.text(`${perc}%`, startX + colWidths[0] + colWidths[1] + 2, y + 5);
+      doc.text(grade, startX + colWidths[0] + colWidths[1] + colWidths[2] + 2, y + 5);
+      y += rowHeight;
+    });
+    doc.end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/reports/student", authenticateToken, async (req, res) => {
+  try {
+    console.log("/api/reports/student body", req.body);
+    const { studentId, format = "pdf" } = req.body;
+    if (!studentId) return res.status(400).json({ error: "studentId required" });
+
+    const StudentModel = createFlexibleModel("students");
+    const MarkModel = createFlexibleModel("marks");
+
+    const student = await StudentModel.findById(studentId).lean();
+    const marks = await MarkModel.find({ student_id: studentId }).lean();
+    const ClassModel = createFlexibleModel("classes");
+    const classInfo = student?.class_id ? await ClassModel.findById(student.class_id).lean() : null;
+    const DormModel = createFlexibleModel("dormitories");
+    const dormInfo = student?.dormitory_id ? await DormModel.findById(student.dormitory_id).lean() : null;
+
+    if (format === "excel") {
+      const wb = XLSX.utils.book_new();
+
+      // info sheet with student details
+      const info = [
+        ["School", SCHOOL_NAME],
+        ["Name", `${student?.first_name || ''} ${student?.last_name || ''}`],
+        ["Class", classInfo?.class_name || "N/A"],
+        ["Dormitory", dormInfo?.dormitory_name || "N/A"],
+      ];
+      const wsInfo = XLSX.utils.aoa_to_sheet(info);
+      applyBorders(wsInfo);
+      XLSX.utils.book_append_sheet(wb, wsInfo, "Info");
+
+      const exams = [...new Set(marks.map((m) => m.exam_type))];
+      exams.forEach((exam) => {
+        const rows = [["Subject", "Obtained", "Total"]];
+        marks.filter((m) => m.exam_type === exam).forEach((m) => {
+          rows.push([m.subject, m.marks_obtained, m.total_marks]);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        applyBorders(ws);
+        XLSX.utils.book_append_sheet(wb, ws, exam.substring(0, 31));
+      });
+      const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+      res.setHeader("Content-Disposition", "attachment; filename=student-report.xlsx");
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      return res.send(buf);
+    }
+
+    res.setHeader("Content-Disposition", "attachment; filename=student-report.pdf");
+    res.setHeader("Content-Type", "application/pdf");
+    const doc = new PDFDocument({ autoFirstPage: false });
+    doc.pipe(res);
+    doc.addPage();
+    doc.fontSize(18).text(SCHOOL_NAME, { align: "center" });
+    doc.moveDown(0.5);
+    doc.fontSize(16).text("Student Report", { align: "center" });
+    doc.moveDown();
+    doc.fontSize(12).text(`Name: ${student?.first_name || ''} ${student?.last_name || ''}`);
+    doc.text(`Class: ${classInfo?.class_name || 'N/A'}`);
+    doc.text(`Dormitory: ${dormInfo?.dormitory_name || 'N/A'}`);
+    doc.moveDown();
+
+    // table of marks with borders (centered, wider)
+    const tableTop = doc.y + 10;
+    const margin = 40;
+    const usableWidth = doc.page.width - margin * 2;
+    const colWidths = [usableWidth * 0.3, usableWidth * 0.4, usableWidth * 0.3];
+    const totalWidth = colWidths.reduce((a, b) => a + b, 0);
+    const startX = (doc.page.width - totalWidth) / 2;
+    const rowHeight = 20;
+
+    // header
+    doc.rect(startX, tableTop, totalWidth, rowHeight).stroke();
+    doc.fontSize(10).text("Exam", startX + 2, tableTop + 5);
+    doc.text("Subject", startX + colWidths[0] + 2, tableTop + 5);
+    doc.text("Marks", startX + colWidths[0] + colWidths[1] + 2, tableTop + 5);
+
+    let y = tableTop + rowHeight;
+    marks.forEach((m) => {
+      doc.rect(startX, y, totalWidth, rowHeight).stroke();
+      doc.fontSize(10).text(m.exam_type, startX + 2, y + 5);
+      doc.text(m.subject, startX + colWidths[0] + 2, y + 5);
+      doc.text(`${m.marks_obtained}/${m.total_marks}`, startX + colWidths[0] + colWidths[1] + 2, y + 5);
+      y += rowHeight;
+    });
+    doc.end();
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

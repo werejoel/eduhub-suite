@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileText, Download, Loader, BarChart3 } from "lucide-react";
-//import { toast } from "sonner";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
   useClasses,
@@ -32,7 +32,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { calculateGrade, exportToExcel, exportToPDF } from "@/lib/exportUtils";
+import { calculateGrade } from "@/lib/exportUtils";
 
 const EXAM_TYPES = [
   "Beginning-of-Term",
@@ -203,132 +203,77 @@ const TeacherReportsPage = () => {
     };
   }, [selectedClassId, classStudents, classMarks, classes]);
 
-  const handleExportExcel = () => {
-    const selectedClass = classes.find((c) => c.id === selectedClassId);
+  const handleExportExcel = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('eduhub_token') : null;
+    if (!token) {
+      toast.error("You must be logged in to generate reports");
+      return;
+    }
 
-    if (reportType === "class" && classReportData) {
-      exportToExcel({
-        filename: `Class_Report_${selectedClass?.class_name}_${new Date().toISOString().split('T')[0]}.xlsx`,
-        sheets: [
-          {
-            name: "Summary",
-            data: [
-              ["Class Report Summary"],
-              ["Class Name", selectedClass?.class_name || "N/A"],
-              ["Total Students", classReportData.studentCount],
-              ["Marks Recorded", classReportData.totalMarksRecorded],
-              ["Class Average", `${classReportData.averagePercentage}%`],
-              ["Exams Recorded", classReportData.examTypeSummary.length],
-              [],
-              ["Grade Distribution"],
-              ["Grade", "Count"],
-              ...Object.entries(classReportData.gradeDistribution).map(([grade, count]) => [
-                grade,
-                count,
-              ]),
-            ],
-          },
-          {
-            name: "Student Performance",
-            data: [
-              ["Student Performance"],
-              ["Student Name", "Marks Obtained", "Total Marks", "Percentage", "Grade"],
-              ...classReportData.studentPerformance.map((student) => [
-                student.name,
-                student.marks,
-                student.total,
-                `${student.percentage}%`,
-                student.grade,
-              ]),
-            ],
-          },
-          {
-            name: "Exam Performance",
-            data: [
-              ["Exam Performance Summary"],
-              ["Exam Type", "Average Percentage", "Students", "Marks Count"],
-              ...classReportData.examTypeSummary.map((exam) => [
-                exam.exam,
-                `${exam.percentage}%`,
-                exam.studentCount,
-                exam.marksCount,
-              ]),
-            ],
-          },
-        ],
+    try {
+      const response = await fetch(`/api/reports/${reportType}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reportType,
+          classId: selectedClassId,
+          studentId: selectedStudentId,
+          format: "excel",
+        }),
       });
-    } else if (reportType === "student" && studentReportData) {
-      exportToExcel({
-        filename: `Student_Report_${studentReportData.student.first_name}_${studentReportData.student.last_name}_${new Date().toISOString().split('T')[0]}.xlsx`,
-        sheets: [
-          {
-            name: "Student Report",
-            data: [
-              ["Student Report"],
-              ["Student Name", `${studentReportData.student.first_name} ${studentReportData.student.last_name}`],
-              ["Total Marks", `${studentReportData.totalMarksObtained}/${studentReportData.totalPossible}`],
-              ["Overall Percentage", `${studentReportData.overallPercentage}%`],
-              ["Overall Grade", studentReportData.overallGrade],
-              [],
-              ["Exam-wise Performance"],
-              ["Exam Type", "Marks Obtained", "Total Marks", "Percentage", "Grade", "Subjects"],
-              ...studentReportData.examSummary.map((exam) => [
-                exam.exam,
-                exam.marks,
-                exam.total,
-                `${exam.percentage}%`,
-                exam.grade,
-                exam.subjects,
-              ]),
-            ],
-          },
-        ],
-      });
+      if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${reportType}-report-${new Date().toISOString()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Report downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error generating Excel report");
     }
   };
+  const handleExportPDF = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('eduhub_token') : null;
+    if (!token) {
+      toast.error("You must be logged in to generate reports");
+      return;
+    }
 
-  const handleExportPDF = () => {
-    const selectedClass = classes.find((c) => c.id === selectedClassId);
-
-    if (reportType === "class" && classReportData) {
-      exportToPDF({
-        filename: `Class_Report_${selectedClass?.class_name}_${new Date().toISOString().split('T')[0]}.pdf`,
-        title: "Class Report",
-        summaryItems: [
-          { label: "Class", value: selectedClass?.class_name || "N/A" },
-          { label: "Total Students", value: classReportData.studentCount },
-          { label: "Class Average", value: `${classReportData.averagePercentage}%` },
-          { label: "Marks Recorded", value: classReportData.totalMarksRecorded },
-        ],
-        tableTitle: "Student Performance",
-        tableHeaders: ["Student Name", "Marks", "Percentage", "Grade"],
-        tableData: classReportData.studentPerformance.map((student) => [
-          student.name,
-          `${student.marks}/${student.total}`,
-          `${student.percentage}%`,
-          student.grade,
-        ]),
+    try {
+      const response = await fetch(`/api/reports/${reportType}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reportType,
+          classId: selectedClassId,
+          studentId: selectedStudentId,
+        }),
       });
-    } else if (reportType === "student" && studentReportData) {
-      exportToPDF({
-        filename: `Student_Report_${studentReportData.student.first_name}_${studentReportData.student.last_name}_${new Date().toISOString().split('T')[0]}.pdf`,
-        title: "Student Report",
-        summaryItems: [
-          { label: "Student", value: `${studentReportData.student.first_name} ${studentReportData.student.last_name}` },
-          { label: "Total Marks", value: `${studentReportData.totalMarksObtained}/${studentReportData.totalPossible}` },
-          { label: "Overall Percentage", value: `${studentReportData.overallPercentage}%` },
-          { label: "Overall Grade", value: studentReportData.overallGrade },
-        ],
-        tableTitle: "Exam-wise Performance",
-        tableHeaders: ["Exam Type", "Marks", "Percentage", "Grade", "Subjects"],
-        tableData: studentReportData.examSummary.map((exam) => [
-          exam.exam,
-          `${exam.marks}/${exam.total}`,
-          `${exam.percentage}%`,
-          exam.grade,
-          String(exam.subjects),
-        ]),
-      });
+      if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${reportType}-report-${new Date().toISOString()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Report downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error generating PDF report");
     }
   };
 
@@ -348,7 +293,7 @@ const TeacherReportsPage = () => {
 
       {anyError && (
         <div className="p-4 bg-red-50 rounded-md mb-4 text-sm text-red-700">
-          Some data failed to load from the backend. Check your server or network and refresh.
+        Check your server or network and refresh.
         </div>
       )}
 
