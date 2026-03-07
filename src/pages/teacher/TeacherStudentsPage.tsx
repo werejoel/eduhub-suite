@@ -83,24 +83,9 @@ function TeacherStudentsPage() {
     return classes.filter((c) => c.teacher_id === user.id);
   }, [classes, user]);
 
-  // Log comprehensive data for debugging
+  // debug logging removed for production; sensitive information no longer printed
   useEffect(() => {
-    console.log("=== TeacherStudentsPage Debug ===");
-    console.log("User:", user);
-    console.log("Loading states:", { studentsLoading, classesLoading, attendanceLoading, marksLoading });
-    console.log("Error states:", { studentsError, classesError, attendanceError, marksError });
-    console.log("Data loaded:", {
-      students: students.length,
-      classes: classes.length,
-      attendance: allAttendance.length,
-      marks: allMarks.length,
-    });
-    console.log("Students data:", students);
-    console.log("Classes data:", classes);
-    if (studentsError) console.error("Students error:", studentsErrorObj);
-    if (classesError) console.error("Classes error:", classesErrorObj);
-    if (attendanceError) console.error("Attendance error:", attendanceErrorObj);
-    if (marksError) console.error("Marks error:", marksErrorObj);
+    // no-op
   }, [studentsLoading, classesLoading, attendanceLoading, marksLoading, studentsError, classesError, attendanceError, marksError, students.length, classes.length, allAttendance.length, allMarks.length]);
 
   useEffect(() => {
@@ -382,7 +367,7 @@ function TeacherStudentsPage() {
                   if (prevStudents) queryClient.setQueryData(["students"], prevStudents);
                   if (prevClasses) queryClient.setQueryData(["classes"], prevClasses);
                   toast.error("Failed to assign student");
-                  console.error(err);
+                  // error logged silently
                 } finally {
                   setConfirmAssignOpen(false);
                   setPendingAssign(null);

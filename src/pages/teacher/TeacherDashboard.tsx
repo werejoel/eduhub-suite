@@ -38,45 +38,12 @@ const TeacherDashboard = () => {
   const loading = classesLoading || studentsLoading || marksLoading || attendanceLoading || dutiesLoading;
   const anyError = classesError || studentsError || marksError || attendanceError || dutiesError;
 
-  // Log comprehensive data for debugging
-  useEffect(() => {
-    console.log("=== TeacherDashboard Debug ===");
-    console.log("User:", user);
-    console.log("Loading states:", { classesLoading, studentsLoading, marksLoading, attendanceLoading, dutiesLoading });
-    console.log("Error states:", { classesError, studentsError, marksError, attendanceError, dutiesError });
-    console.log("Data loaded:", {
-      classes: classes.length,
-      students: students.length,
-      marks: marks.length,
-      attendance: attendance.length,
-      duties: duties.length,
-    });
-    console.log("Classes data:", classes);
-    console.log("Students data:", students);
-    if (classesError) console.error("Classes error:", classesErrorObj);
-    if (studentsError) console.error("Students error:", studentsErrorObj);
-    if (marksError) console.error("Marks error:", marksErrorObj);
-    if (attendanceError) console.error("Attendance error:", attendanceErrorObj);
-    if (dutiesError) console.error("Duties error:", dutiesErrorObj);
-  }, [loading, anyError, user, classes.length, students.length, marks.length, attendance.length, duties.length]);
-
   // Filter classes for this teacher
   const teacherClasses = useMemo(() => {
     if (!user) {
-      console.log("No user yet, returning empty teacherClasses");
       return [];
     }
-    console.log("=== Teacher Class Filtering ===");
-    console.log("User ID:", user.id, "Type:", typeof user.id);
-    console.log("Classes array length:", classes.length);
-    console.log("Raw classes:", classes);
-    if (classes.length > 0) {
-      console.log("First class teacher_id:", classes[0].teacher_id, "Type:", typeof classes[0].teacher_id);
-      console.log("Comparison (classes[0].teacher_id === user.id):", classes[0].teacher_id === user.id);
-      console.log("Comparison (String match):", String(classes[0].teacher_id) === String(user.id));
-    }
     const filtered = classes.filter(c => c.teacher_id === user.id);
-    console.log("Filtered count:", filtered.length);
     return filtered;
   }, [classes, user]);
 
@@ -154,7 +121,7 @@ const TeacherDashboard = () => {
     try {
       await updateDutyMutation.mutateAsync({ id: dutyId, updates: { status: "in_progress", start_date: new Date().toISOString() } });
     } catch (err) {
-      console.error(err);
+      // Error handled silently
     }
   };
 
@@ -162,7 +129,7 @@ const TeacherDashboard = () => {
     try {
       await updateDutyMutation.mutateAsync({ id: dutyId, updates: { status: "completed", end_date: new Date().toISOString() } });
     } catch (err) {
-      console.error(err);
+      // Error handled silently
     }
   };
 

@@ -110,24 +110,10 @@ function MarksPage() {
   const loading = classesLoading || studentsLoading || marksLoading;
   const anyError = classesError || studentsError || marksError;
 
-  // Log comprehensive data for debugging
+  // debug logging removed to protect sensitive data
   useEffect(() => {
-    console.log("=== MarksPage Debug ===");
-    console.log("User:", user);
-    console.log("Loading states:", { classesLoading, studentsLoading, marksLoading });
-    console.log("Error states:", { classesError, studentsError, marksError });
-    console.log("Data loaded:", {
-      classes: classes.length,
-      students: students.length,
-      marks: allMarks.length,
-    });
-    console.log("Classes data:", classes);
-    console.log("Students data:", students);
-    console.log("Marks data:", allMarks);
-    if (classesError) console.error("Classes error:", classesErrorObj);
-    if (studentsError) console.error("Students error:", studentsErrorObj);
-    if (marksError) console.error("Marks error:", marksErrorObj);
-  }, [classesLoading, studentsLoading, marksLoading, classesError, studentsError, marksError, classes.length, students.length, allMarks.length]);
+    // no-op
+  }, [classesLoading, studentsLoading, marksLoading, classesError, studentsError, marksError, classes.length]);
 
   const filteredMarks = useMemo(() => {
     return classMarks.filter((mark) => {

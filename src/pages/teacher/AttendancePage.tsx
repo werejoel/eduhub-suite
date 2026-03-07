@@ -85,23 +85,9 @@ function AttendancePage() {
   const updateAttendanceMutation = useUpdateAttendance();
   const deleteAttendanceMutation = useDeleteAttendance();
 
-  // Log comprehensive data for debugging
+  // debug logging removed for privacy
   useEffect(() => {
-    console.log("=== AttendancePage Debug ===");
-    console.log("User:", user);
-    console.log("Loading states:", { classesLoading, studentsLoading, attendanceLoading });
-    console.log("Error states:", { classesError, studentsError, attendanceError });
-    console.log("Data loaded:", {
-      classes: classes.length,
-      students: students.length,
-      attendance: allAttendance.length,
-    });
-    console.log("Classes data:", classes);
-    console.log("Students data:", students);
-    console.log("Attendance data:", allAttendance);
-    if (classesError) console.error("Classes error:", classesErrorObj);
-    if (studentsError) console.error("Students error:", studentsErrorObj);
-    if (attendanceError) console.error("Attendance error:", attendanceErrorObj);
+    // no-op
   }, [classesLoading, studentsLoading, attendanceLoading, classesError, studentsError, attendanceError, classes.length, students.length, allAttendance.length]);
 
   const [attendanceMap, setAttendanceMap] = useState<
@@ -296,18 +282,12 @@ function AttendancePage() {
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleToggleAttendance(student.id)}
-                    >
-                      <Checkbox
-                        checked={status === "present"}
-                        onCheckedChange={() =>
-                          handleToggleAttendance(student.id)
-                        }
-                      />
-                    </Button>
+                    <Checkbox
+                      checked={status === "present"}
+                      onCheckedChange={() =>
+                        handleToggleAttendance(student.id)
+                      }
+                    />
                     {attendance && (
                       <>
                         <Button
