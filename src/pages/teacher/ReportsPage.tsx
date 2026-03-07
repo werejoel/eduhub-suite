@@ -14,6 +14,11 @@ import {
 import { FileText, Download, Loader, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+
+// export helpers
+import jsPDF from "jspdf";
+import "jspdf-autotable"; // plugin adds autoTable to jsPDF
+import { exportToExcel } from "@/lib/exportUtils";
 import {
   useClasses,
   useStudents,
@@ -98,21 +103,35 @@ function ReportsPage() {
     const studentMarks = allMarks.filter((m) => m.student_id === selectedStudentId);
     
     // Group marks by exam type
-    const marksByExam: Record<string, typeof studentMarks> = {};
-    EXAM_TYPES.forEach((exam) => {
-      marksByExam[exam] = studentMarks.filter((m) => m.exam_type === exam);
-    });
-
-    // Calculate totals for each exam
     const examSummary = EXAM_TYPES.map((exam) => {
-      const marks = marksByExam[exam];
+      const marks = studentMarks.filter((m) => m.exam_type === exam);
       if (marks.length === 0) return null;
-      
+
       const total = marks.reduce((sum, m) => sum + m.marks_obtained, 0);
       const maxTotal = marks.reduce((sum, m) => sum + m.total_marks, 0);
       const percentage = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
       const grade = calculateGrade(total, maxTotal);
-      
+
+      // subjects breakdown for this exam
+      const subjects = [...new Set(marks.map((m) => m.subject))]
+        .map((subject) => {
+          const subMarks = marks.filter((m) => m.subject === subject);
+          const subTotal = subMarks.reduce((s, m) => s + m.marks_obtained, 0);
+          const subMax = subMarks.reduce((s, m) => s + m.total_marks, 0);
+          const subPerc = subMax > 0 ? (subTotal / subMax) * 100 : 0;
+          const subGrade = calculateGrade(subTotal, subMax);
+          const subAvg = subMarks.length > 0 ? Math.round(subTotal / subMarks.length) : 0;
+          return {
+            subject,
+            total: subTotal,
+            maxTotal: subMax,
+            percentage: Math.round(subPerc),
+            grade: subGrade,
+            average: subAvg,
+          };
+        })
+        .filter(Boolean);
+
       return {
         exam,
         marks: total,
@@ -120,6 +139,7 @@ function ReportsPage() {
         percentage: Math.round(percentage),
         grade,
         subjects: marks.length,
+        subjectDetails: subjects,
       };
     }).filter(Boolean);
 
@@ -130,15 +150,41 @@ function ReportsPage() {
     const overallPercentage = totalPossible > 0 ? (totalMarksObtained / totalPossible) * 100 : 0;
     const overallGrade = calculateGrade(totalMarksObtained, totalPossible);
 
+    // Subject-wise breakdown
+    const subjectSummary = [...new Set(studentMarks.map((m) => m.subject))]
+      .map((subject) => {
+        const subjectMarks = studentMarks.filter(
+          (m) => m.subject === subject && m.exam_type !== "Quiz"
+        );
+        if (subjectMarks.length === 0) return null;
+        const total = subjectMarks.reduce((sum, m) => sum + m.marks_obtained, 0);
+        const maxTotal = subjectMarks.reduce((sum, m) => sum + m.total_marks, 0);
+        const percentage = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+        const grade = calculateGrade(total, maxTotal);
+        const average = subjectMarks.length > 0 ? Math.round(total / subjectMarks.length) : 0;
+        return {
+          subject,
+          total,
+          maxTotal,
+          percentage: Math.round(percentage),
+          grade,
+          average,
+          tests: subjectMarks.length,
+        };
+      })
+      .filter(Boolean);
+
     return {
       student,
       examSummary,
+      examCount: examSummary.length,
+      subjectCount: new Set(studentMarks.map((m) => m.subject)).size,
+      examDetails: examSummary, // same structure with details
       totalMarksObtained,
       totalPossible,
       overallPercentage: Math.round(overallPercentage),
       overallGrade,
-      examCount: examSummary.length,
-      subjectCount: new Set(studentMarks.map((m) => m.subject)).size,
+      subjectSummary,
     };
   }, [selectedStudentId, students, allMarks]);
 
@@ -154,10 +200,32 @@ function ReportsPage() {
       const studentMarks = marks.filter((m) => m.student_id === student.id && m.exam_type !== "Quiz");
       if (studentMarks.length === 0) return null;
 
+      // compute total and grade as before
       const totalObtained = studentMarks.reduce((sum, m) => sum + m.marks_obtained, 0);
       const totalPossible = studentMarks.reduce((sum, m) => sum + m.total_marks, 0);
       const percentage = totalPossible > 0 ? (totalObtained / totalPossible) * 100 : 0;
       const grade = calculateGrade(totalObtained, totalPossible);
+
+      // subject breakdown for this student
+      const subjectSummary = [...new Set(studentMarks.map((m) => m.subject))]
+        .map((subject) => {
+          const subMarks = studentMarks.filter((m) => m.subject === subject);
+          const subTotal = subMarks.reduce((s, m) => s + m.marks_obtained, 0);
+          const subMax = subMarks.reduce((s, m) => s + m.total_marks, 0);
+          const subPerc = subMax > 0 ? (subTotal / subMax) * 100 : 0;
+          const subGrade = calculateGrade(subTotal, subMax);
+          const subAvg = subMarks.length > 0 ? Math.round(subTotal / subMarks.length) : 0;
+          return {
+            subject,
+            total: subTotal,
+            maxTotal: subMax,
+            percentage: Math.round(subPerc),
+            grade: subGrade,
+            average: subAvg,
+            tests: subMarks.length,
+          };
+        })
+        .filter(Boolean);
 
       return {
         name: `${student.first_name} ${student.last_name}`,
@@ -166,6 +234,7 @@ function ReportsPage() {
         total: totalPossible,
         percentage: Math.round(percentage),
         grade,
+        subjectSummary,
       };
     }).filter(Boolean);
 
@@ -212,11 +281,193 @@ function ReportsPage() {
     };
   }, [selectedClassId, classStudents, classMarks, classes]);
 
+  const [expandedStudents, setExpandedStudents] = useState<string[]>([]);
+  const [expandedExam, setExpandedExam] = useState<string | null>(null);
+
+  const handleToggleStudent = (studentId: string) => {
+    setExpandedStudents((prev) =>
+      prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId]
+    );
+  };
+
   const handleExportPDF = () => {
-    // Placeholder for PDF export functionality
-    toast.success("Exporting report...");
-    // In a real implementation, you would use a library like jsPDF
-    // to generate a PDF report
+    try {
+      const doc = new jsPDF();
+      if (reportType === "class" && classReportData) {
+        const title = `Class Report – ${classReportData.classInfo?.class_name || ""}`;
+        doc.setFontSize(16);
+        doc.text(title, 14, 20);
+
+        const studentRows = classReportData.studentPerformance.map((p) => [
+          p.name,
+          `${p.marks}/${p.total}`,
+          `${p.percentage}%`,
+          p.grade,
+        ]);
+        (doc as any).autoTable({ head: [["Student", "Marks", "%", "Grade"]], body: studentRows, startY: 30 });
+
+        classReportData.studentPerformance.forEach((p) => {
+          if (p.subjectSummary && p.subjectSummary.length > 0) {
+            doc.addPage();
+            doc.setFontSize(14);
+            doc.text(`Subjects – ${p.name}`, 14, 20);
+            const subRows = p.subjectSummary.map((s) => [
+              s.subject,
+              `${s.total}/${s.maxTotal}`,
+              s.average,
+              `${s.percentage}%`,
+              s.grade,
+              s.tests,
+            ]);
+            (doc as any).autoTable({
+              head: [["Subject", "Total", "Avg", "%", "Grade", "Tests"]],
+              body: subRows,
+              startY: 28,
+            });
+          }
+          const studentMarks = allMarks.filter((m) => m.student_id === p.studentId);
+          if (studentMarks.length > 0) {
+            doc.addPage();
+            doc.setFontSize(14);
+            doc.text(`Raw Marks – ${p.name}`, 14, 20);
+            const rawRows = studentMarks.map((m) => [
+              m.subject,
+              m.exam_type,
+              m.marks_obtained,
+              m.total_marks,
+            ]);
+            (doc as any).autoTable({ head: [["Subject", "Exam", "Obtained", "Total"]], body: rawRows, startY: 28 });
+          }
+        });
+
+        doc.save("class-report.pdf");
+        toast.success("Class report PDF generated");
+      } else if (reportType === "student" && studentReportData) {
+        const name = `${studentReportData.student.first_name} ${studentReportData.student.last_name}`;
+        doc.setFontSize(16);
+        doc.text(`Student Report – ${name}`, 14, 20);
+
+        const examRows = studentReportData.examSummary.map((e) => [
+          e.exam,
+          `${e.marks}/${e.total}`,
+          `${e.percentage}%`,
+          e.grade,
+          e.subjects,
+        ]);
+        (doc as any).autoTable({ head: [["Exam", "Marks", "%", "Grade", "Subjects"]], body: examRows, startY: 30 });
+
+        if (studentReportData.subjectSummary.length > 0) {
+          doc.addPage();
+          doc.setFontSize(14);
+          doc.text("Subject Breakdown", 14, 20);
+          const subRows = studentReportData.subjectSummary.map((s) => [
+            s.subject,
+            `${s.total}/${s.maxTotal}`,
+            s.average,
+            `${s.percentage}%`,
+            s.grade,
+            s.tests,
+          ]);
+          (doc as any).autoTable({ head: [["Subject", "Total", "Avg", "%", "Grade", "Tests"]], body: subRows, startY: 28 });
+        }
+
+        const rawRows = allMarks
+          .filter((m) => m.student_id === studentReportData.student.id)
+          .map((m) => [m.subject, m.exam_type, m.marks_obtained, m.total_marks]);
+        if (rawRows.length > 0) {
+          doc.addPage();
+          doc.setFontSize(14);
+          doc.text("Raw Marks", 14, 20);
+          (doc as any).autoTable({ head: [["Subject", "Exam", "Obtained", "Total"]], body: rawRows, startY: 28 });
+        }
+
+        doc.save("student-report.pdf");
+        toast.success("Student report PDF generated");
+      } else {
+        toast.error("No data available for PDF export");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PDF");
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (reportType === "class" && classReportData) {
+      // build sheets: overview + raw marks per student
+      const overview = [
+        ["Student", "Marks", "%", "Grade"],
+        ...classReportData.studentPerformance.map((p) => [
+          p.name,
+          `${p.marks}/${p.total}`,
+          `${p.percentage}%`,
+          p.grade,
+        ]),
+      ];
+      const rawRows: (string | number)[][] = [
+        ["Student", "Subject", "Exam Type", "Obtained", "Total"],
+      ];
+      classReportData.studentPerformance.forEach((p) => {
+        const studentMarks = allMarks.filter((m) => m.student_id === p.studentId);
+        studentMarks.forEach((m) => {
+          rawRows.push([
+            p.name,
+            m.subject,
+            m.exam_type,
+            m.marks_obtained,
+            m.total_marks,
+          ]);
+        });
+      });
+
+      exportToExcel({
+        filename: `class_${classReportData.classInfo?.class_name || "report"}.xlsx`,
+        sheets: [
+          { name: "Overview", data: overview },
+          { name: "Raw Marks", data: rawRows },
+        ],
+      });
+    } else if (reportType === "student" && studentReportData) {
+      const examSheet = [
+        ["Exam", "Marks", "%", "Grade", "Subjects"],
+        ...studentReportData.examSummary.map((e) => [
+          e.exam,
+          `${e.marks}/${e.total}`,
+          `${e.percentage}%`,
+          e.grade,
+          e.subjects,
+        ]),
+      ];
+      const subjectSheet = [
+        ["Subject", "Total", "Max", "Avg", "%", "Grade", "Tests"],
+        ...studentReportData.subjectSummary.map((s) => [
+          s.subject,
+          s.total,
+          s.maxTotal,
+          s.average,
+          `${s.percentage}%`,
+          s.grade,
+          s.tests,
+        ]),
+      ];
+      const rawRows = [
+        ["Subject", "Exam Type", "Obtained", "Total"],
+        ...allMarks
+          .filter((m) => m.student_id === studentReportData.student.id)
+          .map((m) => [m.subject, m.exam_type, m.marks_obtained, m.total_marks]),
+      ];
+
+      exportToExcel({
+        filename: `${studentReportData.student.first_name}_${studentReportData.student.last_name}.xlsx`,
+        sheets: [
+          { name: "Exams", data: examSheet },
+          { name: "Subjects", data: subjectSheet },
+          { name: "Raw Marks", data: rawRows },
+        ],
+      });
+    } else {
+      toast.error("No data available for Excel export");
+    }
   };
 
   return (
@@ -386,10 +637,16 @@ function ReportsPage() {
               >
                 <div className="p-6 border-b border-border flex justify-between items-center">
                   <h3 className="text-lg font-semibold">Student Performance</h3>
-                  <Button onClick={handleExportPDF} variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export PDF
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={handleExportPDF} variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export PDF
+                    </Button>
+                    <Button onClick={handleExportExcel} variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Excel
+                    </Button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -403,30 +660,82 @@ function ReportsPage() {
                     </thead>
                     <tbody>
                       {classReportData.studentPerformance.map((student, idx) => (
-                        <tr key={student.studentId} className="border-t border-border hover:bg-muted/30">
-                          <td className="p-4 font-medium">{student.name}</td>
-                          <td className="p-4 text-center text-muted-foreground">
-                            {student.marks}/{student.total}
-                          </td>
-                          <td className="p-4 text-center font-medium">{student.percentage}%</td>
-                          <td className="p-4 text-center">
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                student.grade === "A"
-                                  ? "bg-green-100 text-green-800"
-                                  : student.grade === "B"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : student.grade === "C"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : student.grade === "D"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {student.grade}
-                            </span>
-                          </td>
-                        </tr>
+                        <>
+                          <tr
+                            key={student.studentId}
+                            className="border-t border-border hover:bg-muted/30 cursor-pointer"
+                            onClick={() => handleToggleStudent(student.studentId)}
+                          >
+                            <td className="p-4 font-medium">{student.name}</td>
+                            <td className="p-4 text-center text-muted-foreground">
+                              {student.marks}/{student.total}
+                            </td>
+                            <td className="p-4 text-center font-medium">{student.percentage}%</td>
+                            <td className="p-4 text-center">
+                              <span
+                                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                  student.grade === "A"
+                                    ? "bg-green-100 text-green-800"
+                                    : student.grade === "B"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : student.grade === "C"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : student.grade === "D"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {student.grade}
+                              </span>
+                            </td>
+                          </tr>
+                          {expandedStudents.includes(student.studentId) && (
+                            <tr className="bg-muted/20">
+                              <td colSpan={4} className="p-4">
+                                <div className="overflow-x-auto">
+                                  <table className="w-full">
+                                    <thead className="bg-muted/50">
+                                      <tr>
+                                        <th className="text-left p-2 font-semibold">Subject</th>
+                                        <th className="text-center p-2 font-semibold">Total</th>
+                                        <th className="text-center p-2 font-semibold">Max</th>
+                                        <th className="text-center p-2 font-semibold">Avg</th>
+                                        <th className="text-center p-2 font-semibold">% </th>
+                                        <th className="text-center p-2 font-semibold">Grade</th>
+                                        <th className="text-center p-2 font-semibold">Tests</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {student.subjectSummary.map((sub) => (
+                                        <tr key={sub.subject} className="border-t border-border">
+                                          <td className="p-2 font-medium">{sub.subject}</td>
+                                          <td className="p-2 text-center text-muted-foreground">{sub.total}</td>
+                                          <td className="p-2 text-center text-muted-foreground">{sub.maxTotal}</td>
+                                          <td className="p-2 text-center font-medium">{sub.average}</td>
+                                          <td className="p-2 text-center font-medium">{sub.percentage}%</td>
+                                          <td className="p-2 text-center">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                              sub.grade === "A"
+                                                ? "bg-green-100 text-green-800"
+                                                : sub.grade === "B"
+                                                ? "bg-blue-100 text-blue-800"
+                                                : sub.grade === "C"
+                                                ? "bg-yellow-100 text-yellow-800"
+                                                : sub.grade === "D"
+                                                ? "bg-orange-100 text-orange-800"
+                                                : "bg-red-100 text-red-800"
+                                            }`}>{sub.grade}</span>
+                                          </td>
+                                          <td className="p-2 text-center">{sub.tests}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       ))}
                     </tbody>
                   </table>
@@ -519,10 +828,16 @@ function ReportsPage() {
               >
                 <div className="p-6 border-b border-border flex justify-between items-center">
                   <h3 className="text-lg font-semibold">Detailed Exam Results</h3>
-                  <Button onClick={handleExportPDF} variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export PDF
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={handleExportPDF} variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export PDF
+                    </Button>
+                    <Button onClick={handleExportExcel} variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Excel
+                    </Button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -537,30 +852,144 @@ function ReportsPage() {
                     </thead>
                     <tbody>
                       {studentReportData.examSummary.map((exam) => (
-                        <tr key={exam.exam} className="border-t border-border hover:bg-muted/30">
-                          <td className="p-4 font-medium">{exam.exam}</td>
-                          <td className="p-4 text-center text-muted-foreground">
-                            {exam.marks}/{exam.total}
-                          </td>
-                          <td className="p-4 text-center font-medium">{exam.percentage}%</td>
+                        <>
+                          <tr
+                            key={exam.exam}
+                            className="border-t border-border hover:bg-muted/30 cursor-pointer"
+                            onClick={() => setExpandedExam(exam.exam)}
+                          >
+                            <td className="p-4 font-medium">{exam.exam}</td>
+                            <td className="p-4 text-center text-muted-foreground">
+                              {exam.marks}/{exam.total}
+                            </td>
+                            <td className="p-4 text-center font-medium">{exam.percentage}%</td>
+                            <td className="p-4 text-center">
+                              <span
+                                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                  exam.grade === "A"
+                                    ? "bg-green-100 text-green-800"
+                                    : exam.grade === "B"
+                                    ? "bg-sidebar/20 text-sidebar"
+                                    : exam.grade === "C"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : exam.grade === "D"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {exam.grade}
+                              </span>
+                            </td>
+                            <td className="p-4 text-center">{exam.subjects}</td>
+                          </tr>
+                          {expandedExam === exam.exam && (
+                            <tr className="bg-muted/20">
+                              <td colSpan={5} className="p-4">
+                                <div className="overflow-x-auto">
+                                  <table className="w-full">
+                                    <thead className="bg-muted/50">
+                                      <tr>
+                                        <th className="text-left p-2 font-semibold">Subject</th>
+                                        <th className="text-center p-2 font-semibold">Marks</th>
+                                        <th className="text-center p-2 font-semibold">Total</th>
+                                        <th className="text-center p-2 font-semibold">Percentage</th>
+                                        <th className="text-center p-2 font-semibold">Grade</th>
+                                        <th className="text-center p-2 font-semibold">Average</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {exam.subjectDetails.map((s) => (
+                                        <tr key={s.subject} className="border-t border-border">
+                                          <td className="p-2 font-medium">{s.subject}</td>
+                                          <td className="p-2 text-center text-muted-foreground">{s.total}</td>
+                                          <td className="p-2 text-center text-muted-foreground">{s.maxTotal}</td>
+                                          <td className="p-2 text-center font-medium">{s.percentage}%</td>
+                                          <td className="p-2 text-center">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                              s.grade === "A"
+                                                ? "bg-green-100 text-green-800"
+                                                : s.grade === "B"
+                                                ? "bg-sidebar/20 text-sidebar"
+                                                : s.grade === "C"
+                                                ? "bg-yellow-100 text-yellow-800"
+                                                : s.grade === "D"
+                                                ? "bg-orange-100 text-orange-800"
+                                                : "bg-red-100 text-red-800"
+                                            }`}>{s.grade}</span>
+                                          </td>
+                                          <td className="p-2 text-center font-medium">{s.average}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+
+              {/* Subject-wise Summary */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="bg-card rounded-2xl border border-border shadow-md overflow-hidden mt-6"
+              >
+                <div className="p-6 border-b border-border flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">Subject-wise Performance</h3>
+                  <div className="flex gap-2">
+                    <Button onClick={handleExportPDF} variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export PDF
+                    </Button>
+                    <Button onClick={handleExportExcel} variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Excel
+                    </Button>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-4 font-semibold">Subject</th>
+                        <th className="text-center p-4 font-semibold">Total Obtained</th>
+                        <th className="text-center p-4 font-semibold">Max Total</th>
+                        <th className="text-center p-4 font-semibold">Average</th>
+                        <th className="text-center p-4 font-semibold">Percentage</th>
+                        <th className="text-center p-4 font-semibold">Grade</th>
+                        <th className="text-center p-4 font-semibold">Tests</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentReportData.subjectSummary.map((sub) => (
+                        <tr key={sub.subject} className="border-t border-border hover:bg-muted/30">
+                          <td className="p-4 font-medium">{sub.subject}</td>
+                          <td className="p-4 text-center text-muted-foreground">{sub.total}</td>
+                          <td className="p-4 text-center text-muted-foreground">{sub.maxTotal}</td>
+                          <td className="p-4 text-center font-medium">{sub.average}</td>
+                          <td className="p-4 text-center font-medium">{sub.percentage}%</td>
                           <td className="p-4 text-center">
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                exam.grade === "A"
-                                  ? "bg-green-100 text-green-800"
-                                  : exam.grade === "B"
-                                  ? "bg-sidebar/20 text-sidebar"
-                                  : exam.grade === "C"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : exam.grade === "D"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {exam.grade}
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              sub.grade === "A"
+                                ? "bg-green-100 text-green-800"
+                                : sub.grade === "B"
+                                ? "bg-sidebar/20 text-sidebar"
+                                : sub.grade === "C"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : sub.grade === "D"
+                                ? "bg-orange-100 text-orange-800"
+                                : "bg-red-100 text-red-800"
+                            }`}> 
+                              {sub.grade}
                             </span>
                           </td>
-                          <td className="p-4 text-center">{exam.subjects}</td>
+                          <td className="p-4 text-center">{sub.tests}</td>
                         </tr>
                       ))}
                     </tbody>
