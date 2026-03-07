@@ -224,7 +224,18 @@ const TeacherReportsPage = () => {
           format: "excel",
         }),
       });
-      if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+      if (!response.ok) {
+        let errorMessage = `Server responded with ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // ignore
+        }
+        throw new Error(errorMessage);
+      }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");

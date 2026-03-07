@@ -742,6 +742,10 @@ app.post("/api/reports/class", authenticateToken, async (req, res) => {
       marksByStudent[m.student_id].push(m);
     });
 
+    // map students by id
+    const studentMap = {};
+    students.forEach((s) => studentMap[s._id] = s);
+
     const applyBorders = (ws) => {
       const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
       for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -761,49 +765,54 @@ app.post("/api/reports/class", authenticateToken, async (req, res) => {
     };
 
     if (format === "excel") {
-      const wb = XLSX.utils.book_new();
+      try {
+        const wb = XLSX.utils.book_new();
 
-      // info sheet
-      const info = [
-        ["School", SCHOOL_NAME],
-        ["Class", classInfo?.class_name || ""],
-        ["Generated", new Date().toLocaleDateString()],
-      ];
-      const wsInfo = XLSX.utils.aoa_to_sheet(info);
-      applyBorders(wsInfo);
-      XLSX.utils.book_append_sheet(wb, wsInfo, "Info");
+        // info sheet
+        const info = [
+          ["School", SCHOOL_NAME],
+          ["Class", classInfo?.class_name || ""],
+          ["Generated", new Date().toLocaleDateString()],
+        ];
+        const wsInfo = XLSX.utils.aoa_to_sheet(info);
+        applyBorders(wsInfo);
+        XLSX.utils.book_append_sheet(wb, wsInfo, "Info");
 
-      // overview sheet
-      const overview = [
-        ["Student", "Marks", "%", "Grade", "Subjects"],
-      ];
-      for (const s of students) {
-        const sm = marksByStudent[s._id] || [];
-        const total = sm.reduce((a, m) => a + m.marks_obtained, 0);
-        const max = sm.reduce((a, m) => a + m.total_marks, 0);
-        const perc = max > 0 ? Math.round((total / max) * 100) : 0;
-        const grade = calculateGrade(total, max);
-        const subj = [...new Set(sm.map((m) => m.subject))].join(",");
-        overview.push([`${s.first_name} ${s.last_name}`, `${total}/${max}`, `${perc}%`, grade, subj]);
+        // overview sheet
+        const overview = [
+          ["Student", "Marks", "%", "Grade", "Subjects"],
+        ];
+        for (const s of students) {
+          const sm = marksByStudent[s._id] || [];
+          const total = sm.reduce((a, m) => a + m.marks_obtained, 0);
+          const max = sm.reduce((a, m) => a + m.total_marks, 0);
+          const perc = max > 0 ? Math.round((total / max) * 100) : 0;
+          const grade = calculateGrade(total, max);
+          const subj = [...new Set(sm.map((m) => m.subject))].join(",");
+          overview.push([`${s.first_name} ${s.last_name}`, `${total}/${max}`, `${perc}%`, grade, subj]);
+        }
+        const ws1 = XLSX.utils.aoa_to_sheet(overview);
+        applyBorders(ws1);
+        XLSX.utils.book_append_sheet(wb, ws1, "Overview");
+
+        // raw marks sheet
+        const raw = [["Student", "Subject", "Exam", "Obtained", "Total"]];
+        marks.forEach((m) => raw.push([`${studentMap[m.student_id]?.first_name || ''} ${studentMap[m.student_id]?.last_name || ''}`, m.subject, m.exam_type, m.marks_obtained, m.total_marks]));
+        const ws2 = XLSX.utils.aoa_to_sheet(raw);
+        applyBorders(ws2);
+        XLSX.utils.book_append_sheet(wb, ws2, "Raw Marks");
+
+        const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+        res.setHeader("Content-Disposition", "attachment; filename=class-report.xlsx");
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        return res.send(buf);
+      } catch (excelErr) {
+        console.error("Excel export error:", excelErr);
+        return res.status(500).json({ error: `Excel export failed: ${excelErr.message}` });
       }
-      const ws1 = XLSX.utils.aoa_to_sheet(overview);
-      applyBorders(ws1);
-      XLSX.utils.book_append_sheet(wb, ws1, "Overview");
-
-      // raw marks sheet
-      const raw = [["Student", "Subject", "Exam", "Obtained", "Total"]];
-      marks.forEach((m) => raw.push([``, m.subject, m.exam_type, m.marks_obtained, m.total_marks]));
-      const ws2 = XLSX.utils.aoa_to_sheet(raw);
-      applyBorders(ws2);
-      XLSX.utils.book_append_sheet(wb, ws2, "Raw Marks");
-
-      const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-      res.setHeader("Content-Disposition", "attachment; filename=class-report.xlsx");
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-      return res.send(buf);
     }
 
     // default to pdf
@@ -870,37 +879,60 @@ app.post("/api/reports/student", authenticateToken, async (req, res) => {
     const DormModel = createFlexibleModel("dormitories");
     const dormInfo = student?.dormitory_id ? await DormModel.findById(student.dormitory_id).lean() : null;
 
+    const applyBorders = (ws) => {
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cell_address = { c: C, r: R };
+          const cell_ref = XLSX.utils.encode_cell(cell_address);
+          if (!ws[cell_ref]) continue;
+          ws[cell_ref].s = ws[cell_ref].s || {};
+          ws[cell_ref].s.border = {
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } },
+          };
+        }
+      }
+    };
+
     if (format === "excel") {
-      const wb = XLSX.utils.book_new();
+      try {
+        const wb = XLSX.utils.book_new();
 
-      // info sheet with student details
-      const info = [
-        ["School", SCHOOL_NAME],
-        ["Name", `${student?.first_name || ''} ${student?.last_name || ''}`],
-        ["Class", classInfo?.class_name || "N/A"],
-        ["Dormitory", dormInfo?.dormitory_name || "N/A"],
-      ];
-      const wsInfo = XLSX.utils.aoa_to_sheet(info);
-      applyBorders(wsInfo);
-      XLSX.utils.book_append_sheet(wb, wsInfo, "Info");
+        // info sheet with student details
+        const info = [
+          ["School", SCHOOL_NAME],
+          ["Name", `${student?.first_name || ''} ${student?.last_name || ''}`],
+          ["Class", classInfo?.class_name || "N/A"],
+          ["Dormitory", dormInfo?.dormitory_name || "N/A"],
+        ];
+        const wsInfo = XLSX.utils.aoa_to_sheet(info);
+        applyBorders(wsInfo);
+        XLSX.utils.book_append_sheet(wb, wsInfo, "Info");
 
-      const exams = [...new Set(marks.map((m) => m.exam_type))];
-      exams.forEach((exam) => {
-        const rows = [["Subject", "Obtained", "Total"]];
-        marks.filter((m) => m.exam_type === exam).forEach((m) => {
-          rows.push([m.subject, m.marks_obtained, m.total_marks]);
+        const exams = [...new Set(marks.map((m) => m.exam_type))];
+        exams.forEach((exam) => {
+          const rows = [["Subject", "Obtained", "Total"]];
+          marks.filter((m) => m.exam_type === exam).forEach((m) => {
+            rows.push([m.subject, m.marks_obtained, m.total_marks]);
+          });
+          const ws = XLSX.utils.aoa_to_sheet(rows);
+          applyBorders(ws);
+          XLSX.utils.book_append_sheet(wb, ws, exam.substring(0, 31));
         });
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        applyBorders(ws);
-        XLSX.utils.book_append_sheet(wb, ws, exam.substring(0, 31));
-      });
-      const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-      res.setHeader("Content-Disposition", "attachment; filename=student-report.xlsx");
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-      return res.send(buf);
+        const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+        res.setHeader("Content-Disposition", "attachment; filename=student-report.xlsx");
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        return res.send(buf);
+      } catch (excelErr) {
+        console.error("Excel export error (student):", excelErr);
+        return res.status(500).json({ error: `Excel export failed: ${excelErr.message}` });
+      }
     }
 
     res.setHeader("Content-Disposition", "attachment; filename=student-report.pdf");
