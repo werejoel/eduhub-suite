@@ -4,8 +4,7 @@ export interface Student {
   admission_number: string;
   first_name: string;
   last_name: string;
-  email: string;
-  phone: string;
+  other_names?: string;
   date_of_birth: string;
   gender: "male" | "female";
   class_id: string;
@@ -14,9 +13,28 @@ export interface Student {
   dormitory_id?: string;
   bed_number?: string;
   dormitory_status?: "present" | "absent" | "sick" | "not-around";
+  boarding_status?: "day" | "boarding";
+  registration_fee?: number;
+  parents_names?: string;
+  contact?: string;
+  requirements_checklist?: StudentRequirement[];
   createdAt: string;
   updatedAt: string;
 }
+
+export interface StudentRequirement {
+  id: string;
+  name: string;
+  completed: boolean;
+  completedDate?: string;
+  notes?: string;
+}
+
+/** @deprecated Use getStoreRequirements() from schoolConfig.ts instead */
+export const DEFAULT_STUDENT_REQUIREMENTS: StudentRequirement[] = [
+  { id: "1", name: "Sugar — 2 kgs", completed: false },
+  { id: "2", name: "Tissues — 2 Rolls", completed: false },
+];
 
 export interface Teacher {
   id: string;

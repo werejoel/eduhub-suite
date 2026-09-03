@@ -1,14 +1,27 @@
-import { Student, Teacher, Class, Fee, Attendance, Mark, Dormitory, StoreItem, TeacherDuty, DutyRating, PaymentRequest } from './types';
+import {
+  Student,
+  Teacher,
+  Class,
+  Fee,
+  Attendance,
+  Mark,
+  Dormitory,
+  StoreItem,
+  TeacherDuty,
+  DutyRating,
+  PaymentRequest,
+} from "./types";
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:4000';
+const API_BASE =
+  (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:4000";
 
-const normalizeBase = (base: string) => base.replace(/\/$/, '');
+const normalizeBase = (base: string) => base.replace(/\/$/, "");
 const apiUrl = (path: string) => `${normalizeBase(API_BASE)}${path}`;
 
 // Helper to convert VAPID base64 key to UInt8Array
 function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = atob(base64);
   const outputArray = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; ++i) {
@@ -18,27 +31,31 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export async function getPushPublicKey(): Promise<string> {
-  const res = await fetch(apiUrl('/api/push/publicKey'));
+  const res = await fetch(apiUrl("/api/push/publicKey"));
   const json = await handleResponse(res as any);
   return json.publicKey;
 }
 
 export async function registerPushSubscription(subscription: PushSubscription) {
-  const res = await fetch(apiUrl('/api/push/subscribe'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch(apiUrl("/api/push/subscribe"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(subscription),
   });
   return handleResponse(res as any);
 }
 
 export async function subscribeToPush() {
-  if (!('serviceWorker' in navigator)) throw new Error('Service workers not supported');
-  const reg = await navigator.serviceWorker.register('/sw.js');
+  if (!("serviceWorker" in navigator))
+    throw new Error("Service workers not supported");
+  const reg = await navigator.serviceWorker.register("/sw.js");
   const permission = await Notification.requestPermission();
-  if (permission !== 'granted') throw new Error('Permission not granted');
+  if (permission !== "granted") throw new Error("Permission not granted");
   const publicKey = await getPushPublicKey();
-  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(publicKey),
+  });
   await registerPushSubscription(sub);
   return sub;
 }
@@ -63,9 +80,18 @@ async function handleResponse(res: Response) {
   return normalize(json);
 }
 
-async function getAll<T>(collection: string, params?: Record<string, any>): Promise<T[]> {
-  const url = new URL(apiUrl(`/api/${collection}`), typeof window !== 'undefined' ? window.location.origin : '');
-  if (params) Object.keys(params).forEach(k => url.searchParams.set(k, String(params[k])));
+async function getAll<T>(
+  collection: string,
+  params?: Record<string, any>,
+): Promise<T[]> {
+  const url = new URL(
+    apiUrl(`/api/${collection}`),
+    typeof window !== "undefined" ? window.location.origin : "",
+  );
+  if (params)
+    Object.keys(params).forEach((k) =>
+      url.searchParams.set(k, String(params[k])),
+    );
   const res = await fetch(url.toString());
   return handleResponse(res) as Promise<T[]>;
 }
@@ -76,55 +102,94 @@ async function getById<T>(collection: string, id: string): Promise<T> {
 }
 
 async function createItem<T>(collection: string, body: any): Promise<T> {
-  const res = await fetch(apiUrl(`/api/${collection}`), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const res = await fetch(apiUrl(`/api/${collection}`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
   return handleResponse(res) as Promise<T>;
 }
 
-async function updateItem<T>(collection: string, id: string, body: any): Promise<T> {
-  const res = await fetch(apiUrl(`/api/${collection}/${id}`), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+async function updateItem<T>(
+  collection: string,
+  id: string,
+  body: any,
+): Promise<T> {
+  const res = await fetch(apiUrl(`/api/${collection}/${id}`), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
   return handleResponse(res) as Promise<T>;
 }
 
 async function deleteItem(collection: string, id: string): Promise<void> {
-  await fetch(apiUrl(`/api/${collection}/${id}`), { method: 'DELETE' });
+  await fetch(apiUrl(`/api/${collection}/${id}`), { method: "DELETE" });
 }
 
 // STUDENT OPERATIONS
 export const studentService = {
   async getAll() {
-    return getAll<Student>('students', { _sort: 'last_name' });
+    return getAll<Student>("students", { _sort: "last_name" });
   },
-  async getById(id: string) { return getById<Student>('students', id); },
-  async create(student: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Student>('students', student); },
-  async update(id: string, updates: Partial<Student>) { return updateItem<Student>('students', id, updates); },
-  async delete(id: string) { return deleteItem('students', id); },
+  async getById(id: string) {
+    return getById<Student>("students", id);
+  },
+  async create(student: Omit<Student, "id" | "createdAt" | "updatedAt">) {
+    return createItem<Student>("students", student);
+  },
+  async update(id: string, updates: Partial<Student>) {
+    return updateItem<Student>("students", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("students", id);
+  },
   async searchByName(name: string) {
-    const res = await fetch(apiUrl(`/api/students/search?name=${encodeURIComponent(name)}`));
+    const res = await fetch(
+      apiUrl(`/api/students/search?name=${encodeURIComponent(name)}`),
+    );
     return handleResponse(res) as Promise<Student[]>;
   },
 };
 
-
 // TEACHER OPERATIONS - Fetch from users collection with role "teacher"
 export const teacherService = {
-  async getAll() { 
+  async getAll() {
     // Fetch users with role "teacher"
-    return getAll<Teacher>('users', { role: 'teacher', _sort: 'last_name' });
+    return getAll<Teacher>("users", { role: "teacher", _sort: "last_name" });
   },
-  async getById(id: string) { return getById<Teacher>('users', id); },
-  async create(teacher: Omit<Teacher, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Teacher>('users', teacher); },
-  async update(id: string, updates: Partial<Teacher>) { return updateItem<Teacher>('users', id, updates); },
-  async delete(id: string) { return deleteItem('users', id); },
+  async getById(id: string) {
+    return getById<Teacher>("users", id);
+  },
+  async create(teacher: Omit<Teacher, "id" | "createdAt" | "updatedAt">) {
+    return createItem<Teacher>("users", teacher);
+  },
+  async update(id: string, updates: Partial<Teacher>) {
+    return updateItem<Teacher>("users", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("users", id);
+  },
 };
 
 // CLASS OPERATIONS
 export const classService = {
-  async getAll() { return getAll<Class>('classes', { _sort: 'form_number' }); },
-  async getById(id: string) { return getById<Class>('classes', id); },
-  async create(classData: Omit<Class, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Class>('classes', classData); },
-  async update(id: string, updates: Partial<Class>) { return updateItem<Class>('classes', id, updates); },
-  async delete(id: string) { return deleteItem('classes', id); },
-  async getByTeacher(teacherId: string) { 
+  async getAll() {
+    return getAll<Class>("classes", { _sort: "form_number" });
+  },
+  async getById(id: string) {
+    return getById<Class>("classes", id);
+  },
+  async create(classData: Omit<Class, "id" | "createdAt" | "updatedAt">) {
+    return createItem<Class>("classes", classData);
+  },
+  async update(id: string, updates: Partial<Class>) {
+    return updateItem<Class>("classes", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("classes", id);
+  },
+  async getByTeacher(teacherId: string) {
     const res = await fetch(apiUrl(`/api/classes?teacher_id=${teacherId}`));
     return handleResponse(res) as Promise<Class[]>;
   },
@@ -132,104 +197,221 @@ export const classService = {
 
 // FEE OPERATIONS
 export const feeService = {
-  async getAll() { return getAll<Fee>('fees', { _sort: 'due_date' }); },
-  async getByStudent(studentId: string) { const res = await fetch(apiUrl(`/api/fees/student/${studentId}`)); return handleResponse(res) as Promise<Fee[]>; },
-  async create(fee: Omit<Fee, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Fee>('fees', fee); },
-  async update(id: string, updates: Partial<Fee>) { return updateItem<Fee>('fees', id, updates); },
-  async delete(id: string) { return deleteItem('fees', id); },
-  async getByStatus(status: 'paid' | 'pending' | 'overdue') { const res = await fetch(apiUrl(`/api/fees/status/${status}`)); return handleResponse(res) as Promise<Fee[]>; },
-  async getById(id: string) { return getById<Fee>('fees', id); },
+  async getAll() {
+    return getAll<Fee>("fees", { _sort: "due_date" });
+  },
+  async getByStudent(studentId: string) {
+    const res = await fetch(apiUrl(`/api/fees/student/${studentId}`));
+    return handleResponse(res) as Promise<Fee[]>;
+  },
+  async create(fee: Omit<Fee, "id" | "createdAt" | "updatedAt">) {
+    return createItem<Fee>("fees", fee);
+  },
+  async update(id: string, updates: Partial<Fee>) {
+    return updateItem<Fee>("fees", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("fees", id);
+  },
+  async getByStatus(status: "paid" | "pending" | "overdue") {
+    const res = await fetch(apiUrl(`/api/fees/status/${status}`));
+    return handleResponse(res) as Promise<Fee[]>;
+  },
+  async getById(id: string) {
+    return getById<Fee>("fees", id);
+  },
 };
 
 // ATTENDANCE OPERATIONS
 export const attendanceService = {
-  async getAll() { return getAll<Attendance>('attendance', { _sort: '-attendance_date' }); },
-  async getByStudent(studentId: string) { const res = await fetch(apiUrl(`/api/attendance/student/${studentId}`)); return handleResponse(res) as Promise<Attendance[]>; },
-  async getByClass(classId: string) { const res = await fetch(apiUrl(`/api/attendance/class/${classId}`)); return handleResponse(res) as Promise<Attendance[]>; },
-  async create(attendance: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Attendance>('attendance', attendance); },
-  async bulkCreate(records: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'>[]) { const res = await fetch(apiUrl('/api/attendance/bulk'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records) }); return handleResponse(res) as Promise<Attendance[]>; },
-  async update(id: string, updates: Partial<Attendance>) { return updateItem<Attendance>('attendance', id, updates); },
-  async delete(id: string) { return deleteItem('attendance', id); },
-  async getById(id: string) { return getById<Attendance>('attendance', id); },
+  async getAll() {
+    return getAll<Attendance>("attendance", { _sort: "-attendance_date" });
+  },
+  async getByStudent(studentId: string) {
+    const res = await fetch(apiUrl(`/api/attendance/student/${studentId}`));
+    return handleResponse(res) as Promise<Attendance[]>;
+  },
+  async getByClass(classId: string) {
+    const res = await fetch(apiUrl(`/api/attendance/class/${classId}`));
+    return handleResponse(res) as Promise<Attendance[]>;
+  },
+  async create(attendance: Omit<Attendance, "id" | "createdAt" | "updatedAt">) {
+    return createItem<Attendance>("attendance", attendance);
+  },
+  async bulkCreate(
+    records: Omit<Attendance, "id" | "createdAt" | "updatedAt">[],
+  ) {
+    const res = await fetch(apiUrl("/api/attendance/bulk"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(records),
+    });
+    return handleResponse(res) as Promise<Attendance[]>;
+  },
+  async update(id: string, updates: Partial<Attendance>) {
+    return updateItem<Attendance>("attendance", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("attendance", id);
+  },
+  async getById(id: string) {
+    return getById<Attendance>("attendance", id);
+  },
 };
 
 // MARK OPERATIONS
 export const markService = {
-  async getAll() { return getAll<Mark>('marks'); },
-  async getByStudent(studentId: string) { const res = await fetch(apiUrl(`/api/marks/student/${studentId}`)); return handleResponse(res) as Promise<Mark[]>; },
-  async getByClass(classId: string) { const res = await fetch(apiUrl(`/api/marks/class/${classId}`)); return handleResponse(res) as Promise<Mark[]>; },
-  async create(mark: Omit<Mark, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Mark>('marks', mark); },
-  async bulkCreate(records: Omit<Mark, 'id' | 'createdAt' | 'updatedAt'>[]) { const res = await fetch(apiUrl('/api/marks/bulk'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(records) }); return handleResponse(res) as Promise<Mark[]>; },
-  async update(id: string, updates: Partial<Mark>) { return updateItem<Mark>('marks', id, updates); },
-  async delete(id: string) { return deleteItem('marks', id); },
-  async getById(id: string) { return getById<Mark>('marks', id); },
+  async getAll() {
+    return getAll<Mark>("marks");
+  },
+  async getByStudent(studentId: string) {
+    const res = await fetch(apiUrl(`/api/marks/student/${studentId}`));
+    return handleResponse(res) as Promise<Mark[]>;
+  },
+  async getByClass(classId: string) {
+    const res = await fetch(apiUrl(`/api/marks/class/${classId}`));
+    return handleResponse(res) as Promise<Mark[]>;
+  },
+  async create(mark: Omit<Mark, "id" | "createdAt" | "updatedAt">) {
+    return createItem<Mark>("marks", mark);
+  },
+  async bulkCreate(records: Omit<Mark, "id" | "createdAt" | "updatedAt">[]) {
+    const res = await fetch(apiUrl("/api/marks/bulk"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(records),
+    });
+    return handleResponse(res) as Promise<Mark[]>;
+  },
+  async update(id: string, updates: Partial<Mark>) {
+    return updateItem<Mark>("marks", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("marks", id);
+  },
+  async getById(id: string) {
+    return getById<Mark>("marks", id);
+  },
 };
 
 // DORMITORY OPERATIONS
 export const dormitoryService = {
-  async getAll() { return getAll<Dormitory>('dormitories'); },
-  async getById(id: string) { return getById<Dormitory>('dormitories', id); },
-  async create(dormitory: Omit<Dormitory, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<Dormitory>('dormitories', dormitory); },
-  async update(id: string, updates: Partial<Dormitory>) { return updateItem<Dormitory>('dormitories', id, updates); },
-  async delete(id: string) { return deleteItem('dormitories', id); },
+  async getAll() {
+    return getAll<Dormitory>("dormitories");
+  },
+  async getById(id: string) {
+    return getById<Dormitory>("dormitories", id);
+  },
+  async create(dormitory: Omit<Dormitory, "id" | "createdAt" | "updatedAt">) {
+    return createItem<Dormitory>("dormitories", dormitory);
+  },
+  async update(id: string, updates: Partial<Dormitory>) {
+    return updateItem<Dormitory>("dormitories", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("dormitories", id);
+  },
 };
 
 // ROOM OPERATIONS
 export const roomService = {
-  async getAll(params?: Record<string, any>) { return getAll<any>('rooms', params); },
-  async getById(id: string) { return getById<any>('rooms', id); },
-  async create(room: any) { return createItem<any>('rooms', room); },
-  async update(id: string, updates: any) { return updateItem<any>('rooms', id, updates); },
-  async delete(id: string) { return deleteItem('rooms', id); },
+  async getAll(params?: Record<string, any>) {
+    return getAll<any>("rooms", params);
+  },
+  async getById(id: string) {
+    return getById<any>("rooms", id);
+  },
+  async create(room: any) {
+    return createItem<any>("rooms", room);
+  },
+  async update(id: string, updates: any) {
+    return updateItem<any>("rooms", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("rooms", id);
+  },
 };
 
 // ASSIGNMENT LOGS
 export const assignmentLogService = {
-  async getAll(params?: Record<string, any>) { return getAll<any>('assignment_logs', params); },
+  async getAll(params?: Record<string, any>) {
+    return getAll<any>("assignment_logs", params);
+  },
   async exportCsv(params?: Record<string, any>) {
-    const url = new URL(apiUrl('/api/assignments/export'), typeof window !== 'undefined' ? window.location.origin : '');
-    if (params) Object.keys(params).forEach(k => url.searchParams.set(k, String(params[k])));
-    const res = await fetch(url.toString(), { headers: { ...getAuthHeaders() } });
-    if (!res.ok) throw new Error('Failed to export');
+    const url = new URL(
+      apiUrl("/api/assignments/export"),
+      typeof window !== "undefined" ? window.location.origin : "",
+    );
+    if (params)
+      Object.keys(params).forEach((k) =>
+        url.searchParams.set(k, String(params[k])),
+      );
+    const res = await fetch(url.toString(), {
+      headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error("Failed to export");
     const text = await res.text();
     return text;
-  }
+  },
 };
 
 // OCCUPANCY SNAPSHOTS
 export const occupancyService = {
-  async getAll(params?: Record<string, any>) { return getAll<any>('occupancy_snapshots', params); },
+  async getAll(params?: Record<string, any>) {
+    return getAll<any>("occupancy_snapshots", params);
+  },
 };
 
 // STORE ITEM OPERATIONS
 export const storeService = {
-  async getAll() { return getAll<StoreItem>('store_items', { _sort: 'item_name' }); },
-  async getById(id: string) { return getById<StoreItem>('store_items', id); },
-  async create(item: Omit<StoreItem, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<StoreItem>('store_items', item); },
-  async update(id: string, updates: Partial<StoreItem>) { return updateItem<StoreItem>('store_items', id, updates); },
-  async delete(id: string) { return deleteItem('store_items', id); },
-  async getLowStock(threshold: number = 10) { const res = await fetch(apiUrl(`/api/store_items/low-stock/${threshold}`)); return handleResponse(res) as Promise<StoreItem[]>; },
+  async getAll() {
+    return getAll<StoreItem>("store_items", { _sort: "item_name" });
+  },
+  async getById(id: string) {
+    return getById<StoreItem>("store_items", id);
+  },
+  async create(item: Omit<StoreItem, "id" | "createdAt" | "updatedAt">) {
+    return createItem<StoreItem>("store_items", item);
+  },
+  async update(id: string, updates: Partial<StoreItem>) {
+    return updateItem<StoreItem>("store_items", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("store_items", id);
+  },
+  async getLowStock(threshold: number = 10) {
+    const res = await fetch(apiUrl(`/api/store_items/low-stock/${threshold}`));
+    return handleResponse(res) as Promise<StoreItem[]>;
+  },
 };
 
 // TEACHER DUTIES
 export const dutyService = {
   async getAll() {
-    return getAll<TeacherDuty>('duties', { _sort: '-assigned_date' });
+    return getAll<TeacherDuty>("duties", { _sort: "-assigned_date" });
   },
   async getByTeacherId(teacherId: string) {
     const res = await fetch(apiUrl(`/api/duties?teacher_id=${teacherId}`));
     return handleResponse(res) as Promise<TeacherDuty[]>;
   },
-  async getById(id: string) { return getById<TeacherDuty>('duties', id); },
-  async create(duty: Omit<TeacherDuty, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<TeacherDuty>('duties', duty); },
-  async update(id: string, updates: Partial<TeacherDuty>) { return updateItem<TeacherDuty>('duties', id, updates); },
-  async delete(id: string) { return deleteItem('duties', id); },
+  async getById(id: string) {
+    return getById<TeacherDuty>("duties", id);
+  },
+  async create(duty: Omit<TeacherDuty, "id" | "createdAt" | "updatedAt">) {
+    return createItem<TeacherDuty>("duties", duty);
+  },
+  async update(id: string, updates: Partial<TeacherDuty>) {
+    return updateItem<TeacherDuty>("duties", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("duties", id);
+  },
 };
 
 // DUTY RATINGS
 export const ratingService = {
   async getAll() {
-    return getAll<DutyRating>('ratings', { _sort: '-rating_date' });
+    return getAll<DutyRating>("ratings", { _sort: "-rating_date" });
   },
   async getByDutyId(dutyId: string) {
     const res = await fetch(apiUrl(`/api/ratings?duty_id=${dutyId}`));
@@ -239,46 +421,96 @@ export const ratingService = {
     const res = await fetch(apiUrl(`/api/ratings?teacher_id=${teacherId}`));
     return handleResponse(res) as Promise<DutyRating[]>;
   },
-  async getById(id: string) { return getById<DutyRating>('ratings', id); },
-  async create(rating: Omit<DutyRating, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<DutyRating>('ratings', rating); },
-  async update(id: string, updates: Partial<DutyRating>) { return updateItem<DutyRating>('ratings', id, updates); },
-  async delete(id: string) { return deleteItem('ratings', id); },
+  async getById(id: string) {
+    return getById<DutyRating>("ratings", id);
+  },
+  async create(rating: Omit<DutyRating, "id" | "createdAt" | "updatedAt">) {
+    return createItem<DutyRating>("ratings", rating);
+  },
+  async update(id: string, updates: Partial<DutyRating>) {
+    return updateItem<DutyRating>("ratings", id, updates);
+  },
+  async delete(id: string) {
+    return deleteItem("ratings", id);
+  },
 };
 
 // PAYMENT REQUESTS
 export const paymentRequestService = {
   async getAll() {
-    return getAll<PaymentRequest>('payment_requests', { _sort: '-request_date' });
+    return getAll<PaymentRequest>("payment_requests", {
+      _sort: "-request_date",
+    });
   },
   async getByTeacherId(teacherId: string) {
-    const res = await fetch(apiUrl(`/api/payment_requests?teacher_id=${teacherId}`));
+    const res = await fetch(
+      apiUrl(`/api/payment_requests?teacher_id=${teacherId}`),
+    );
     return handleResponse(res) as Promise<PaymentRequest[]>;
   },
-  async getById(id: string) { return getById<PaymentRequest>('payment_requests', id); },
-  async create(request: Omit<PaymentRequest, 'id' | 'createdAt' | 'updatedAt'>) { return createItem<PaymentRequest>('payment_requests', request); },
-  async update(id: string, updates: Partial<PaymentRequest>) { return updateItem<PaymentRequest>('payment_requests', id, updates); },
-  async approve(id: string, approvedBy: string) { return updateItem<PaymentRequest>('payment_requests', id, { status: 'approved', approved_by: approvedBy, approval_date: new Date().toISOString() }); },
-  async reject(id: string, rejectionReason: string) { return updateItem<PaymentRequest>('payment_requests', id, { status: 'rejected', rejection_reason: rejectionReason }); },
-  async delete(id: string) { return deleteItem('payment_requests', id); },
+  async getById(id: string) {
+    return getById<PaymentRequest>("payment_requests", id);
+  },
+  async create(
+    request: Omit<PaymentRequest, "id" | "createdAt" | "updatedAt">,
+  ) {
+    return createItem<PaymentRequest>("payment_requests", request);
+  },
+  async update(id: string, updates: Partial<PaymentRequest>) {
+    return updateItem<PaymentRequest>("payment_requests", id, updates);
+  },
+  async approve(id: string, approvedBy: string) {
+    return updateItem<PaymentRequest>("payment_requests", id, {
+      status: "approved",
+      approved_by: approvedBy,
+      approval_date: new Date().toISOString(),
+    });
+  },
+  async reject(id: string, rejectionReason: string) {
+    return updateItem<PaymentRequest>("payment_requests", id, {
+      status: "rejected",
+      rejection_reason: rejectionReason,
+    });
+  },
+  async delete(id: string) {
+    return deleteItem("payment_requests", id);
+  },
 };
 
 // AUTH
 const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('eduhub_token') : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("eduhub_token") : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 export const authService = {
-  async register(payload: { email: string; password: string; role?: string; first_name?: string; last_name?: string }) {
-    const res = await fetch(apiUrl('/api/auth/register'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  async register(payload: {
+    email: string;
+    password: string;
+    role?: string;
+    first_name?: string;
+    last_name?: string;
+  }) {
+    const res = await fetch(apiUrl("/api/auth/register"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
     return handleResponse(res);
   },
   async login(email: string, password: string) {
-    const res = await fetch(apiUrl('/api/auth/login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    const res = await fetch(apiUrl("/api/auth/login"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
     return handleResponse(res);
   },
   async me() {
-    const res = await fetch(apiUrl('/api/auth/me'), { headers: { ...getAuthHeaders() } });
+    const res = await fetch(apiUrl("/api/auth/me"), {
+      headers: { ...getAuthHeaders() },
+    });
     return handleResponse(res);
-  }
+  },
 };

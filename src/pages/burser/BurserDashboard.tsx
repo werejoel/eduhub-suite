@@ -25,8 +25,15 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useFees, useStudents } from "@/hooks/useDatabase";
+import { useFees, useStudents, useClasses } from "@/hooks/useDatabase";
 import { formatUGX } from "@/lib/utils";
+import {
+  getExpectedFee,
+  FEE_STRUCTURE,
+  BOARDING_STORE_REQUIREMENTS,
+  DAY_STORE_REQUIREMENTS,
+  BURSER_FEE_REFERENCE,
+} from "@/lib/schoolConfig";
 import { exportToExcel, exportMultipleSheets, formatDataForExport } from "@/lib/exportToExcel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,13 +74,16 @@ const BurserDashboard = () => {
   const navigate = useNavigate();
   const authContext = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "payments" | "reports" | "settings"
+    "overview" | "payments" | "students" | "reports" | "settings"
   >("overview");
   const [searchQuery, setSearchQuery] = useState("");
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  const [studentSectionFilter, setStudentSectionFilter] = useState("all");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [balanceVisible, setBalanceVisible] = useState(true);
   const { data: fees = [] } = useFees();
   const { data: students = [] } = useStudents();
+  const { data: classes = [] } = useClasses();
   const createFee = useCreateFee();
   const deleteFee = useDeleteFee();
 
@@ -86,7 +96,51 @@ const BurserDashboard = () => {
     due_date: "",
   });
 
-  // Calculate  statistics
+  const getClassName = (classId: string) =>
+    classes.find((c) => c.id === classId)?.class_name || "Unassigned";
+
+  const registeredStudents = useMemo(() => {
+    return students
+      .filter((s) => s.status === "active")
+      .filter((s) => {
+        const name =
+          `${s.first_name} ${s.other_names || ""} ${s.last_name}`.toLowerCase();
+        const matchesSearch =
+          studentSearchQuery === "" ||
+          name.includes(studentSearchQuery.toLowerCase()) ||
+          (s.admission_number || "")
+            .toLowerCase()
+            .includes(studentSearchQuery.toLowerCase());
+        const boarding = s.boarding_status || "day";
+        const matchesSection =
+          studentSectionFilter === "all" || boarding === studentSectionFilter;
+        return matchesSearch && matchesSection;
+      })
+      .map((s) => {
+        const className = getClassName(s.class_id);
+        const boarding = s.boarding_status || "day";
+        const expectedFee = getExpectedFee(className, boarding);
+        const studentFees = fees.filter((f) => f.student_id === s.id);
+        const paid = studentFees
+          .filter((f) => f.payment_status === "paid")
+          .reduce((sum, f) => sum + (f.amount || 0), 0);
+        return {
+          id: s.id,
+          name: `${s.first_name} ${s.other_names ? s.other_names + " " : ""}${s.last_name}`,
+          admission: s.admission_number,
+          class: className,
+          section: boarding === "boarding" ? "Boarding" : "Day",
+          parents: s.parents_names || "—",
+          contact: s.contact || "—",
+          registrationFee: s.registration_fee || FEE_STRUCTURE.registration,
+          expectedFee,
+          paid,
+          balance: Math.max(0, expectedFee - paid),
+        };
+      });
+  }, [students, classes, fees, studentSearchQuery, studentSectionFilter]);
+
+  // Calculate statistics
   const stats = useMemo(() => {
     const paid = fees.filter((f) => f.payment_status === "paid");
     const pending = fees.filter((f) => f.payment_status === "pending");
@@ -277,7 +331,19 @@ const BurserDashboard = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target as any;
-    setNewPayment((prev) => ({ ...prev, [name]: value }));
+    setNewPayment((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === "student_id" && value) {
+        const student = students.find((s) => s.id === value);
+        if (student) {
+          const className = getClassName(student.class_id);
+          updated.amount = String(
+            getExpectedFee(className, student.boarding_status || "day"),
+          );
+        }
+      }
+      return updated;
+    });
   };
 
   const submitNewPayment = async () => {
@@ -692,6 +758,108 @@ const BurserDashboard = () => {
           </motion.div>
         );
 
+      case "students":
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="bg-white p-4 rounded-xl shadow-md border border-gray-100">
+              <p className="text-sm text-gray-600 mb-4">
+                Fee structure: Baby/Top (Day) — {formatUGX(FEE_STRUCTURE.day_baby_top)} ·
+                P1–P3 (Day) — {formatUGX(FEE_STRUCTURE.day_p1_p3)} ·
+                P4–P7 (Boarding) — {formatUGX(FEE_STRUCTURE.boarding_p4_p7)}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <Input
+                    placeholder="Search by name or admission number..."
+                    value={studentSearchQuery}
+                    onChange={(e) => setStudentSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <select
+                  value={studentSectionFilter}
+                  onChange={(e) => setStudentSectionFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value="all">All Sections</option>
+                  <option value="day">Day Students</option>
+                  <option value="boarding">Boarding Students</option>
+                </select>
+                <Button
+                  className="gap-2"
+                  onClick={() => {
+                    exportToExcel(
+                      registeredStudents.map((s) => ({
+                        Name: s.name,
+                        Admission: s.admission,
+                        Class: s.class,
+                        Section: s.section,
+                        Parents: s.parents,
+                        Contact: s.contact,
+                        "Registration Fee": s.registrationFee,
+                        "Expected Term Fee": s.expectedFee,
+                        Paid: s.paid,
+                        Balance: s.balance,
+                      })),
+                      "Registered_Students",
+                    );
+                    toast.success("Student list exported");
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  Export
+                </Button>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Registered Students ({registeredStudents.length})
+              </h3>
+              <DataTable
+                columns={[
+                  { key: "name", label: "Student Name" },
+                  { key: "admission", label: "Admission No." },
+                  { key: "class", label: "Class" },
+                  { key: "section", label: "Section" },
+                  { key: "parents", label: "Parents" },
+                  { key: "contact", label: "Contact" },
+                  {
+                    key: "registrationFee",
+                    label: "Reg. Fee",
+                    render: (v: number) => formatUGX(v),
+                  },
+                  {
+                    key: "expectedFee",
+                    label: "Expected Fee",
+                    render: (v: number) => formatUGX(v),
+                  },
+                  {
+                    key: "paid",
+                    label: "Paid",
+                    render: (v: number) => formatUGX(v),
+                  },
+                  {
+                    key: "balance",
+                    label: "Balance",
+                    render: (v: number) => (
+                      <span className={v > 0 ? "text-destructive font-medium" : "text-success"}>
+                        {formatUGX(v)}
+                      </span>
+                    ),
+                  },
+                ]}
+                data={registeredStudents}
+              />
+            </div>
+          </motion.div>
+        );
+
       case "reports":
         return (
           <motion.div
@@ -742,6 +910,9 @@ const BurserDashboard = () => {
                 <div>
                   <h3 className="font-semibold mb-2">
                     SCHOOL FEES — BOARDING SECTION
+                    <span className="text-sm font-normal text-gray-500 ml-2">
+                      (P4–P7: {formatUGX(FEE_STRUCTURE.boarding_p4_p7)})
+                    </span>
                   </h3>
                   <table className="w-full table-auto border-collapse">
                     <thead>
@@ -765,7 +936,14 @@ const BurserDashboard = () => {
                         "P.7",
                       ].map((cls) => (
                         <tr key={`boarding-${cls}`}>
-                          <td className="border px-2 py-1">{cls}</td>
+                          <td className="border px-2 py-1">
+                            {cls}
+                            {BURSER_FEE_REFERENCE[cls]?.boarding && (
+                              <span className="text-xs text-gray-500 block">
+                                Ref: {formatUGX(BURSER_FEE_REFERENCE[cls].boarding!)}
+                              </span>
+                            )}
+                          </td>
                           <td className="border px-2 py-1">
                             <Input
                               name={`boarding_${cls}_expected`}
@@ -829,6 +1007,9 @@ const BurserDashboard = () => {
                 <div>
                   <h3 className="font-semibold mb-2">
                     SCHOOL FEES — DAY SECTION
+                    <span className="text-sm font-normal text-gray-500 ml-2">
+                      (Baby/Top: {formatUGX(FEE_STRUCTURE.day_baby_top)} · P1–P3: {formatUGX(FEE_STRUCTURE.day_p1_p3)})
+                    </span>
                   </h3>
                   <table className="w-full table-auto border-collapse">
                     <thead>
@@ -852,7 +1033,14 @@ const BurserDashboard = () => {
                         "P.7",
                       ].map((cls) => (
                         <tr key={`day-${cls}`}>
-                          <td className="border px-2 py-1">{cls}</td>
+                          <td className="border px-2 py-1">
+                            {cls}
+                            {BURSER_FEE_REFERENCE[cls]?.day && (
+                              <span className="text-xs text-gray-500 block">
+                                Ref: {formatUGX(BURSER_FEE_REFERENCE[cls].day!)}
+                              </span>
+                            )}
+                          </td>
                           <td className="border px-2 py-1">
                             <Input
                               name={`day_${cls}_expected`}
@@ -948,19 +1136,25 @@ const BurserDashboard = () => {
                   </table>
                 </div>
 
-                {/* REQUIREMENTS */}
+                {/* REQUIREMENTS — Boarding store items */}
                 <div>
-                  <h3 className="font-semibold mb-2">REQUIREMENTS</h3>
+                  <h3 className="font-semibold mb-2">
+                    STORE REQUIREMENTS — BOARDING
+                    <span className="text-sm font-normal text-gray-500 ml-2 block mt-1">
+                      Posho 20kgs · Beans 10kgs · Sugar 4kg · Gnuts 4kg · Tissues 4 Rolls · Broom 1 · Squeezer 1
+                    </span>
+                  </h3>
                   <table className="w-full table-auto border-collapse text-sm">
                     <thead>
                       <tr>
                         <th className="border px-2 py-1">CLASS</th>
+                        <th className="border px-2 py-1">POSHO</th>
                         <th className="border px-2 py-1">BEANS</th>
-                        <th className="border px-2 py-1">FLOUR</th>
                         <th className="border px-2 py-1">SUGAR</th>
                         <th className="border px-2 py-1">G/NUTS</th>
                         <th className="border px-2 py-1">T/P</th>
-                        <th className="border px-2 py-1">BROOMS</th>
+                        <th className="border px-2 py-1">BROOM</th>
+                        <th className="border px-2 py-1">SQUEEZER</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -979,15 +1173,15 @@ const BurserDashboard = () => {
                           <td className="border px-2 py-1">{cls}</td>
                           <td className="border px-2 py-1">
                             <Input
-                              name={`req_${cls}_beans`}
-                              value={weeklyReport[`req_${cls}_beans`] || ""}
+                              name={`req_${cls}_posho`}
+                              value={weeklyReport[`req_${cls}_posho`] || ""}
                               onChange={handleInputChange}
                             />
                           </td>
                           <td className="border px-2 py-1">
                             <Input
-                              name={`req_${cls}_flour`}
-                              value={weeklyReport[`req_${cls}_flour`] || ""}
+                              name={`req_${cls}_beans`}
+                              value={weeklyReport[`req_${cls}_beans`] || ""}
                               onChange={handleInputChange}
                             />
                           </td>
@@ -1014,8 +1208,15 @@ const BurserDashboard = () => {
                           </td>
                           <td className="border px-2 py-1">
                             <Input
-                              name={`req_${cls}_brooms`}
-                              value={weeklyReport[`req_${cls}_brooms`] || ""}
+                              name={`req_${cls}_broom`}
+                              value={weeklyReport[`req_${cls}_broom`] || ""}
+                              onChange={handleInputChange}
+                            />
+                          </td>
+                          <td className="border px-2 py-1">
+                            <Input
+                              name={`req_${cls}_squeezer`}
+                              value={weeklyReport[`req_${cls}_squeezer`] || ""}
                               onChange={handleInputChange}
                             />
                           </td>
@@ -1027,15 +1228,15 @@ const BurserDashboard = () => {
                         </td>
                         <td className="border px-2 py-1">
                           <Input
-                            name="req_total_beans"
-                            value={weeklyReport.req_total_beans || ""}
+                            name="req_total_posho"
+                            value={weeklyReport.req_total_posho || ""}
                             onChange={handleInputChange}
                           />
                         </td>
                         <td className="border px-2 py-1">
                           <Input
-                            name="req_total_flour"
-                            value={weeklyReport.req_total_flour || ""}
+                            name="req_total_beans"
+                            value={weeklyReport.req_total_beans || ""}
                             onChange={handleInputChange}
                           />
                         </td>
@@ -1062,12 +1263,75 @@ const BurserDashboard = () => {
                         </td>
                         <td className="border px-2 py-1">
                           <Input
-                            name="req_total_brooms"
-                            value={weeklyReport.req_total_brooms || ""}
+                            name="req_total_broom"
+                            value={weeklyReport.req_total_broom || ""}
+                            onChange={handleInputChange}
+                          />
+                        </td>
+                        <td className="border px-2 py-1">
+                          <Input
+                            name="req_total_squeezer"
+                            value={weeklyReport.req_total_squeezer || ""}
                             onChange={handleInputChange}
                           />
                         </td>
                       </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* DAY STORE REQUIREMENTS */}
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    STORE REQUIREMENTS — DAY SECTION
+                    <span className="text-sm font-normal text-gray-500 ml-2">
+                      (Sugar 2kgs · Tissues 2 Rolls)
+                    </span>
+                  </h3>
+                  <table className="w-full table-auto border-collapse text-sm">
+                    <thead>
+                      <tr>
+                        <th className="border px-2 py-1">CLASS</th>
+                        <th className="border px-2 py-1">SUGAR</th>
+                        <th className="border px-2 py-1">TISSUES</th>
+                        <th className="border px-2 py-1">RECEIVED</th>
+                        <th className="border px-2 py-1">BALANCE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {["BABY", "TOP", "P.1", "P.2", "P.3", "P.4", "P.5", "P.6", "P.7"].map((cls) => (
+                        <tr key={`dayreq-${cls}`}>
+                          <td className="border px-2 py-1">{cls}</td>
+                          <td className="border px-2 py-1">
+                            <Input
+                              name={`dayreq_${cls}_sugar`}
+                              value={weeklyReport[`dayreq_${cls}_sugar`] || ""}
+                              onChange={handleInputChange}
+                            />
+                          </td>
+                          <td className="border px-2 py-1">
+                            <Input
+                              name={`dayreq_${cls}_tissues`}
+                              value={weeklyReport[`dayreq_${cls}_tissues`] || ""}
+                              onChange={handleInputChange}
+                            />
+                          </td>
+                          <td className="border px-2 py-1">
+                            <Input
+                              name={`dayreq_${cls}_received`}
+                              value={weeklyReport[`dayreq_${cls}_received`] || ""}
+                              onChange={handleInputChange}
+                            />
+                          </td>
+                          <td className="border px-2 py-1">
+                            <Input
+                              name={`dayreq_${cls}_balance`}
+                              value={weeklyReport[`dayreq_${cls}_balance`] || ""}
+                              onChange={handleInputChange}
+                            />
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -1181,16 +1445,41 @@ const BurserDashboard = () => {
                   </table>
                 </div>
 
-                {/* STORE */}
+                {/* STORE CHECKLIST */}
                 <div>
-                  <h3 className="font-semibold mb-2">STORE</h3>
-                  {Array.from({ length: 6 }).map((_, i) => (
+                  <h3 className="font-semibold mb-2">STORE CHECKLIST</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-medium mb-2 text-primary">Boarding Section</h4>
+                      <ul className="text-sm space-y-1">
+                        {BOARDING_STORE_REQUIREMENTS.map((r) => (
+                          <li key={r.id} className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-primary" />
+                            {r.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-medium mb-2 text-primary">Day Section</h4>
+                      <ul className="text-sm space-y-1">
+                        {DAY_STORE_REQUIREMENTS.map((r) => (
+                          <li key={r.id} className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-primary" />
+                            {r.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  {Array.from({ length: 4 }).map((_, i) => (
                     <Input
                       key={`store-${i}`}
                       name={`store_row_${i}`}
                       value={weeklyReport[`store_row_${i}`] || ""}
                       onChange={handleInputChange}
                       className="mb-2"
+                      placeholder={`Store note ${i + 1}`}
                     />
                   ))}
                 </div>
@@ -1345,7 +1634,7 @@ const BurserDashboard = () => {
       {/* Sidebar */}
       <motion.aside
         animate={{ width: sidebarOpen ? 280 : 80 }}
-        className="bg-red-900 text-white shadow-xl overflow-hidden"
+        className="bg-[#800020] text-white shadow-xl overflow-hidden"
       >
         <div className="p-6 flex items-center justify-between">
           {sidebarOpen && <h1 className="text-xl font-bold">Burser</h1>}
@@ -1364,6 +1653,7 @@ const BurserDashboard = () => {
         <nav className="space-y-2 px-3 py-6">
           {[
             { id: "overview", icon: Home, label: "Overview" },
+            { id: "students", icon: Users, label: "Students" },
             { id: "payments", icon: CreditCard, label: "Payments" },
             { id: "reports", icon: FileText, label: "Reports" },
             { id: "finances", icon: DollarSign, label: "Finances", route: "/burser/finances" },
@@ -1419,6 +1709,7 @@ const BurserDashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-800">
                 {activeTab === "overview" && "Dashboard"}
+                {activeTab === "students" && "Registered Students"}
                 {activeTab === "payments" && "Payment Records"}
                 {activeTab === "reports" && "Reports"}
                 {activeTab === "settings" && "Settings"}

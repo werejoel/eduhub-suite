@@ -13,6 +13,9 @@ import {
   Calendar,
   BookOpen,
   ShoppingCart,
+  Sun,
+  Moon,
+  ClipboardList,
 } from "lucide-react";
 import {
   AreaChart,
@@ -36,6 +39,7 @@ import { subscribeToPush } from "@/lib/services";
 import { toast } from "sonner";
 import { formatUGX } from "@/lib/utils";
 import { useMemo } from "react";
+import { DEFAULT_STUDENT_REQUIREMENTS } from "@/lib/types";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -104,6 +108,22 @@ function AdminDashboard() {
         iconColor: "bg-primary",
       },
       {
+        title: "Day Students",
+        value: students.filter((s) => (s.boarding_status || "day") === "day").length.toString(),
+        change: `${Math.round((students.filter((s) => (s.boarding_status || "day") === "day").length / Math.max(totalStudents, 1)) * 100)}% of total`,
+        changeType: "neutral" as const,
+        icon: Sun,
+        iconColor: "bg-amber",
+      },
+      {
+        title: "Boarding Students",
+        value: students.filter((s) => s.boarding_status === "boarding").length.toString(),
+        change: `${Math.round((students.filter((s) => s.boarding_status === "boarding").length / Math.max(totalStudents, 1)) * 100)}% of total`,
+        changeType: "neutral" as const,
+        icon: Moon,
+        iconColor: "bg-blue",
+      },
+      {
         title: "Total Teachers",
         value: totalTeachers.toString(),
         change: teacherGrowth,
@@ -130,6 +150,43 @@ function AdminDashboard() {
       },
     ];
   }, [students, teachers, fees, dormitories]);
+
+  const requirementStats = useMemo(() => {
+    const activeStudents = students.filter((s) => s.status === "active");
+    const fullyComplete = activeStudents.filter((s) => {
+      const checklist = s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
+      return checklist.length > 0 && checklist.every((r) => r.completed);
+    }).length;
+    const incomplete = activeStudents.length - fullyComplete;
+    const byItem = DEFAULT_STUDENT_REQUIREMENTS.map((req) => ({
+      id: req.id,
+      name: req.name,
+      pending: activeStudents.filter((s) => {
+        const checklist = s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
+        const item = checklist.find((r) => r.id === req.id);
+        return !item?.completed;
+      }).length,
+    }));
+    const incompleteStudents = activeStudents
+      .filter((s) => {
+        const checklist = s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
+        return !checklist.every((r) => r.completed);
+      })
+      .slice(0, 6)
+      .map((s) => {
+        const checklist = s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
+        const completed = checklist.filter((r) => r.completed).length;
+        return {
+          id: s.id,
+          name: `${s.first_name} ${s.last_name}`,
+          class:
+            classes.find((c) => c.id === s.class_id)?.class_name || "Unassigned",
+          section: s.boarding_status === "boarding" ? "Boarding" : "Day",
+          progress: `${completed}/${checklist.length}`,
+        };
+      });
+    return { fullyComplete, incomplete, byItem, incompleteStudents, totalActive: activeStudents.length };
+  }, [students, classes]);
 
   // Get recent students
   const recentStudents = useMemo(() => {
@@ -215,9 +272,9 @@ function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
         {isLoading
-          ? Array.from({ length: 4 }).map((_, idx) => (
+          ? Array.from({ length: 6 }).map((_, idx) => (
             <div
               key={idx}
               className="bg-card rounded-2xl p-6 border border-border animate-pulse"
@@ -229,6 +286,159 @@ function AdminDashboard() {
           : stats.map((stat, idx) => (
             <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
           ))}
+      </div>
+
+      {/* Requirements & Section Overview */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="bg-card rounded-2xl p-6 border border-border shadow-md"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold">Student Requirements</h3>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/admin/students")}
+            >
+              Manage
+            </Button>
+          </div>
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-8 bg-muted rounded animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-success/10 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-success">
+                    {requirementStats.fullyComplete}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Fully Complete</p>
+                </div>
+                <div className="bg-warning/10 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-warning">
+                    {requirementStats.incomplete}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Incomplete</p>
+                </div>
+              </div>
+              <div className="space-y-2 mb-4">
+                {requirementStats.byItem.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between text-sm py-1.5 border-b border-border/50 last:border-0"
+                  >
+                    <span className="text-muted-foreground">{item.name}</span>
+                    <span
+                      className={`font-medium ${
+                        item.pending > 0 ? "text-warning" : "text-success"
+                      }`}
+                    >
+                      {item.pending} pending
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {requirementStats.incompleteStudents.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Students needing attention</p>
+                  <div className="space-y-2">
+                    {requirementStats.incompleteStudents.map((s) => (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between p-2 bg-muted/30 rounded-lg text-sm"
+                      >
+                        <div>
+                          <p className="font-medium">{s.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {s.class} · {s.section}
+                          </p>
+                        </div>
+                        <span className="text-xs px-2 py-1 rounded-full bg-warning/10 text-warning">
+                          {s.progress}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-card rounded-2xl p-6 border border-border shadow-md"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Day & Boarding Sections</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/admin/students")}
+            >
+              View All
+            </Button>
+          </div>
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-10 bg-muted rounded animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {classes.map((cls) => {
+                const classStudents = students.filter(
+                  (s) => s.class_id === cls.id && s.status === "active"
+                );
+                const dayCount = classStudents.filter(
+                  (s) => (s.boarding_status || "day") === "day"
+                ).length;
+                const boardingCount = classStudents.filter(
+                  (s) => s.boarding_status === "boarding"
+                ).length;
+                return (
+                  <div
+                    key={cls.id}
+                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{cls.class_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {classStudents.length} active students
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber/10 text-amber">
+                        Day: {dayCount}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue/10 text-blue">
+                        Boarding: {boardingCount}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              {classes.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No classes configured yet
+                </p>
+              )}
+            </div>
+          )}
+        </motion.div>
       </div>
 
       {/* Charts & Quick Actions */}
