@@ -46,6 +46,7 @@ import {
 } from "@/lib/types";
 import {
   getStoreRequirements,
+  getStudentRequirements,
   getExpectedFee,
   getClassGroup,
   FEE_STRUCTURE,
@@ -382,7 +383,10 @@ const StudentsPage = () => {
         registration_fee: newStudent.registration_fee || FEE_STRUCTURE.registration,
         parents_names: newStudent.parents_names,
         contact: newStudent.contact,
-        requirements_checklist: getStoreRequirements(boardingStatus),
+        requirements_checklist: getStudentRequirements(
+          boardingStatus,
+          className,
+        ),
         enrollment_date: new Date().toISOString(),
         status: "active",
       });

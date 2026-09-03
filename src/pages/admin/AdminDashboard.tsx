@@ -339,9 +339,8 @@ function AdminDashboard() {
                   >
                     <span className="text-muted-foreground">{item.name}</span>
                     <span
-                      className={`font-medium ${
-                        item.pending > 0 ? "text-warning" : "text-success"
-                      }`}
+                      className={`font-medium ${item.pending > 0 ? "text-warning" : "text-success"
+                        }`}
                     >
                       {item.pending} pending
                     </span>
@@ -713,8 +712,8 @@ function AdminDashboard() {
                       </p>
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${fee.status === "pending"
-                            ? "bg-warning/10 text-warning"
-                            : "bg-destructive/10 text-destructive"
+                          ? "bg-warning/10 text-warning"
+                          : "bg-destructive/10 text-destructive"
                           }`}
                       >
                         {fee.status}

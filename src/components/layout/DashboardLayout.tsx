@@ -32,6 +32,7 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   href: string;
+  section?: string;
   children?: { label: string; href: string }[];
 }
 
@@ -41,76 +42,76 @@ interface DashboardLayoutProps {
 
 const navItems: Record<string, NavItem[]> = {
   admin: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
-    { label: "Students", icon: Users, href: "/admin/students" },
-    { label: "Teachers", icon: GraduationCap, href: "/admin/teachers" },
-    { label: "Users", icon: Users, href: "/admin/users" },
-    { label: "Classes", icon: BookOpen, href: "/admin/classes" },
-    { label: "Fees", icon: DollarSign, href: "/admin/fees" },
-    { label: "Dormitory", icon: Building2, href: "/admin/dormitory" },
-    { label: "Dormitory Details", icon: FileText, href: "/dormitory/details" },
-    { label: "Dormitory Requirements", icon: Building2, href: "/dormitory/requirements" },
-    { label: "Student Status", icon: Users, href: "/dormitory/student-status" },
-    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy" },
-    { label: "Assign Students", icon: Users, href: "/dormitory/assignments" },
-    { label: "Store", icon: ShoppingCart, href: "/admin/store" },
-    { label: "Item Requests", icon: FileText, href: "/admin/item-requests" },
-    { label: "Records", icon: FileText, href: "/admin/records" },
-    { label: "Settings", icon: Settings, href: "/settings" },
+    { label: "Dashboard", icon: LayoutDashboard, href: "/admin", section: "Overview" },
+    { label: "Students", icon: Users, href: "/admin/students", section: "Academics" },
+    { label: "Teachers", icon: GraduationCap, href: "/admin/teachers", section: "Academics" },
+    { label: "Classes", icon: BookOpen, href: "/admin/classes", section: "Academics" },
+    { label: "Fees", icon: DollarSign, href: "/admin/fees", section: "Finance" },
+    { label: "Dormitory", icon: Building2, href: "/admin/dormitory", section: "Student Life" },
+    { label: "Dormitory Details", icon: FileText, href: "/dormitory/details", section: "Student Life" },
+    { label: "Dormitory Requirements", icon: Building2, href: "/dormitory/requirements", section: "Student Life" },
+    { label: "Student Status", icon: Users, href: "/dormitory/student-status", section: "Student Life" },
+    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy", section: "Student Life" },
+    { label: "Assign Students", icon: Users, href: "/dormitory/assignments", section: "Student Life" },
+    { label: "Store", icon: ShoppingCart, href: "/admin/store", section: "Operations" },
+    { label: "Item Requests", icon: FileText, href: "/admin/item-requests", section: "Operations" },
+    { label: "Records", icon: FileText, href: "/admin/records", section: "Operations" },
+    { label: "Users", icon: Users, href: "/admin/users", section: "System" },
+    { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   teacher: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/teacher" },
-    { label: "Students", icon: Users, href: "/teacher/students" },
-    { label: "Marks", icon: FileText, href: "/teacher/marks" },
-    { label: "Attendance", icon: GraduationCap, href: "/teacher/attendance" },
-    { label: "Reports", icon: FileText, href: "/teacher/reports" },
-    { label: "Settings", icon: Settings, href: "/settings" },
+    { label: "Dashboard", icon: LayoutDashboard, href: "/teacher", section: "Overview" },
+    { label: "Students", icon: Users, href: "/teacher/students", section: "Classroom" },
+    { label: "Marks", icon: FileText, href: "/teacher/marks", section: "Classroom" },
+    { label: "Attendance", icon: GraduationCap, href: "/teacher/attendance", section: "Classroom" },
+    { label: "Reports", icon: FileText, href: "/teacher/reports", section: "Reports" },
+    { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   headteacher: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/headteacher" },
-    { label: "Staff", icon: GraduationCap, href: "/headteacher/staff" },
-    { label: "Students", icon: Users, href: "/headteacher/students" },
-    { label: "Academic", icon: BookOpen, href: "/headteacher/academic" },
-    { label: "Reports", icon: FileText, href: "/headteacher/reports" },
-    { label: "Assign Duties", icon: FileText, href: "/headteacher/duties" },
-    { label: "Duty Ratings", icon: FileText, href: "/headteacher/ratings" },
-    { label: "Payment Requests", icon: DollarSign, href: "/headteacher/payment-requests" },
-    { label: "Item Requests", icon: FileText, href: "/headteacher/item-requests" },
-    { label: "Dormitory Details", icon: FileText, href: "/dormitory/details" },
-    { label: "Dormitory Requirements", icon: Building2, href: "/dormitory/requirements" },
-    { label: "Student Status", icon: Users, href: "/dormitory/student-status" },
-    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy" },
-    { label: "Settings", icon: Settings, href: "/settings" },
+    { label: "Dashboard", icon: LayoutDashboard, href: "/headteacher", section: "Overview" },
+    { label: "Staff", icon: GraduationCap, href: "/headteacher/staff", section: "People" },
+    { label: "Students", icon: Users, href: "/headteacher/students", section: "People" },
+    { label: "Academic", icon: BookOpen, href: "/headteacher/academic", section: "Academics" },
+    { label: "Reports", icon: FileText, href: "/headteacher/reports", section: "Academics" },
+    { label: "Assign Duties", icon: FileText, href: "/headteacher/duties", section: "Staff Duties" },
+    { label: "Duty Ratings", icon: FileText, href: "/headteacher/ratings", section: "Staff Duties" },
+    { label: "Payment Requests", icon: DollarSign, href: "/headteacher/payment-requests", section: "Requests" },
+    { label: "Item Requests", icon: FileText, href: "/headteacher/item-requests", section: "Requests" },
+    { label: "Dormitory Details", icon: FileText, href: "/dormitory/details", section: "Dormitory" },
+    { label: "Dormitory Requirements", icon: Building2, href: "/dormitory/requirements", section: "Dormitory" },
+    { label: "Student Status", icon: Users, href: "/dormitory/student-status", section: "Dormitory" },
+    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy", section: "Dormitory" },
+    { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   dos: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/dos" },
-    { label: "Manage Classes", icon: BookOpen, href: "/dos/classes" },
-    { label: "Brief Notes", icon: FileText, href: "/dos/notes" },
-    { label: "Termly Reports", icon: FileText, href: "/dos/reports" },
-    { label: "Monitor Teachers", icon: Users, href: "/dos/teachers" },
-    { label: "Settings", icon: Settings, href: "/settings" },
+    { label: "Dashboard", icon: LayoutDashboard, href: "/dos", section: "Overview" },
+    { label: "Manage Classes", icon: BookOpen, href: "/dos/classes", section: "Academics" },
+    { label: "Brief Notes", icon: FileText, href: "/dos/notes", section: "Academics" },
+    { label: "Termly Reports", icon: FileText, href: "/dos/reports", section: "Reports" },
+    { label: "Monitor Teachers", icon: Users, href: "/dos/teachers", section: "People" },
+    { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   burser: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/burser" },
-    { label: "Transactions", icon: DollarSign, href: "/burser" },
-    { label: "Fees", icon: FileText, href: "/burser" },
-    { label: "Finances", icon: DollarSign, href: "/burser/finances" },
-    { label: "Settings", icon: Settings, href: "/settings" },
+    { label: "Dashboard", icon: LayoutDashboard, href: "/burser", section: "Overview" },
+    { label: "Transactions", icon: DollarSign, href: "/burser", section: "Finance" },
+    { label: "Fees", icon: FileText, href: "/burser", section: "Finance" },
+    { label: "Finances", icon: DollarSign, href: "/burser/finances", section: "Finance" },
+    { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   store: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/store" },
-    { label: "Inventory", icon: ShoppingCart, href: "/admin/store" },
-    { label: "Settings", icon: Settings, href: "/settings" },
+    { label: "Dashboard", icon: LayoutDashboard, href: "/store", section: "Overview" },
+    { label: "Inventory", icon: ShoppingCart, href: "/admin/store", section: "Inventory" },
+    { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   dormitory: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/dormitory" },
-    { label: "Dormitories", icon: Building2, href: "/admin/dormitory" },
-    { label: "Details", icon: FileText, href: "/dormitory/details" },
-    { label: "Requirements", icon: Building2, href: "/dormitory/requirements" },
-    { label: "Student Status", icon: Users, href: "/dormitory/student-status" },
-    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy" },
-    { label: "Assign Students", icon: Users, href: "/dormitory/assignments" },
-    { label: "Settings", icon: Settings, href: "/settings" },
+    { label: "Dashboard", icon: LayoutDashboard, href: "/dormitory", section: "Overview" },
+    { label: "Dormitories", icon: Building2, href: "/admin/dormitory", section: "Dormitory" },
+    { label: "Details", icon: FileText, href: "/dormitory/details", section: "Dormitory" },
+    { label: "Requirements", icon: Building2, href: "/dormitory/requirements", section: "Dormitory" },
+    { label: "Student Status", icon: Users, href: "/dormitory/student-status", section: "Students" },
+    { label: "Assign Students", icon: Users, href: "/dormitory/assignments", section: "Students" },
+    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy", section: "Reports" },
+    { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
 };
 
@@ -216,33 +217,40 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {items.map((item) => {
+          {items.map((item, index) => {
             const isActive = location.pathname === item.href;
+            const showSection = item.section && items[index - 1]?.section !== item.section;
             return (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
-                  isActive
-                    ? "bg-secondary text-secondary-foreground shadow-lg"
-                    : "text-white/80 dark:text-white/80 hover:bg-white/10 hover:text-white dark:hover:bg-white/10 dark:hover:text-white"
+              <div key={item.href}>
+                {showSection && sidebarOpen && (
+                  <p className="px-4 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                    {item.section}
+                  </p>
                 )}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                <AnimatePresence>
-                  {sidebarOpen && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      className="font-medium whitespace-nowrap overflow-hidden text-white dark:text-white"
-                    >
-                      {item.label}
-                    </motion.span>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                    isActive
+                      ? "bg-secondary text-secondary-foreground shadow-lg"
+                      : "text-white/80 dark:text-white/80 hover:bg-white/10 hover:text-white dark:hover:bg-white/10 dark:hover:text-white"
                   )}
-                </AnimatePresence>
-              </Link>
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  <AnimatePresence>
+                    {sidebarOpen && (
+                      <motion.span
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: "auto" }}
+                        exit={{ opacity: 0, width: 0 }}
+                        className="font-medium whitespace-nowrap overflow-hidden text-white dark:text-white"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
+              </div>
             );
           })}
         </nav>
@@ -306,23 +314,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </button>
               </div>
               <nav className="flex-1 px-3 py-4 space-y-1">
-                {items.map((item) => {
+                {items.map((item, index) => {
                   const isActive = location.pathname === item.href;
+                  const showSection = item.section && items[index - 1]?.section !== item.section;
                   return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
-                        isActive
-                          ? "bg-secondary text-secondary-foreground"
-                          : "text-primary-foreground/80 hover:bg-sidebar-accent"
+                    <div key={item.href}>
+                      {showSection && (
+                        <p className="px-4 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 first:pt-0">
+                          {item.section}
+                        </p>
                       )}
-                    >
-                      <item.icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
-                    </Link>
+                      <Link
+                        to={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
+                          isActive
+                            ? "bg-secondary text-secondary-foreground"
+                            : "text-primary-foreground/80 hover:bg-sidebar-accent"
+                        )}
+                      >
+                        <item.icon className="w-5 h-5" />
+                        <span className="font-medium">{item.label}</span>
+                      </Link>
+                    </div>
                   );
                 })}
               </nav>
