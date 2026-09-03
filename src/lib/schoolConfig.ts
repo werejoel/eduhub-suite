@@ -23,6 +23,21 @@ export const DAY_STORE_REQUIREMENTS: StudentRequirement[] = [
   { id: "d2", name: "Tissues — 2 Rolls", completed: false },
 ];
 
+export const COMMON_STUDENT_REQUIREMENTS: StudentRequirement[] = [
+  { id: "medical-fees", name: "Medical fees — UGX 10,000", completed: false },
+  { id: "holiday-package", name: "Holiday package — UGX 5,000", completed: false },
+  { id: "hair-trimming", name: "Hair trimming — UGX 3,000", completed: false },
+];
+
+export const PRIMARY_UNIFORM_REQUIREMENTS: StudentRequirement[] = [
+  { id: "uniform", name: "Uniform — UGX 40,000", completed: false },
+  { id: "casual-uniform", name: "Casual uniform — UGX 28,000", completed: false },
+  { id: "sports-wear", name: "Sports wear — UGX 50,000", completed: false },
+  { id: "sunday-uniform", name: "Sunday uniform — UGX 30,000", completed: false },
+  { id: "sweater", name: "Sweater — UGX 30,000", completed: false },
+  { id: "white-stocking", name: "White stockings — 2 pairs, UGX 7,000", completed: false },
+];
+
 export const EXAM_TERMS = [
   "Beginning of Term",
   "Mid Term",
@@ -91,6 +106,22 @@ export function getStoreRequirements(
   return boardingStatus === "boarding"
     ? BOARDING_STORE_REQUIREMENTS.map((r) => ({ ...r }))
     : DAY_STORE_REQUIREMENTS.map((r) => ({ ...r }));
+}
+
+export function getStudentRequirements(
+  boardingStatus: "day" | "boarding" = "day",
+  className = "",
+  existingRequirements: StudentRequirement[] = [],
+): StudentRequirement[] {
+  const defaults = [
+    ...getStoreRequirements(boardingStatus),
+    ...COMMON_STUDENT_REQUIREMENTS,
+    ...(isP1P3Class(className) || isP4P7Class(className)
+      ? PRIMARY_UNIFORM_REQUIREMENTS
+      : []),
+  ];
+  const existingById = new Map(existingRequirements.map((requirement) => [requirement.id, requirement]));
+  return defaults.map((requirement) => existingById.get(requirement.id) || { ...requirement });
 }
 
 /** Burser weekly report fee reference per class row */
