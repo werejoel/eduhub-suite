@@ -20,6 +20,8 @@ export interface Student {
   requirements_checklist?: StudentRequirement[];
   createdAt: string;
   updatedAt: string;
+  updated_existing?: boolean;
+  message?: string;
 }
 
 export interface StudentRequirement {

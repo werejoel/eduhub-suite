@@ -646,6 +646,31 @@ collections.forEach((col) => {
       : []),
     async (req, res) => {
     try {
+      if (col === "students") {
+        const body = { ...(req.body || {}) };
+        const admissionNumber = String(body.admission_number || "").trim();
+        if (!admissionNumber) {
+          return res.status(400).json({ error: "Admission number is required" });
+        }
+
+        const existingStudent = await Model.findOne({ admission_number: admissionNumber });
+        if (existingStudent) {
+          delete body._id;
+          delete body.id;
+          const updatedStudent = await Model.findByIdAndUpdate(
+            existingStudent._id,
+            { $set: body },
+            { new: true, runValidators: true },
+          );
+          return res.status(200).json({
+            ...updatedStudent.toObject(),
+            updated_existing: true,
+            message: "Existing student record updated; payment history preserved.",
+          });
+        }
+
+        req.body = { ...body, admission_number: admissionNumber };
+      }
       if (col === "fees") {
         const { student_id, amount, term, academic_year, expected_fee } = req.body || {};
         const paymentAmount = Number(amount);

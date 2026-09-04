@@ -104,9 +104,14 @@ export const useCreateStudent = () => {
   return useMutation({
     mutationFn: (student: Omit<Student, "id" | "createdAt" | "updatedAt">) =>
       studentService.create(student),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.students });
-      toast({ title: "Success", description: "Student created successfully" });
+      toast({
+        title: "Success",
+        description: data.updated_existing
+          ? "Existing student updated; payment history preserved"
+          : "Student created successfully",
+      });
     },
     onError: (error: any) => {
       toast({
