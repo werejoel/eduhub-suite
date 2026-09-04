@@ -20,11 +20,9 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
@@ -37,7 +35,6 @@ import {
   useItemRequests,
 } from "@/hooks/useDatabase";
 import { useLowStockItems } from "@/hooks/useDatabase";
-import { subscribeToPush } from "@/lib/services";
 import { toast } from "sonner";
 import { formatUGX } from "@/lib/utils";
 import { useMemo } from "react";
@@ -112,7 +109,8 @@ function AdminDashboard() {
         change: studentGrowth,
         changeType: "positive" as const,
         icon: Users,
-        iconColor: "bg-primary",
+        iconColor: "bg-sky-600",
+        accentColor: "border-sky-600",
       },
       {
         title: "Day Students",
@@ -122,7 +120,8 @@ function AdminDashboard() {
         change: `${Math.round((students.filter((s) => (s.boarding_status || "day") === "day").length / Math.max(totalStudents, 1)) * 100)}% of total`,
         changeType: "neutral" as const,
         icon: Sun,
-        iconColor: "bg-amber",
+        iconColor: "bg-amber-500",
+        accentColor: "border-amber-500",
       },
       {
         title: "Boarding Students",
@@ -132,7 +131,8 @@ function AdminDashboard() {
         change: `${Math.round((students.filter((s) => s.boarding_status === "boarding").length / Math.max(totalStudents, 1)) * 100)}% of total`,
         changeType: "neutral" as const,
         icon: Moon,
-        iconColor: "bg-blue",
+        iconColor: "bg-blue-600",
+        accentColor: "border-blue-600",
       },
       {
         title: "Total Teachers",
@@ -140,7 +140,8 @@ function AdminDashboard() {
         change: teacherGrowth,
         changeType: "positive" as const,
         icon: GraduationCap,
-        iconColor: "bg-success",
+        iconColor: "bg-emerald-600",
+        accentColor: "border-emerald-600",
       },
       {
         title: "Fees Collected",
@@ -150,7 +151,8 @@ function AdminDashboard() {
         } paid`,
         changeType: "neutral" as const,
         icon: DollarSign,
-        iconColor: "bg-secondary",
+        iconColor: "bg-indigo-600",
+        accentColor: "border-indigo-600",
       },
       {
         title: "Dormitory",
@@ -158,7 +160,8 @@ function AdminDashboard() {
         change: `${occupancyRate}% occupancy`,
         changeType: "neutral" as const,
         icon: Building2,
-        iconColor: "bg-warning",
+        iconColor: "bg-orange-500",
+        accentColor: "border-orange-500",
       },
     ];
   }, [students, teachers, fees, dormitories]);
@@ -236,29 +239,18 @@ function AdminDashboard() {
       }));
   }, [students, classes]);
 
-  // Calculate fee collection by month
-  const feeData = useMemo(() => {
-    const monthlyData: Record<string, number> = {};
-
-    fees
-      .filter((f) => f.payment_status === "paid" && f.paid_date)
-      .forEach((fee) => {
-        const date = new Date(fee.paid_date!);
-        const monthKey = date.toLocaleDateString("en-US", { month: "short" });
-        monthlyData[monthKey] =
-          (monthlyData[monthKey] || 0) + (fee.amount || 0);
-      });
-
-    // Get last 6 months
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthKey = date.toLocaleDateString("en-US", { month: "short" });
-      months.push({ month: monthKey, collected: monthlyData[monthKey] || 0 });
-    }
-
-    return months;
+  const feeBreakdown = useMemo(() => {
+    const entries = [
+      { name: "Paid", status: "paid", color: "#059669" },
+      { name: "Pending", status: "pending", color: "#d97706" },
+      { name: "Overdue", status: "overdue", color: "#e11d48" },
+    ].map((entry) => ({
+      ...entry,
+      value: fees
+        .filter((fee) => fee.payment_status === entry.status)
+        .reduce((sum, fee) => sum + Number(fee.amount || 0), 0),
+    }));
+    return entries.filter((entry) => entry.value > 0);
   }, [fees]);
 
   const isLoading =
@@ -274,34 +266,16 @@ function AdminDashboard() {
         icon={TrendingUp}
       />
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={async () => {
-            try {
-              await subscribeToPush();
-              toast.success("Push notifications have been enabled.");
-            } catch (err) {
-              console.error("Push subscribe error", err);
-              toast.error(
-                "Unable to enable push notifications. Please try again later.",
-              );
-            }
-          }}
-        >
-          Enable push notifications
-        </Button>
-      </div>
-
       {/* Data Export Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-card rounded-2xl p-6 border border-border shadow-md mb-8"
       >
-        <div className="flex items-center gap-2 mb-4">
-          <Download className="w-5 h-5 text-primary" />
+        <div className="mb-4 flex items-center gap-3">
+          <div className="rounded-lg bg-sky-100 p-2 text-sky-700">
+            <Download className="h-5 w-5" />
+          </div>
           <h3 className="text-lg font-semibold">Download Reports</h3>
         </div>
         <p className="text-sm text-muted-foreground mb-4">
@@ -311,6 +285,8 @@ function AdminDashboard() {
           {[
             {
               label: "Students List",
+              accent: "border-sky-200 bg-sky-50/70",
+              labelColor: "text-sky-800",
               onExcel: () => {
                 exportStudents(students, classes, "excel");
                 toast.success("Students exported to Excel");
@@ -322,6 +298,8 @@ function AdminDashboard() {
             },
             {
               label: "Fee Records",
+              accent: "border-emerald-200 bg-emerald-50/70",
+              labelColor: "text-emerald-800",
               onExcel: () => {
                 exportFees(fees, students, "excel");
                 toast.success("Fees exported to Excel");
@@ -333,6 +311,8 @@ function AdminDashboard() {
             },
             {
               label: "Outstanding Fees",
+              accent: "border-rose-200 bg-rose-50/70",
+              labelColor: "text-rose-800",
               onExcel: () => {
                 exportOutstandingFees(students, fees, classes, "excel");
                 toast.success("Outstanding fees exported to Excel");
@@ -345,14 +325,15 @@ function AdminDashboard() {
           ].map((item) => (
             <div
               key={item.label}
-              className="p-4 rounded-xl border border-border bg-muted/20"
+              className={`rounded-xl border p-4 shadow-sm transition-shadow hover:shadow-md ${item.accent}`}
             >
-              <p className="font-medium text-sm mb-3">{item.label}</p>
+              <p className={`mb-3 text-sm font-semibold ${item.labelColor}`}>
+                {item.label}
+              </p>
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="flex-1 gap-1 text-xs"
+                  className="flex-1 gap-1 border-emerald-600 bg-emerald-600 text-xs text-white hover:bg-emerald-700"
                   onClick={item.onExcel}
                   disabled={isLoading}
                 >
@@ -361,8 +342,7 @@ function AdminDashboard() {
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="flex-1 gap-1 text-xs"
+                  className="flex-1 gap-1 border-sky-600 bg-sky-600 text-xs text-white hover:bg-sky-700"
                   onClick={item.onCsv}
                   disabled={isLoading}
                 >
@@ -376,7 +356,7 @@ function AdminDashboard() {
       </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {isLoading
           ? Array.from({ length: 6 }).map((_, idx) => (
               <div
@@ -558,54 +538,50 @@ function AdminDashboard() {
           transition={{ delay: 0.4 }}
           className="lg:col-span-2 bg-card rounded-2xl p-6 border border-border shadow-md"
         >
-          <h3 className="text-lg font-semibold mb-4">
+          <h3 className="text-lg font-semibold mb-2">
             Fee Collection Overview
           </h3>
-          <div className="h-64">
+          <p className="mb-3 text-sm text-muted-foreground">
+            Payment amounts by current status
+          </p>
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={feeData}>
-                <defs>
-                  <linearGradient id="colorFee" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor="hsl(217, 91%, 22%)"
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="hsl(217, 91%, 22%)"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(214, 32%, 91%)"
-                />
-                <XAxis
-                  dataKey="month"
-                  stroke="hsl(215, 16%, 47%)"
-                  fontSize={12}
-                />
-                <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(0, 0%, 100%)",
-                    border: "1px solid hsl(214, 32%, 91%)",
-                    borderRadius: "8px",
+              <PieChart>
+                <Pie
+                  data={feeBreakdown}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={58}
+                  outerRadius={98}
+                  paddingAngle={3}
+                  label={({ value }) => {
+                    const total = feeBreakdown.reduce((sum, entry) => sum + entry.value, 0);
+                    return total > 0 ? `${((Number(value) / total) * 100).toFixed(1)}%` : "";
                   }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="collected"
-                  stroke="hsl(217, 91%, 22%)"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorFee)"
-                />
+                  labelLine={{ stroke: "#64748b", strokeWidth: 1 }}
+                >
+                  {feeBreakdown.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
                 <Tooltip formatter={(value: number) => formatUGX(value)} />
-              </AreaChart>
+              </PieChart>
             </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {feeBreakdown.map((entry) => {
+              const total = feeBreakdown.reduce((sum, item) => sum + item.value, 0);
+              const percentage = total > 0 ? (entry.value / total) * 100 : 0;
+              return (
+                <div key={entry.name} className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-sm">
+                  <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} />
+                  <span className="flex-1 text-muted-foreground">{entry.name}</span>
+                  <span className="font-semibold">{percentage.toFixed(1)}%</span>
+                </div>
+              );
+            })}
           </div>
         </motion.div>
 

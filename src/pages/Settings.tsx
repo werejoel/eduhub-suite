@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { subscribeToPush } from "@/lib/services";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
@@ -512,6 +513,28 @@ export default function SettingsPage() {
                   <CardDescription>Choose how you want to be notified</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-sky-200 bg-sky-50 p-4">
+                    <div>
+                      <p className="font-medium text-sky-900">Browser Push Notifications</p>
+                      <p className="text-sm text-sky-700">Allow alerts from Kabale Parents SMS on this device.</p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="shrink-0 bg-sky-600 text-white hover:bg-sky-700"
+                      onClick={async () => {
+                        try {
+                          await subscribeToPush();
+                          toast.success("Push notifications have been enabled.");
+                        } catch (error) {
+                          console.error("Push subscribe error", error);
+                          toast.error("Unable to enable push notifications. Please try again later.");
+                        }
+                      }}
+                    >
+                      Enable
+                    </Button>
+                  </div>
                   {[
                     { key: "notifications", label: "Push Notifications", desc: "In-app alerts" },
                     { key: "email_notifications", label: "Email Notifications", desc: "Email updates" },

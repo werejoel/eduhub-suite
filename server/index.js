@@ -143,6 +143,26 @@ if (vapidPublic && vapidPrivate) {
   console.log("VAPID public key:", vapidPublic);
 }
 
+async function notifyAdminPush(payload) {
+  const adminSubscriptions = pushSubscriptions.filter(
+    (subscription) => subscription.user_role === "admin",
+  );
+  await Promise.all(
+    adminSubscriptions.map((subscription) =>
+      webpush.sendNotification(subscription, JSON.stringify(payload)).catch((err) => {
+        if (err && (err.statusCode === 404 || err.statusCode === 410)) {
+          const index = pushSubscriptions.findIndex(
+            (item) => item.endpoint === subscription.endpoint,
+          );
+          if (index >= 0) pushSubscriptions.splice(index, 1);
+        } else {
+          console.error("Admin push notification error", err?.body || err);
+        }
+      }),
+    ),
+  );
+}
+
 // In-memory store for push subscriptions
 const pushSubscriptions = [];
 
@@ -311,10 +331,16 @@ app.post("/api/auth/register", async (req, res) => {
       role: user.role,
       first_name: user.first_name,
       last_name: user.last_name,
+      profile_picture: user.profile_picture || "",
       email_confirmed: false,
     };
     // Do not issue a token yet; require admin confirmation
     res.status(201).json({ message: "pending_confirmation", user: safeUser });
+    void notifyAdminPush({
+      title: "New user registration",
+      message: `${first_name} ${last_name} registered as ${role} and is awaiting approval.`,
+      url: "/admin/users",
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -355,6 +381,7 @@ app.post("/api/auth/login", async (req, res) => {
       role: user.role,
       first_name: user.first_name,
       last_name: user.last_name,
+      profile_picture: user.profile_picture || "",
     };
     res.json({ token, user: safeUser });
   } catch (err) {
@@ -530,6 +557,7 @@ app.get("/api/auth/me", authenticateToken, async (req, res) => {
       role: user.role,
       first_name: user.first_name,
       last_name: user.last_name,
+      profile_picture: user.profile_picture || "",
       email_confirmed: user.email_confirmed,
       account_status: accountStatus,
     };
@@ -1015,11 +1043,21 @@ collections.forEach((col) => {
         const sub = req.body;
         if (!sub || !sub.endpoint)
           return res.status(400).json({ error: "Invalid subscription" });
+        const subscriber = await UserModel.findById(req.user.id).select("role").lean();
+        const subscription = {
+          ...sub,
+          user_id: String(req.user.id),
+          user_role: subscriber?.role || req.user.role,
+        };
         // Deduplicate by endpoint
         const exists = pushSubscriptions.find(
-          (s) => s.endpoint === sub.endpoint
+          (s) => s.endpoint === subscription.endpoint
         );
-        if (!exists) pushSubscriptions.push(sub);
+        if (exists) {
+          Object.assign(exists, subscription);
+        } else {
+          pushSubscriptions.push(subscription);
+        }
         res.status(201).json({ ok: true });
       } catch (err) {
         res.status(500).json({ error: err.message });

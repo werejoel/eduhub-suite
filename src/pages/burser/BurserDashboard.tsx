@@ -558,8 +558,14 @@ const BurserDashboard = () => {
 
   // Render different views based on active tab
   const renderContent = () => {
-    const paymentTotal = paymentBreakdown.reduce((sum, entry) => sum + entry.value, 0);
-    const statusTotal = statusDistribution.reduce((sum, entry) => sum + entry.value, 0);
+    const paymentTotal = paymentBreakdown.reduce(
+      (sum, entry) => sum + entry.value,
+      0,
+    );
+    const statusTotal = statusDistribution.reduce(
+      (sum, entry) => sum + entry.value,
+      0,
+    );
 
     switch (activeTab) {
       case "overview":
@@ -641,7 +647,10 @@ const BurserDashboard = () => {
                       paddingAngle={3}
                       dataKey="value"
                       label={({ value }) => {
-                        const percentage = paymentTotal > 0 ? (Number(value) / paymentTotal) * 100 : 0;
+                        const percentage =
+                          paymentTotal > 0
+                            ? (Number(value) / paymentTotal) * 100
+                            : 0;
                         return `${percentage.toFixed(1)}%`;
                       }}
                       labelLine={{ stroke: "#64748b", strokeWidth: 1 }}
@@ -652,20 +661,35 @@ const BurserDashboard = () => {
                     </Pie>
                     <Tooltip
                       formatter={(value: number) => {
-                        const percentage = paymentTotal > 0 ? (value / paymentTotal) * 100 : 0;
-                        return [`${formatUGX(value)} (${percentage.toFixed(1)}%)`, "Amount"];
+                        const percentage =
+                          paymentTotal > 0 ? (value / paymentTotal) * 100 : 0;
+                        return [
+                          `${formatUGX(value)} (${percentage.toFixed(1)}%)`,
+                          "Amount",
+                        ];
                       }}
                     />
                   </PieChartComponent>
                 </ResponsiveContainer>
                 <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {paymentBreakdown.map((entry) => {
-                    const percentage = paymentTotal > 0 ? (entry.value / paymentTotal) * 100 : 0;
+                    const percentage =
+                      paymentTotal > 0 ? (entry.value / paymentTotal) * 100 : 0;
                     return (
-                      <div key={entry.name} className="flex min-w-0 items-center gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm">
-                        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} />
-                        <span className="min-w-0 flex-1 truncate text-slate-600">{entry.name}</span>
-                        <span className="shrink-0 font-semibold text-slate-800">{percentage.toFixed(1)}%</span>
+                      <div
+                        key={entry.name}
+                        className="flex min-w-0 items-center gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm"
+                      >
+                        <span
+                          className="h-3 w-3 shrink-0 rounded-full"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="min-w-0 flex-1 truncate text-slate-600">
+                          {entry.name}
+                        </span>
+                        <span className="shrink-0 font-semibold text-slate-800">
+                          {percentage.toFixed(1)}%
+                        </span>
                       </div>
                     );
                   })}
@@ -693,7 +717,10 @@ const BurserDashboard = () => {
                       fill="#8884d8"
                       dataKey="value"
                       label={({ value }) => {
-                        const percentage = statusTotal > 0 ? (Number(value) / statusTotal) * 100 : 0;
+                        const percentage =
+                          statusTotal > 0
+                            ? (Number(value) / statusTotal) * 100
+                            : 0;
                         return `${percentage.toFixed(1)}%`;
                       }}
                       labelLine={{ stroke: "#64748b", strokeWidth: 1 }}
@@ -706,12 +733,23 @@ const BurserDashboard = () => {
                 </ResponsiveContainer>
                 <div className="mt-2 space-y-2">
                   {statusDistribution.map((entry) => {
-                    const percentage = statusTotal > 0 ? (entry.value / statusTotal) * 100 : 0;
+                    const percentage =
+                      statusTotal > 0 ? (entry.value / statusTotal) * 100 : 0;
                     return (
-                      <div key={entry.name} className="flex items-center gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm">
-                        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} />
-                        <span className="flex-1 text-slate-600">{entry.name}</span>
-                        <span className="font-semibold text-slate-800">{percentage.toFixed(1)}%</span>
+                      <div
+                        key={entry.name}
+                        className="flex items-center gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm"
+                      >
+                        <span
+                          className="h-3 w-3 shrink-0 rounded-full"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="flex-1 text-slate-600">
+                          {entry.name}
+                        </span>
+                        <span className="font-semibold text-slate-800">
+                          {percentage.toFixed(1)}%
+                        </span>
                       </div>
                     );
                   })}
@@ -2043,7 +2081,9 @@ const BurserDashboard = () => {
         className="flex h-screen shrink-0 flex-col border-r border-white/10 bg-[#800020] text-white shadow-2xl overflow-hidden"
       >
         <div className="relative flex min-h-[88px] items-center justify-center border-b border-white/10 px-4 py-4 pr-16">
-          <div className={`flex min-w-0 items-center gap-3 ${sidebarOpen ? "" : "mx-auto"}`}>
+          <div
+            className={`flex min-w-0 items-center gap-3 ${sidebarOpen ? "" : "mx-auto"}`}
+          >
             <img
               src="/favicon.svg"
               alt="Kabale Parents SMS logo"
@@ -2051,7 +2091,9 @@ const BurserDashboard = () => {
             />
             {sidebarOpen && (
               <div className="min-w-0">
-                <h1 className="truncate text-lg font-bold">Kabale Parents SMS</h1>
+                <h1 className="truncate text-lg font-bold">
+                  Kabale Parents SMS
+                </h1>
                 <p className="text-xs text-white/70">Bursar Portal</p>
               </div>
             )}
@@ -2109,23 +2151,23 @@ const BurserDashboard = () => {
         </nav>
 
         <div className="mt-auto space-y-1 border-t border-white/10 bg-black/10 p-3">
-            <button
-              onClick={async () => {
-                try {
-                  await authContext?.signOut?.();
-                  toast.success("Logged out successfully");
-                  navigate("/login");
-                } catch (error) {
-                  toast.error("Failed to logout");
-                  console.error("Logout error:", error);
-                }
-              }}
-              className={`flex min-h-11 w-full items-center rounded-xl py-2.5 text-sm font-medium transition-colors hover:bg-white/10 ${sidebarOpen ? "gap-3 px-3" : "justify-center px-2"}`}
-            >
-              <LogOut className="w-5 h-5" />
-              {sidebarOpen && <span>Logout</span>}
-            </button>
-          </div>
+          <button
+            onClick={async () => {
+              try {
+                await authContext?.signOut?.();
+                toast.success("Logged out successfully");
+                navigate("/login");
+              } catch (error) {
+                toast.error("Failed to logout");
+                console.error("Logout error:", error);
+              }
+            }}
+            className={`flex min-h-11 w-full items-center rounded-xl py-2.5 text-sm font-medium transition-colors hover:bg-white/10 ${sidebarOpen ? "gap-3 px-3" : "justify-center px-2"}`}
+          >
+            <LogOut className="w-5 h-5" />
+            {sidebarOpen && <span>Logout</span>}
+          </button>
+        </div>
       </motion.aside>
 
       {/* Main Content */}

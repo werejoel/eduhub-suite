@@ -121,6 +121,12 @@ const Login = () => {
                   'Sign In'
                 )}
               </Button>
+              <Link
+                to="/forgot-password"
+                className="block text-center text-sm font-medium text-primary hover:underline"
+              >
+                Forgot password?
+              </Link>
             </form>
 
             <div className="mt-6 text-center text-sm">
