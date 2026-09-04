@@ -374,7 +374,9 @@ const StudentsPage = () => {
       !newStudent.class_id ||
       !newStudent.admission_number
     ) {
-      toast.error("First name, last name, admission number, and class are required.");
+      toast.error(
+        "First name, last name, admission number, and class are required.",
+      );
       return;
     }
     setIsAddingStudent(true);
