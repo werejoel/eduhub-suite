@@ -109,8 +109,8 @@ function AdminDashboard() {
         change: studentGrowth,
         changeType: "positive" as const,
         icon: Users,
-        iconColor: "bg-sky-600",
-        accentColor: "border-sky-600",
+        iconColor: "bg-[#800020]",
+        accentColor: "border-[#800020]",
       },
       {
         title: "Day Students",
@@ -120,8 +120,8 @@ function AdminDashboard() {
         change: `${Math.round((students.filter((s) => (s.boarding_status || "day") === "day").length / Math.max(totalStudents, 1)) * 100)}% of total`,
         changeType: "neutral" as const,
         icon: Sun,
-        iconColor: "bg-amber-500",
-        accentColor: "border-amber-500",
+        iconColor: "bg-[#941b43]",
+        accentColor: "border-[#941b43]",
       },
       {
         title: "Boarding Students",
@@ -131,8 +131,8 @@ function AdminDashboard() {
         change: `${Math.round((students.filter((s) => s.boarding_status === "boarding").length / Math.max(totalStudents, 1)) * 100)}% of total`,
         changeType: "neutral" as const,
         icon: Moon,
-        iconColor: "bg-blue-600",
-        accentColor: "border-blue-600",
+        iconColor: "bg-[#6b001b]",
+        accentColor: "border-[#6b001b]",
       },
       {
         title: "Total Teachers",
@@ -140,8 +140,8 @@ function AdminDashboard() {
         change: teacherGrowth,
         changeType: "positive" as const,
         icon: GraduationCap,
-        iconColor: "bg-emerald-600",
-        accentColor: "border-emerald-600",
+        iconColor: "bg-[#a52a52]",
+        accentColor: "border-[#a52a52]",
       },
       {
         title: "Fees Collected",
@@ -151,8 +151,8 @@ function AdminDashboard() {
         } paid`,
         changeType: "neutral" as const,
         icon: DollarSign,
-        iconColor: "bg-indigo-600",
-        accentColor: "border-indigo-600",
+        iconColor: "bg-[#76001e]",
+        accentColor: "border-[#76001e]",
       },
       {
         title: "Dormitory",
@@ -160,8 +160,8 @@ function AdminDashboard() {
         change: `${occupancyRate}% occupancy`,
         changeType: "neutral" as const,
         icon: Building2,
-        iconColor: "bg-orange-500",
-        accentColor: "border-orange-500",
+        iconColor: "bg-[#b23a5b]",
+        accentColor: "border-[#b23a5b]",
       },
     ];
   }, [students, teachers, fees, dormitories]);

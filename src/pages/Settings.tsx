@@ -45,6 +45,7 @@ type ProfileFormData = {
   email: string;
   phone: string;
   subject: string;
+  profile_picture: string;
 };
 
 type PasswordFormData = {
@@ -71,6 +72,7 @@ export default function SettingsPage() {
     email: user?.email || "",
     phone: (user as any)?.phone || "",
     subject: (user as any)?.subject || "",
+    profile_picture: user?.profile_picture || "",
   });
 
   const [passwordData, setPasswordData] = useState<PasswordFormData>({
@@ -99,6 +101,33 @@ export default function SettingsPage() {
   // Helpers
   const getInitials = () => {
     return `${user?.first_name?.[0] || ""}${user?.last_name?.[0] || ""}`.toUpperCase();
+  };
+
+  const handleProfilePictureChange = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 400;
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+        setProfileData((previous) => ({
+          ...previous,
+          profile_picture: canvas.toDataURL("image/jpeg", 0.82),
+        }));
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const roleLabel = useMemo(() => {
@@ -132,6 +161,7 @@ export default function SettingsPage() {
           last_name: profileData.last_name,
           phone: profileData.phone,
           subject: profileData.subject,
+          profile_picture: profileData.profile_picture,
           updated_at: new Date().toISOString(),
         }),
       });
@@ -288,9 +318,9 @@ export default function SettingsPage() {
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-6">
                     <div className="w-20 h-20 sm:w-24 sm:h-24 bg-primary rounded-full overflow-hidden flex items-center justify-center text-2xl sm:text-3xl font-bold text-primary-foreground">
-                      {user?.profile_picture ? (
+                      {profileData.profile_picture ? (
                         <img
-                          src={user.profile_picture}
+                          src={profileData.profile_picture}
                           alt={`${user.first_name} ${user.last_name} profile`}
                           className="h-full w-full object-cover"
                         />
@@ -326,6 +356,27 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleProfileChange} className="space-y-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full bg-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">
+                        {profileData.profile_picture ? (
+                          <img src={profileData.profile_picture} alt="Profile preview" className="h-full w-full object-cover" />
+                        ) : (
+                          getInitials()
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="profile_picture">Profile Picture</Label>
+                        <Input
+                          id="profile_picture"
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => handleProfilePictureChange(event.target.files?.[0])}
+                          className="cursor-pointer"
+                        />
+                        <p className="text-xs text-muted-foreground">Optional JPG, PNG, or WebP image.</p>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <Label className="text-muted-foreground">Role</Label>

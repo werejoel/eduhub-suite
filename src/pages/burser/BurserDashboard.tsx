@@ -584,6 +584,8 @@ const BurserDashboard = () => {
                     balanceVisible ? formatUGX(stats.totalCollected) : "••••••"
                   }
                   icon={CreditCard}
+                  iconColor="bg-[#800020]"
+                  accentColor="border-[#800020]"
                   change={`${stats.collectionRate}% collection rate`}
                   changeType="positive"
                 />
@@ -595,6 +597,8 @@ const BurserDashboard = () => {
                     balanceVisible ? formatUGX(stats.totalPending) : "••••••"
                   }
                   icon={AlertCircle}
+                  iconColor="bg-[#941b43]"
+                  accentColor="border-[#941b43]"
                   change={`${stats.pendingCount} payments`}
                   changeType="neutral"
                 />
@@ -606,6 +610,8 @@ const BurserDashboard = () => {
                     balanceVisible ? formatUGX(stats.totalOverdue) : "••••••"
                   }
                   icon={TrendingUp}
+                  iconColor="bg-[#6b001b]"
+                  accentColor="border-[#6b001b]"
                   change={`${stats.overdueCount} overdue`}
                   changeType="negative"
                 />
@@ -617,6 +623,8 @@ const BurserDashboard = () => {
                     balanceVisible ? formatUGX(stats.totalExpected) : "••••••"
                   }
                   icon={DollarSign}
+                  iconColor="bg-[#a52a52]"
+                  accentColor="border-[#a52a52]"
                   change={`${fees.length} records`}
                   changeType="positive"
                 />
