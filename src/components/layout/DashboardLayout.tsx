@@ -42,75 +42,320 @@ interface DashboardLayoutProps {
 
 const navItems: Record<string, NavItem[]> = {
   admin: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/admin", section: "Overview" },
-    { label: "Students", icon: Users, href: "/admin/students", section: "Academics" },
-    { label: "Teachers", icon: GraduationCap, href: "/admin/teachers", section: "Academics" },
-    { label: "Classes", icon: BookOpen, href: "/admin/classes", section: "Academics" },
-    { label: "Fees", icon: DollarSign, href: "/admin/fees", section: "Finance" },
-    { label: "Dormitory", icon: Building2, href: "/admin/dormitory", section: "Student Life" },
-    { label: "Dormitory Details", icon: FileText, href: "/dormitory/details", section: "Student Life" },
-    { label: "Dormitory Requirements", icon: Building2, href: "/dormitory/requirements", section: "Student Life" },
-    { label: "Student Status", icon: Users, href: "/dormitory/student-status", section: "Student Life" },
-    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy", section: "Student Life" },
-    { label: "Assign Students", icon: Users, href: "/dormitory/assignments", section: "Student Life" },
-    { label: "Store", icon: ShoppingCart, href: "/admin/store", section: "Operations" },
-    { label: "Item Requests", icon: FileText, href: "/admin/item-requests", section: "Operations" },
-    { label: "Records", icon: FileText, href: "/admin/records", section: "Operations" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/admin",
+      section: "Overview",
+    },
+    {
+      label: "Students",
+      icon: Users,
+      href: "/admin/students",
+      section: "Academics Module",
+    },
+    {
+      label: "Teachers",
+      icon: GraduationCap,
+      href: "/admin/teachers",
+      section: "Academics Module",
+    },
+    {
+      label: "Classes",
+      icon: BookOpen,
+      href: "/admin/classes",
+      section: "Academics Module",
+    },
+    {
+      label: "Fees",
+      icon: DollarSign,
+      href: "/admin/fees",
+      section: "Finance Module",
+    },
+    {
+      label: "Dormitory",
+      icon: Building2,
+      href: "/admin/dormitory",
+      section: "Student Module",
+    },
+    {
+      label: "Dormitory Details",
+      icon: FileText,
+      href: "/dormitory/details",
+      section: "Student Module",
+    },
+    {
+      label: "Dormitory Requirements",
+      icon: Building2,
+      href: "/dormitory/requirements",
+      section: "Student Module",
+    },
+    {
+      label: "Student Status",
+      icon: Users,
+      href: "/dormitory/student-status",
+      section: "Student Module",
+    },
+    {
+      label: "Occupancy Report",
+      icon: FileText,
+      href: "/dormitory/occupancy",
+      section: "Student Module",
+    },
+    {
+      label: "Assign Students",
+      icon: Users,
+      href: "/dormitory/assignments",
+      section: "Student Module",
+    },
+    {
+      label: "Store",
+      icon: ShoppingCart,
+      href: "/admin/store",
+      section: "Operations Module",
+    },
+    {
+      label: "Item Requests",
+      icon: FileText,
+      href: "/admin/item-requests",
+      section: "Operations Module",
+    },
+    {
+      label: "Records",
+      icon: FileText,
+      href: "/admin/records",
+      section: "Operations Module",
+    },
     { label: "Users", icon: Users, href: "/admin/users", section: "System" },
     { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   teacher: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/teacher", section: "Overview" },
-    { label: "Students", icon: Users, href: "/teacher/students", section: "Classroom" },
-    { label: "Marks", icon: FileText, href: "/teacher/marks", section: "Classroom" },
-    { label: "Attendance", icon: GraduationCap, href: "/teacher/attendance", section: "Classroom" },
-    { label: "Reports", icon: FileText, href: "/teacher/reports", section: "Reports" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/teacher",
+      section: "Overview",
+    },
+    {
+      label: "Students",
+      icon: Users,
+      href: "/teacher/students",
+      section: "Classroom Module",
+    },
+    {
+      label: "Marks",
+      icon: FileText,
+      href: "/teacher/marks",
+      section: "Classroom Module",
+    },
+    {
+      label: "Attendance",
+      icon: GraduationCap,
+      href: "/teacher/attendance",
+      section: "Classroom Module",
+    },
+    {
+      label: "Reports",
+      icon: FileText,
+      href: "/teacher/reports",
+      section: "Reports Module",
+    },
     { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   headteacher: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/headteacher", section: "Overview" },
-    { label: "Staff", icon: GraduationCap, href: "/headteacher/staff", section: "People" },
-    { label: "Students", icon: Users, href: "/headteacher/students", section: "People" },
-    { label: "Academic", icon: BookOpen, href: "/headteacher/academic", section: "Academics" },
-    { label: "Reports", icon: FileText, href: "/headteacher/reports", section: "Academics" },
-    { label: "Assign Duties", icon: FileText, href: "/headteacher/duties", section: "Staff Duties" },
-    { label: "Duty Ratings", icon: FileText, href: "/headteacher/ratings", section: "Staff Duties" },
-    { label: "Payment Requests", icon: DollarSign, href: "/headteacher/payment-requests", section: "Requests" },
-    { label: "Item Requests", icon: FileText, href: "/headteacher/item-requests", section: "Requests" },
-    { label: "Dormitory Details", icon: FileText, href: "/dormitory/details", section: "Dormitory" },
-    { label: "Dormitory Requirements", icon: Building2, href: "/dormitory/requirements", section: "Dormitory" },
-    { label: "Student Status", icon: Users, href: "/dormitory/student-status", section: "Dormitory" },
-    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy", section: "Dormitory" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/headteacher",
+      section: "Overview",
+    },
+    {
+      label: "Staff",
+      icon: GraduationCap,
+      href: "/headteacher/staff",
+      section: "Staff Module",
+    },
+    {
+      label: "Students",
+      icon: Users,
+      href: "/headteacher/students",
+      section: "Staff Module",
+    },
+    {
+      label: "Academic",
+      icon: BookOpen,
+      href: "/headteacher/academic",
+      section: "Academics Module",
+    },
+    {
+      label: "Reports",
+      icon: FileText,
+      href: "/headteacher/reports",
+      section: "Academics Module",
+    },
+    {
+      label: "Assign Duties",
+      icon: FileText,
+      href: "/headteacher/duties",
+      section: "Staff Duties Module",
+    },
+    {
+      label: "Duty Ratings",
+      icon: FileText,
+      href: "/headteacher/ratings",
+      section: "Staff Duties Module",
+    },
+    {
+      label: "Payment Requests",
+      icon: DollarSign,
+      href: "/headteacher/payment-requests",
+      section: "Requests Module",
+    },
+    {
+      label: "Item Requests",
+      icon: FileText,
+      href: "/headteacher/item-requests",
+      section: "Requests Module",
+    },
+    {
+      label: "Dormitory Details",
+      icon: FileText,
+      href: "/dormitory/details",
+      section: "Dormitory Module",
+    },
+    {
+      label: "Dormitory Requirements",
+      icon: Building2,
+      href: "/dormitory/requirements",
+      section: "Dormitory Module",
+    },
+    {
+      label: "Student Status",
+      icon: Users,
+      href: "/dormitory/student-status",
+      section: "Dormitory Module",
+    },
+    {
+      label: "Occupancy Report",
+      icon: FileText,
+      href: "/dormitory/occupancy",
+      section: "Dormitory Module",
+    },
     { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   dos: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/dos", section: "Overview" },
-    { label: "Manage Classes", icon: BookOpen, href: "/dos/classes", section: "Academics" },
-    { label: "Brief Notes", icon: FileText, href: "/dos/notes", section: "Academics" },
-    { label: "Termly Reports", icon: FileText, href: "/dos/reports", section: "Reports" },
-    { label: "Monitor Teachers", icon: Users, href: "/dos/teachers", section: "People" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dos",
+      section: "Overview",
+    },
+    {
+      label: "Manage Classes",
+      icon: BookOpen,
+      href: "/dos/classes",
+      section: "Academics Module",
+    },
+    {
+      label: "Brief Notes",
+      icon: FileText,
+      href: "/dos/notes",
+      section: "Academics Module",
+    },
+    {
+      label: "Termly Reports",
+      icon: FileText,
+      href: "/dos/reports",
+      section: "Reports Module",
+    },
+    {
+      label: "Monitor Teachers",
+      icon: Users,
+      href: "/dos/teachers",
+      section: "Staff Module",
+    },
     { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   burser: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/burser", section: "Overview" },
-    { label: "Transactions", icon: DollarSign, href: "/burser", section: "Finance" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/burser",
+      section: "Overview",
+    },
+    {
+      label: "Transactions",
+      icon: DollarSign,
+      href: "/burser",
+      section: "Finance Module",
+    },
     { label: "Fees", icon: FileText, href: "/burser", section: "Finance" },
-    { label: "Finances", icon: DollarSign, href: "/burser/finances", section: "Finance" },
+    {
+      label: "Finances",
+      icon: DollarSign,
+      href: "/burser/finances",
+      section: "Finance Module",
+    },
     { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   store: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/store", section: "Overview" },
-    { label: "Inventory", icon: ShoppingCart, href: "/admin/store", section: "Inventory" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/store",
+      section: "Overview",
+    },
+    {
+      label: "Inventory",
+      icon: ShoppingCart,
+      href: "/admin/store",
+      section: "Inventory Module",
+    },
     { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   dormitory: [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/dormitory", section: "Overview" },
-    { label: "Dormitories", icon: Building2, href: "/admin/dormitory", section: "Dormitory" },
-    { label: "Details", icon: FileText, href: "/dormitory/details", section: "Dormitory" },
-    { label: "Requirements", icon: Building2, href: "/dormitory/requirements", section: "Dormitory" },
-    { label: "Student Status", icon: Users, href: "/dormitory/student-status", section: "Students" },
-    { label: "Assign Students", icon: Users, href: "/dormitory/assignments", section: "Students" },
-    { label: "Occupancy Report", icon: FileText, href: "/dormitory/occupancy", section: "Reports" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dormitory",
+      section: "Overview",
+    },
+    {
+      label: "Dormitories",
+      icon: Building2,
+      href: "/admin/dormitory",
+      section: "Dormitory Module",
+    },
+    {
+      label: "Details",
+      icon: FileText,
+      href: "/dormitory/details",
+      section: "Dormitory Module",
+    },
+    {
+      label: "Requirements",
+      icon: Building2,
+      href: "/dormitory/requirements",
+      section: "Dormitory Module",
+    },
+    {
+      label: "Student Status",
+      icon: Users,
+      href: "/dormitory/student-status",
+      section: "Students Module",
+    },
+    {
+      label: "Assign Students",
+      icon: Users,
+      href: "/dormitory/assignments",
+      section: "Students Module",
+    },
+    {
+      label: "Occupancy Report",
+      icon: FileText,
+      href: "/dormitory/occupancy",
+      section: "Reports Module",
+    },
     { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
 };
@@ -133,7 +378,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Always fetch item requests (hook must be called unconditionally)
   const { data: itemRequests = [] } = useItemRequests();
 
@@ -147,8 +392,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Count pending notifications (pending item requests) - only for admin
   const pendingCount = useMemo(() => {
-    if (role !== 'admin') return 0;
-    return (itemRequests as any[]).filter((r: any) => r.status === 'pending').length;
+    if (role !== "admin") return 0;
+    return (itemRequests as any[]).filter((r: any) => r.status === "pending")
+      .length;
   }, [itemRequests, role]);
 
   // Search through navigation items
@@ -156,7 +402,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
     const results: any[] = [];
-    
+
     items.forEach((item) => {
       if (item.label.toLowerCase().includes(query)) {
         results.push({ label: item.label, href: item.href });
@@ -164,7 +410,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       if (item.children) {
         item.children.forEach((child) => {
           if (child.label.toLowerCase().includes(query)) {
-            results.push({ label: `${item.label} > ${child.label}`, href: child.href });
+            results.push({
+              label: `${item.label} > ${child.label}`,
+              href: child.href,
+            });
           }
         });
       }
@@ -204,8 +453,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 exit={{ opacity: 0, width: 0 }}
                 className="overflow-hidden"
               >
-                <h1 className="text-xl font-bold text-white dark:text-white whitespace-nowrap">
-                  EduManage
+                <h1 className="max-w-[150px] text-lg font-bold leading-tight text-white dark:text-white whitespace-normal break-words">
+                  Kabale Parents SMS
                 </h1>
                 <p className="text-xs text-white/70 dark:text-white/70">
                   {roleLabels[role]}
@@ -219,7 +468,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {items.map((item, index) => {
             const isActive = location.pathname === item.href;
-            const showSection = item.section && items[index - 1]?.section !== item.section;
+            const showSection =
+              item.section && items[index - 1]?.section !== item.section;
             return (
               <div key={item.href}>
                 {showSection && sidebarOpen && (
@@ -233,7 +483,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
                     isActive
                       ? "bg-secondary text-secondary-foreground shadow-lg"
-                      : "text-white/80 dark:text-white/80 hover:bg-white/10 hover:text-white dark:hover:bg-white/10 dark:hover:text-white"
+                      : "text-white/80 dark:text-white/80 hover:bg-white/10 hover:text-white dark:hover:bg-white/10 dark:hover:text-white",
                   )}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -262,14 +512,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white transition-colors"
           >
             <Menu className="w-5 h-5" />
-            {sidebarOpen && <span className="font-medium text-white dark:text-white">Collapse</span>}
+            {sidebarOpen && (
+              <span className="font-medium text-white dark:text-white">
+                Collapse
+              </span>
+            )}
           </button>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-red-600/40 hover:text-white dark:text-white/80 dark:hover:bg-red-600/40 dark:hover:text-white transition-colors mt-1"
           >
             <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span className="font-medium text-white dark:text-white">Logout</span>}
+            {sidebarOpen && (
+              <span className="font-medium text-white dark:text-white">
+                Logout
+              </span>
+            )}
           </button>
         </div>
       </motion.aside>
@@ -316,7 +574,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <nav className="flex-1 px-3 py-4 space-y-1">
                 {items.map((item, index) => {
                   const isActive = location.pathname === item.href;
-                  const showSection = item.section && items[index - 1]?.section !== item.section;
+                  const showSection =
+                    item.section && items[index - 1]?.section !== item.section;
                   return (
                     <div key={item.href}>
                       {showSection && (
@@ -331,7 +590,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                           "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
                           isActive
                             ? "bg-secondary text-secondary-foreground"
-                            : "text-primary-foreground/80 hover:bg-sidebar-accent"
+                            : "text-primary-foreground/80 hover:bg-sidebar-accent",
                         )}
                       >
                         <item.icon className="w-5 h-5" />
@@ -359,7 +618,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <main
         className={cn(
           "flex-1 min-h-screen transition-all duration-300",
-          sidebarOpen ? "lg:ml-[280px]" : "lg:ml-[80px]"
+          sidebarOpen ? "lg:ml-[280px]" : "lg:ml-[80px]",
         )}
       >
         {/* Top Header */}
@@ -372,7 +631,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               >
                 <Menu className="w-6 h-6" />
               </button>
-              
+
               {/* Search Bar */}
               <div className="relative hidden sm:block">
                 <div className="flex items-center gap-2 bg-muted rounded-lg px-4 py-2 hover:bg-muted/80 transition">
@@ -401,9 +660,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                           </button>
                         ))
                       ) : searchQuery.trim() ? (
-                        <p className="px-3 py-2 text-sm text-muted-foreground">No results found</p>
+                        <p className="px-3 py-2 text-sm text-muted-foreground">
+                          No results found
+                        </p>
                       ) : (
-                        <p className="px-3 py-2 text-xs text-muted-foreground">Type to search pages...</p>
+                        <p className="px-3 py-2 text-xs text-muted-foreground">
+                          Type to search pages...
+                        </p>
                       )}
                     </div>
                   </div>
@@ -412,7 +675,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
             <div className="flex items-center gap-4">
               {/* Notifications - Only for Admin */}
-              {role === 'admin' && (
+              {role === "admin" && (
                 <Popover>
                   <PopoverTrigger asChild>
                     <button className="relative p-2 rounded-lg hover:bg-muted transition">
@@ -427,20 +690,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       <div>
                         <h3 className="font-semibold text-sm">Notifications</h3>
                         <p className="text-xs text-muted-foreground">
-                          {pendingCount} pending item request{pendingCount !== 1 ? 's' : ''}
+                          {pendingCount} pending item request
+                          {pendingCount !== 1 ? "s" : ""}
                         </p>
                       </div>
                       {pendingCount > 0 ? (
                         <div className="space-y-2 max-h-96 overflow-y-auto">
                           {(itemRequests as any[])
-                            .filter((r) => r.status === 'pending')
+                            .filter((r) => r.status === "pending")
                             .slice(0, 5)
                             .map((request) => (
                               <div
                                 key={request._id}
                                 className="p-2 bg-muted rounded-md border-l-2 border-amber-500"
                               >
-                                <p className="text-sm font-medium">{request.item_name}</p>
+                                <p className="text-sm font-medium">
+                                  {request.item_name}
+                                </p>
                                 <p className="text-xs text-muted-foreground">
                                   Requested by: {request.requested_by}
                                 </p>
@@ -455,7 +721,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              navigate('/admin/item-requests');
+                              navigate("/admin/item-requests");
                             }}
                             className="w-full"
                           >
@@ -471,19 +737,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   </PopoverContent>
                 </Popover>
               )}
-              {role !== 'admin' && (
+              {role !== "admin" && (
                 <button className="p-2 rounded-lg hover:bg-muted transition">
                   <Bell className="w-5 h-5" />
                 </button>
               )}
 
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                  {userName
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()}
+                <div className="w-9 h-9 rounded-full bg-primary overflow-hidden flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                  {user.profile_picture ? (
+                    <img
+                      src={user.profile_picture}
+                      alt={`${userName} profile`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    userName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                  )}
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-sm font-medium">{userName}</p>

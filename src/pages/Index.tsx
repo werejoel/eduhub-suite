@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import {
   GraduationCap,
   Users,
-  Shield,
   BookOpen,
   ArrowRight,
   CheckCircle,
@@ -234,7 +233,7 @@ const Index = () => {
             </span>
           </div>
           <p className="text-primary-foreground/70 text-sm">
-            © 2025 Kabale Parents School Management System. All rights reserved.
+            © 2026 Kabale Parents School Management System. All rights reserved. Powered By Koboko Web Solutions Ltd
           </p>
         </div>
       </footer>

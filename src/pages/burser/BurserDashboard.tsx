@@ -24,8 +24,11 @@ import {
   LogOut,
   Menu,
   X,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
-import { useFees, useStudents, useClasses } from "@/hooks/useDatabase";
+import { useFees, useStudents, useClasses, useCreateStudent, useUpdateStudent, useDeleteStudent } from "@/hooks/useDatabase";
 import { formatUGX } from "@/lib/utils";
 import {
   getExpectedFee,
@@ -41,6 +44,14 @@ import {
 } from "@/lib/exportToExcel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import DataTable from "@/components/dashboard/DataTable";
 import StatCard from "@/components/dashboard/StatCard";
 import {
@@ -67,7 +78,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { useCreateFee, useDeleteFee } from "@/hooks/useDatabase";
+import { useCreateFee, useDeleteFee, useUpdateFee } from "@/hooks/useDatabase";
 
 const getCurrentAcademicYear = () => {
   const y = new Date().getFullYear();
@@ -90,6 +101,22 @@ const BurserDashboard = () => {
   const { data: classes = [] } = useClasses();
   const createFee = useCreateFee();
   const deleteFee = useDeleteFee();
+  const updateFee = useUpdateFee();
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
+  const createStudent = useCreateStudent();
+  const updateStudent = useUpdateStudent();
+  const deleteStudent = useDeleteStudent();
+  const [studentDialogOpen, setStudentDialogOpen] = useState(false);
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [studentForm, setStudentForm] = useState({
+    first_name: "",
+    last_name: "",
+    admission_number: "",
+    class_id: "",
+    boarding_status: "day" as "day" | "boarding",
+    parents_names: "",
+    contact: "",
+  });
 
   const [newPayment, setNewPayment] = useState({
     student_id: "",
@@ -126,7 +153,7 @@ const BurserDashboard = () => {
         const expectedFee = getExpectedFee(className, boarding);
         const studentFees = fees.filter((f) => f.student_id === s.id);
         const paid = studentFees
-          .filter((f) => f.payment_status === "paid")
+          .filter((f) => f.payment_status === "paid" || f.payment_status === "pending")
           .reduce((sum, f) => sum + (f.amount || 0), 0);
         return {
           id: s.id,
@@ -219,7 +246,7 @@ const BurserDashboard = () => {
 
   // Recent transactions with student names
   const recentTransactions = useMemo(() => {
-    return fees
+    return [...fees]
       .sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -227,6 +254,21 @@ const BurserDashboard = () => {
       .slice(0, 15)
       .map((fee) => {
         const student = students.find((s) => s.id === fee.student_id);
+        const className = student ? getClassName(student.class_id) : "";
+        const expectedFee = Number(fee.expected_fee) > 0
+          ? Number(fee.expected_fee)
+          : student
+            ? getExpectedFee(className, student.boarding_status || "day")
+            : 0;
+        const totalForTerm = fees
+          .filter(
+            (otherFee) =>
+              otherFee.student_id === fee.student_id &&
+              (otherFee.term || "N/A") === (fee.term || "N/A") &&
+              (otherFee.academic_year || "N/A") === (fee.academic_year || "N/A") &&
+              (otherFee.payment_status === "paid" || otherFee.payment_status === "pending"),
+          )
+          .reduce((sum, otherFee) => sum + Number(otherFee.amount || 0), 0);
 
         // Format dates safely
         const formatDate = (dateStr: any) => {
@@ -245,6 +287,7 @@ const BurserDashboard = () => {
             ? `${student.first_name} ${student.last_name}`
             : "Unknown",
           amount: fee.amount,
+          balance: Math.max(0, expectedFee - totalForTerm),
           term: fee.term,
           status: fee.payment_status,
           date: formatDate(fee.createdAt),
@@ -362,7 +405,7 @@ const BurserDashboard = () => {
     }
 
     try {
-      await createFee.mutateAsync({
+      const paymentData = {
         student_id: newPayment.student_id,
         amount: Number(newPayment.amount),
         term: newPayment.term || "N/A",
@@ -372,9 +415,20 @@ const BurserDashboard = () => {
           | "pending"
           | "overdue",
         due_date: dueDate || new Date().toISOString(),
-        // MongoDB automatically creates 'createdAt' field via timestamps: true
-      });
-      toast.success("Payment recorded successfully");
+        expected_fee: getExpectedFee(
+          getClassName(students.find((s) => s.id === newPayment.student_id)?.class_id || ""),
+          students.find((s) => s.id === newPayment.student_id)?.boarding_status || "day",
+        ),
+      };
+
+      if (editingPaymentId) {
+        await updateFee.mutateAsync({ id: editingPaymentId, updates: paymentData });
+        toast.success("Payment updated successfully");
+      } else {
+        await createFee.mutateAsync(paymentData);
+        toast.success("Payment recorded successfully");
+      }
+      setEditingPaymentId(null);
       setNewPayment({
         student_id: "",
         amount: "",
@@ -383,8 +437,82 @@ const BurserDashboard = () => {
         payment_status: "paid",
         due_date: "",
       });
-    } catch (err) {
-      toast.error("Failed to record payment");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to record payment");
+    }
+  };
+
+  const resetPaymentForm = () => {
+    setEditingPaymentId(null);
+    setNewPayment({
+      student_id: "",
+      amount: "",
+      term: "",
+      academic_year: "",
+      payment_status: "paid",
+      due_date: "",
+    });
+  };
+
+  const editPayment = (row: any) => {
+    const fee = fees.find((item) => String(item.id) === String(row.id));
+    if (!fee) return toast.error("Payment record could not be found");
+    setEditingPaymentId(String(fee.id));
+    setNewPayment({
+      student_id: fee.student_id,
+      amount: String(fee.amount || ""),
+      term: fee.term || "",
+      academic_year: fee.academic_year || "",
+      payment_status: fee.payment_status,
+      due_date: fee.due_date ? String(fee.due_date).slice(0, 10) : "",
+    });
+    setActiveTab("payments");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const openStudentDialog = (student?: (typeof students)[number]) => {
+    setEditingStudentId(student?.id || null);
+    setStudentForm({
+      first_name: student?.first_name || "",
+      last_name: student?.last_name || "",
+      admission_number: student?.admission_number || "",
+      class_id: student?.class_id || classes[0]?.id || "",
+      boarding_status: student?.boarding_status || "day",
+      parents_names: student?.parents_names || "",
+      contact: student?.contact || "",
+    });
+    setStudentDialogOpen(true);
+  };
+
+  const saveStudent = async () => {
+    if (!studentForm.first_name.trim() || !studentForm.last_name.trim() || !studentForm.admission_number.trim() || !studentForm.class_id) {
+      toast.error("First name, last name, admission number, and class are required");
+      return;
+    }
+    try {
+      if (editingStudentId) {
+        await updateStudent.mutateAsync({ id: editingStudentId, updates: studentForm });
+      } else {
+        await createStudent.mutateAsync({
+          ...studentForm,
+          date_of_birth: "",
+          gender: "male",
+          enrollment_date: new Date().toISOString(),
+          status: "active",
+        });
+      }
+      setStudentDialogOpen(false);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save student record");
+    }
+  };
+
+  const removeStudent = async (studentId: string) => {
+    if (!window.confirm("Delete this student record permanently?")) return;
+    try {
+      await deleteStudent.mutateAsync(studentId);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete student record");
     }
   };
 
@@ -620,7 +748,9 @@ const BurserDashboard = () => {
           >
             {/* Add Payment Form */}
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
-              <h3 className="text-lg font-semibold mb-4">Record New Payment</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                {editingPaymentId ? "Edit Payment" : "Record New Payment"}
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 <select
                   name="student_id"
@@ -673,14 +803,19 @@ const BurserDashboard = () => {
                   placeholder="Academic year"
                 />
               </div>
-              <Button onClick={submitNewPayment} className="mt-4 gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
+              <Button type="button" onClick={submitNewPayment} className="gap-2">
                 <CheckCircle className="w-4 h-4" />
-                Record Payment
+                {editingPaymentId ? "Save Payment" : "Record Payment"}
               </Button>
+              <Button type="button" variant="outline" onClick={resetPaymentForm}>
+                {editingPaymentId ? "Cancel Edit" : "Clear"}
+              </Button>
+              </div>
             </div>
 
             {/* Payments Table */}
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+            <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -702,6 +837,7 @@ const BurserDashboard = () => {
                       "Student Name": t.student,
                       Term: t.term,
                       "Amount (UGX)": t.amount,
+                      "Balance (UGX)": t.balance,
                       Status: t.status,
                       "Due Date": t.dueDate,
                       Date: t.date,
@@ -714,6 +850,12 @@ const BurserDashboard = () => {
                   Export
                 </Button>
               </div>
+              <div className="flex flex-wrap items-center gap-3 mb-4 rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                <span className="font-semibold text-slate-600">Payment status:</span>
+                <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700">Paid</span>
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-700">Pending</span>
+                <span className="rounded-full bg-rose-100 px-2.5 py-1 font-medium text-rose-700">Overdue</span>
+              </div>
 
               <DataTable
                 columns={[
@@ -722,7 +864,9 @@ const BurserDashboard = () => {
                   {
                     key: "amount",
                     label: "Amount",
-                    render: (value: number) => formatUGX(value),
+                    render: (value: number) => (
+                      <span className="font-semibold text-slate-700">{formatUGX(value)}</span>
+                    ),
                   },
                   {
                     key: "status",
@@ -731,13 +875,22 @@ const BurserDashboard = () => {
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
                           value === "paid"
-                            ? "bg-success/10 text-success"
+                            ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200"
                             : value === "pending"
-                              ? "bg-warning/10 text-warning"
-                              : "bg-destructive/10 text-destructive"
+                              ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200"
+                              : "bg-rose-100 text-rose-700 ring-1 ring-rose-200"
                         }`}
                       >
                         {value.charAt(0).toUpperCase() + value.slice(1)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "balance",
+                    label: "Remaining Balance",
+                    render: (value: number) => (
+                      <span className={`inline-flex rounded-md px-2.5 py-1 font-semibold ${value > 0 ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>
+                        {formatUGX(value)}
                       </span>
                     ),
                   },
@@ -759,6 +912,7 @@ const BurserDashboard = () => {
                   },
                 ]}
                 data={filteredTransactions}
+                onEdit={editPayment}
                 onDelete={(row) => handleDeletePayment(row)}
               />
             </div>
@@ -822,6 +976,14 @@ const BurserDashboard = () => {
                   <Download className="w-4 h-4" />
                   Export
                 </Button>
+                <Button
+                  type="button"
+                  className="gap-2"
+                  onClick={() => openStudentDialog()}
+                >
+                  <Plus className="w-4 h-4" />
+                  Register Student
+                </Button>
               </div>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
@@ -867,10 +1029,86 @@ const BurserDashboard = () => {
                       </span>
                     ),
                   },
+                  {
+                    key: "actions",
+                    label: "Actions",
+                    render: (_: unknown, row: (typeof registeredStudents)[number]) => (
+                      <div className="flex min-w-max gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="relative z-10 border-[#800020] bg-[#800020] text-white pointer-events-auto hover:bg-[#660018] hover:text-white"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            const student = students.find(
+                              (candidate) => String(candidate.id) === String(row.id),
+                            );
+                            if (!student) {
+                              toast.error("Student record could not be found");
+                              return;
+                            }
+                            openStudentDialog(student);
+                          }}
+                        >
+                          <Pencil className="mr-1 h-3 w-3" /> Edit
+                        </Button>
+                        <Button type="button" size="sm" variant="destructive" onClick={() => removeStudent(row.id)}>
+                          <Trash2 className="mr-1 h-3 w-3" /> Delete
+                        </Button>
+                      </div>
+                    ),
+                  },
                 ]}
                 data={registeredStudents}
               />
             </div>
+            <Dialog open={studentDialogOpen} onOpenChange={setStudentDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingStudentId ? "Edit Student Record" : "Register Student"}</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label>First Name</Label>
+                    <Input value={studentForm.first_name} onChange={(e) => setStudentForm({ ...studentForm, first_name: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Last Name</Label>
+                    <Input value={studentForm.last_name} onChange={(e) => setStudentForm({ ...studentForm, last_name: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Admission Number</Label>
+                    <Input value={studentForm.admission_number} onChange={(e) => setStudentForm({ ...studentForm, admission_number: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Class</Label>
+                    <select className="h-10 rounded-md border bg-background px-3" value={studentForm.class_id} onChange={(e) => setStudentForm({ ...studentForm, class_id: e.target.value })}>
+                      <option value="">Select class</option>
+                      {classes.map((studentClass) => <option key={studentClass.id} value={studentClass.id}>{studentClass.class_name}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Section</Label>
+                    <select className="h-10 rounded-md border bg-background px-3" value={studentForm.boarding_status} onChange={(e) => setStudentForm({ ...studentForm, boarding_status: e.target.value as "day" | "boarding" })}>
+                      <option value="day">Day</option>
+                      <option value="boarding">Boarding</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Parent Contact</Label>
+                    <Input value={studentForm.contact} onChange={(e) => setStudentForm({ ...studentForm, contact: e.target.value })} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setStudentDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={saveStudent} disabled={createStudent.isPending || updateStudent.isPending}>
+                    {editingStudentId ? "Save Changes" : "Register Student"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </motion.div>
         );
 

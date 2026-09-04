@@ -17,7 +17,8 @@ interface AuthContextType {
     password: string,
     firstName: string,
     lastName: string,
-    role: UserRole
+    role: UserRole,
+    profilePicture?: string
   ) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -92,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(data.user || null);
         return { error: null };
       }
-      return { error: data };
+      return { error: data?.error || data?.message || data };
     } catch (err) {
       return { error: err };
     }
@@ -103,7 +104,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     password: string,
     firstName: string,
     lastName: string,
-    role: UserRole
+    role: UserRole,
+    profilePicture?: string,
   ) => {
     try {
       const data: any = await authService.register({
@@ -112,6 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         first_name: firstName,
         last_name: lastName,
         role,
+        profile_picture: typeof profilePicture === "string" ? profilePicture : "",
       });
       // If server issued a token (e.g., immediate activation), log user in.
       if (data?.token) {

@@ -2,17 +2,56 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+mongoose.set("sanitizeFilter", true);
 const app = express();
-app.use(cors());
-app.use(express.json());
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080";
+const allowedOrigins = FRONTEND_URL.split(",").map((origin) => origin.trim());
+const isDevelopmentNetworkOrigin = (origin) =>
+  process.env.NODE_ENV !== "production" &&
+  /^https?:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(origin);
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin) || isDevelopmentNetworkOrigin(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Origin is not allowed"));
+    },
+    credentials: true,
+  })
+);
+app.use(helmet());
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: false, limit: "100kb" }));
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://localhost:27017/eduhub";
+if (process.env.NODE_ENV === "production" && !process.env.MONGODB_URI) {
+  throw new Error("MONGODB_URI must be configured in production");
+}
 const PORT = process.env.PORT || 4000;
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const JWT_SECRET = process.env.JWT_SECRET || "change_this_secret";
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080";
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString("hex");
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("JWT_SECRET must be configured in production");
+  }
+  console.warn("JWT_SECRET is not set; using a temporary development secret.");
+}
+
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 25,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many authentication attempts. Try again later." },
+});
+app.use("/api/auth/login", authRateLimit);
+app.use("/api/auth/register", authRateLimit);
+app.use("/api/auth/forgot-password", authRateLimit);
 
 // Email transport for password reset (optional — logs to console if SMTP not configured)
 let mailTransport = null;
@@ -48,8 +87,28 @@ async function sendPasswordResetEmail(email, resetLink) {
       html,
     });
   } else {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SMTP must be configured in production to send password resets");
+    }
     console.log(`[Password Reset] Email: ${email} | Link: ${resetLink}`);
   }
+}
+
+async function issuePasswordReset(user) {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  const resetTokenHash = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
+
+  await UserModel.findByIdAndUpdate(user._id, {
+    reset_token: resetTokenHash,
+    reset_token_expires: resetExpires,
+  });
+
+  const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
+  await sendPasswordResetEmail(user.email, resetLink);
 }
 const webpush = require("web-push");
 const XLSX = require("xlsx");
@@ -87,11 +146,62 @@ if (vapidPublic && vapidPrivate) {
 // In-memory store for push subscriptions
 const pushSubscriptions = [];
 
+const databaseIndexes = {
+  users: [
+    { email: 1 },
+    { role: 1, account_status: 1 },
+    { createdAt: -1 },
+  ],
+  students: [
+    { admission_number: 1 },
+    { class_id: 1 },
+    { createdAt: -1 },
+  ],
+  teachers: [{ email: 1 }, { createdAt: -1 }],
+  classes: [{ teacher_id: 1 }, { createdAt: -1 }],
+  fees: [
+    { student_id: 1 },
+    { payment_status: 1 },
+    { student_id: 1, payment_status: 1 },
+    { createdAt: -1 },
+  ],
+  attendance: [
+    { student_id: 1, attendance_date: -1 },
+    { class_id: 1, attendance_date: -1 },
+  ],
+  marks: [
+    { student_id: 1 },
+    { class_id: 1 },
+  ],
+  store_items: [{ quantity_in_stock: 1 }, { createdAt: -1 }],
+  item_requests: [{ status: 1, createdAt: -1 }, { createdAt: -1 }],
+  assignment_logs: [{ class_id: 1, timestamp: -1 }, { timestamp: -1 }],
+  duties: [{ teacher_id: 1, assigned_date: -1 }, { status: 1 }],
+  ratings: [{ teacher_id: 1, week_number: 1, academic_year: 1 }],
+};
+
+async function ensureDatabaseIndexes() {
+  const operations = Object.entries(databaseIndexes).flatMap(
+    ([collection, indexes]) =>
+      indexes.map((index) =>
+        mongoose.connection.db.collection(collection).createIndex(index)
+      )
+  );
+  const results = await Promise.allSettled(operations);
+  const failures = results.filter((result) => result.status === "rejected");
+  if (failures.length > 0) {
+    console.error(`Database index setup failed for ${failures.length} index(es)`);
+  } else {
+    console.log(`Database indexes ready (${operations.length} indexes)`);
+  }
+}
+
 // Connect with retry logic so server keeps trying if DB is down
 async function connectWithRetry() {
   try {
     await mongoose.connect(MONGODB_URI);
     console.log("Successfully Connected");
+    await ensureDatabaseIndexes();
   } catch (err) {
     console.error("connection error:", err && err.message ? err : err);
     console.error("Retrying connection in 5 seconds...");
@@ -140,21 +250,58 @@ app.post("/api/auth/register", async (req, res) => {
       role = "teacher",
       first_name = "",
       last_name = "",
+      profile_picture = "",
     } = req.body;
     if (!email || !password)
       return res.status(400).json({ error: "email and password are required" });
 
-    const existing = await UserModel.findOne({ email });
-    if (existing) return res.status(400).json({ error: "User already exists" });
-
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await UserModel.findOne({ email: normalizedEmail });
     const hashed = await bcrypt.hash(password, 10);
+
+    if (existing) {
+      if (existing.email_confirmed !== false) {
+        return res.status(409).json({
+          error: "An account with this email already exists. Please sign in or use the password reset link.",
+        });
+      }
+
+      const pendingUser = await UserModel.findByIdAndUpdate(
+        existing._id,
+        {
+          password: hashed,
+          role,
+          first_name,
+          last_name,
+          profile_picture,
+          email_confirmed: false,
+          account_status: "active",
+        },
+        { new: true },
+      );
+
+      return res.status(200).json({
+        message: "pending_confirmation",
+        user: {
+          id: pendingUser._id,
+          email: pendingUser.email,
+          role: pendingUser.role,
+          first_name: pendingUser.first_name,
+          last_name: pendingUser.last_name,
+          profile_picture: pendingUser.profile_picture || "",
+          email_confirmed: false,
+        },
+      });
+    }
+
     // Create account in pending state; admin must confirm before login
     const user = await UserModel.create({
-      email,
+      email: normalizedEmail,
       password: hashed,
       role,
       first_name,
       last_name,
+      profile_picture,
       email_confirmed: false,
     });
 
@@ -228,20 +375,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenHash = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
-    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-    await UserModel.findByIdAndUpdate(user._id, {
-      reset_token: resetTokenHash,
-      reset_token_expires: resetExpires,
-    });
-
-    const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
-    await sendPasswordResetEmail(email, resetLink);
+    await issuePasswordReset(user);
 
     res.json({
       message: "If an account exists with that email, a reset link has been sent.",
@@ -333,22 +467,145 @@ function authenticateToken(req, res, next) {
   }
 }
 
+async function requireAdmin(req, res, next) {
+  try {
+    const user = await UserModel.findById(req.user.id).lean();
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ error: "Administrator access required" });
+    }
+    req.currentUser = user;
+    next();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+function requireRoles(...roles) {
+  return async (req, res, next) => {
+    try {
+      const user = await UserModel.findById(req.user.id).lean();
+      if (!user || !roles.includes(user.role)) {
+        return res.status(403).json({ error: "You do not have permission for this operation" });
+      }
+      req.currentUser = user;
+      next();
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  };
+}
+
+async function authorizeUserUpdate(req, res, next) {
+  try {
+    const target = await UserModel.findById(req.params.id).lean();
+    if (!target) return res.status(404).json({ error: "User not found" });
+    const requester = await UserModel.findById(req.user.id).lean();
+    if (!requester) return res.status(401).json({ error: "User not found" });
+    if (requester.role === "admin") return next();
+    if (String(requester._id) !== String(target._id)) {
+      return res.status(403).json({ error: "You may only update your own profile" });
+    }
+    const allowedFields = ["first_name", "last_name", "phone", "subject", "updated_at"];
+    req.body = Object.fromEntries(
+      Object.entries(req.body || {}).filter(([key]) => allowedFields.includes(key))
+    );
+    next();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 app.get("/api/auth/me", authenticateToken, async (req, res) => {
   try {
     const id = req.user.id;
     const user = await UserModel.findById(id).lean();
     if (!user) return res.status(404).json({ error: "Not found" });
+    const accountStatus = user.account_status || "active";
+    if (accountStatus !== "active") {
+      return res.status(403).json({ error: "This account is not active" });
+    }
     const safeUser = {
       id: user._id,
       email: user.email,
       role: user.role,
       first_name: user.first_name,
       last_name: user.last_name,
+      email_confirmed: user.email_confirmed,
+      account_status: accountStatus,
     };
     res.json(safeUser);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+app.get("/api/admin/users", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const users = await UserModel.find({}).sort("-createdAt");
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put("/api/admin/users/:id", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const allowedFields = ["role", "status", "email_confirmed", "account_status", "updated_at"];
+    const updates = Object.fromEntries(
+      Object.entries(req.body || {}).filter(([key]) => allowedFields.includes(key))
+    );
+    const user = await UserModel.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (String(user._id) === String(req.user.id) && updates.account_status && updates.account_status !== "active") {
+      return res.status(400).json({ error: "You cannot deactivate or block your own account" });
+    }
+    if (user.role === "teacher" && updates.email_confirmed === true) {
+      updates.status = "active";
+    }
+    const updated = await UserModel.findByIdAndUpdate(req.params.id, updates, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete("/api/admin/users/:id", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    if (String(req.user.id) === String(req.params.id)) {
+      return res.status(400).json({ error: "You cannot delete your own account" });
+    }
+    const deleted = await UserModel.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: "User not found" });
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/admin/users/:id/password-reset", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    await issuePasswordReset(user);
+    res.json({ message: "Password reset email sent" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const publicApiPaths = new Set([
+  "/auth/register",
+  "/auth/login",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/health",
+  "/push/publicKey",
+]);
+
+// Every API route declared below this point requires an authenticated user.
+app.use("/api", (req, res, next) => {
+  if (publicApiPaths.has(req.path)) return next();
+  return authenticateToken(req, res, next);
 });
 
 collections.forEach((col) => {
@@ -382,8 +639,41 @@ collections.forEach((col) => {
     }
   });
 
-  app.post(base, async (req, res) => {
+  app.post(
+    base,
+    ...((col === "students" || col === "fees")
+      ? [requireRoles("admin", "burser")]
+      : []),
+    async (req, res) => {
     try {
+      if (col === "fees") {
+        const { student_id, amount, term, academic_year, expected_fee } = req.body || {};
+        const paymentAmount = Number(amount);
+        const expectedAmount = Number(expected_fee);
+        if (!student_id || !Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+          return res.status(400).json({ error: "Student and a payment amount greater than zero are required" });
+        }
+
+        const existingPayments = await Model.find({
+          student_id,
+          term: term || "N/A",
+          academic_year: academic_year || "N/A",
+          payment_status: { $in: ["paid", "pending"] },
+        }).lean();
+        const totalPaid = existingPayments.reduce((sum, fee) => sum + Number(fee.amount || 0), 0);
+        if (Number.isFinite(expectedAmount) && expectedAmount > 0 && totalPaid >= expectedAmount) {
+          return res.status(409).json({
+            error: "This student has already paid the full amount for this term.",
+            balance: 0,
+          });
+        }
+        if (Number.isFinite(expectedAmount) && expectedAmount > 0 && totalPaid + paymentAmount > expectedAmount) {
+          return res.status(409).json({
+            error: `Payment exceeds the remaining balance of ${expectedAmount - totalPaid}.`,
+            balance: expectedAmount - totalPaid,
+          });
+        }
+      }
       // For store items compute and store status automatically
       if (col === "store_items") {
         const body = { ...req.body };
@@ -401,8 +691,44 @@ collections.forEach((col) => {
     }
   });
 
-  app.put(`${base}/:id`, async (req, res) => {
+  app.put(
+    `${base}/:id`,
+    ...(col === "users"
+      ? [authenticateToken, authorizeUserUpdate]
+      : col === "students"
+        ? [requireRoles("admin", "burser")]
+        : col === "fees"
+          ? [requireRoles("admin", "burser")]
+        : []),
+    async (req, res) => {
     try {
+      if (col === "fees") {
+        const existing = await Model.findById(req.params.id).lean();
+        if (!existing) return res.status(404).json({ error: "Not found" });
+        const updates = req.body || {};
+        const studentId = updates.student_id || existing.student_id;
+        const term = updates.term || existing.term || "N/A";
+        const academicYear = updates.academic_year || existing.academic_year || "N/A";
+        const amount = Number(typeof updates.amount !== "undefined" ? updates.amount : existing.amount);
+        const expectedFee = Number(updates.expected_fee || existing.expected_fee);
+        const otherPayments = await Model.find({
+          _id: { $ne: req.params.id },
+          student_id: studentId,
+          term,
+          academic_year: academicYear,
+          payment_status: { $in: ["paid", "pending"] },
+        }).lean();
+        const otherTotal = otherPayments.reduce((sum, fee) => sum + Number(fee.amount || 0), 0);
+        if (!Number.isFinite(amount) || amount <= 0) {
+          return res.status(400).json({ error: "Payment amount must be greater than zero" });
+        }
+        if (Number.isFinite(expectedFee) && expectedFee > 0 && otherTotal + amount > expectedFee) {
+          return res.status(409).json({
+            error: `Payment exceeds the remaining balance of ${expectedFee - otherTotal}.`,
+            balance: Math.max(0, expectedFee - otherTotal),
+          });
+        }
+      }
       // For store items, compute new status based on updated quantity or reorder level
       if (col === "store_items") {
         const existing = await Model.findById(req.params.id).lean();
@@ -523,7 +849,14 @@ collections.forEach((col) => {
     }
   });
 
-  app.delete(`${base}/:id`, async (req, res) => {
+  app.delete(
+    `${base}/:id`,
+    ...(col === "users"
+      ? [authenticateToken, requireAdmin]
+      : col === "students"
+        ? [requireRoles("admin", "burser")]
+        : []),
+    async (req, res) => {
     try {
       await Model.findByIdAndDelete(req.params.id);
       res.status(204).end();

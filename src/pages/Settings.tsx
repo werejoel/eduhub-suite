@@ -122,7 +122,10 @@ export default function SettingsPage() {
     try {
       const res = await fetch(`/api/users/${user?.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("eduhub_token") || ""}`,
+        },
         body: JSON.stringify({
           first_name: profileData.first_name,
           last_name: profileData.last_name,
@@ -283,8 +286,16 @@ export default function SettingsPage() {
               <Card className="mb-6 bg-gradient-to-r from-primary/5 to-primary/10">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-primary rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-primary-foreground">
-                      {getInitials()}
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-primary rounded-full overflow-hidden flex items-center justify-center text-2xl sm:text-3xl font-bold text-primary-foreground">
+                      {user?.profile_picture ? (
+                        <img
+                          src={user.profile_picture}
+                          alt={`${user.first_name} ${user.last_name} profile`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        getInitials()
+                      )}
                     </div>
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold">

@@ -140,7 +140,10 @@ const StoreDashboard = () => {
     try {
       const res = await fetch("/api/item-requests", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("eduhub_token") || ""}`,
+        },
         body: JSON.stringify({
           ...requestData,
           requested_by: user ? `${user.first_name} ${user.last_name}` : "Store Manager",

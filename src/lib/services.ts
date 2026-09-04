@@ -39,7 +39,7 @@ export async function getPushPublicKey(): Promise<string> {
 export async function registerPushSubscription(subscription: PushSubscription) {
   const res = await fetch(apiUrl("/api/push/subscribe"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(subscription),
   });
   return handleResponse(res as any);
@@ -92,19 +92,21 @@ async function getAll<T>(
     Object.keys(params).forEach((k) =>
       url.searchParams.set(k, String(params[k])),
     );
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { headers: getAuthHeaders() });
   return handleResponse(res) as Promise<T[]>;
 }
 
 async function getById<T>(collection: string, id: string): Promise<T> {
-  const res = await fetch(apiUrl(`/api/${collection}/${id}`));
+  const res = await fetch(apiUrl(`/api/${collection}/${id}`), {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(res) as Promise<T>;
 }
 
 async function createItem<T>(collection: string, body: any): Promise<T> {
   const res = await fetch(apiUrl(`/api/${collection}`), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(body),
   });
   return handleResponse(res) as Promise<T>;
@@ -117,14 +119,17 @@ async function updateItem<T>(
 ): Promise<T> {
   const res = await fetch(apiUrl(`/api/${collection}/${id}`), {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(body),
   });
   return handleResponse(res) as Promise<T>;
 }
 
 async function deleteItem(collection: string, id: string): Promise<void> {
-  await fetch(apiUrl(`/api/${collection}/${id}`), { method: "DELETE" });
+  await fetch(apiUrl(`/api/${collection}/${id}`), {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
 }
 
 // STUDENT OPERATIONS
@@ -147,6 +152,7 @@ export const studentService = {
   async searchByName(name: string) {
     const res = await fetch(
       apiUrl(`/api/students/search?name=${encodeURIComponent(name)}`),
+      { headers: getAuthHeaders() },
     );
     return handleResponse(res) as Promise<Student[]>;
   },
@@ -491,6 +497,7 @@ export const authService = {
     role?: string;
     first_name?: string;
     last_name?: string;
+    profile_picture?: string;
   }) {
     const res = await fetch(apiUrl("/api/auth/register"), {
       method: "POST",

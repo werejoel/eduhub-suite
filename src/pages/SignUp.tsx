@@ -7,6 +7,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import { getRoleDashboard } from "@/lib/roleRoutes";
 const SignUp = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [profilePicture, setProfilePicture] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -41,6 +43,17 @@ const SignUp = () => {
   const [success, setSuccess] = useState(false);
   const { signUp, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  const getErrorMessage = (value: unknown): string => {
+    if (typeof value === "string") return value;
+    if (value instanceof Error) return value.message;
+    if (value && typeof value === "object") {
+      const response = value as { error?: unknown; message?: unknown };
+      if (typeof response.error === "string") return response.error;
+      if (typeof response.message === "string") return response.message;
+    }
+    return "Unable to create your account. Please try again.";
+  };
 
   // Auto-navigate once user is created
   useEffect(() => {
@@ -74,6 +87,30 @@ const SignUp = () => {
     return null;
   };
 
+  const handleProfilePictureChange = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 400;
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+        setProfilePicture(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -95,10 +132,11 @@ const SignUp = () => {
         firstName.trim(),
         lastName.trim(),
         role,
+        profilePicture,
       );
 
       if (signUpError) {
-        setError(signUpError.message || "Failed to create account");
+        setError(getErrorMessage(signUpError));
         setIsSubmitting(false);
         return;
       }
@@ -109,7 +147,7 @@ const SignUp = () => {
 
       // Auto-navigate will happen via useEffect when user loads
     } catch (err: any) {
-      setError(err.message || "An error occurred during registration");
+      setError(getErrorMessage(err));
       setIsSubmitting(false);
     }
   };
@@ -178,6 +216,28 @@ const SignUp = () => {
                       disabled={isSubmitting}
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="profilePicture">Profile Picture</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                      {profilePicture ? (
+                        <img src={profilePicture} alt="Profile preview" className="h-full w-full object-cover" />
+                      ) : (
+                        <Camera className="h-6 w-6" />
+                      )}
+                    </div>
+                    <Input
+                      id="profilePicture"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleProfilePictureChange(e.target.files?.[0])}
+                      disabled={isSubmitting}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Optional. JPG, PNG, or WebP images are supported.</p>
                 </div>
 
                 <div className="space-y-2">

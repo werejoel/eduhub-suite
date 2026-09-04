@@ -68,6 +68,7 @@ export interface Fee {
   id: string;
   student_id: string;
   amount: number;
+  expected_fee?: number;
   term: string;
   academic_year: string;
   payment_status: "paid" | "pending" | "overdue";
@@ -186,6 +187,7 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  profile_picture?: string;
   role: UserRole;
   email_confirmed: boolean;
   phone?: string;

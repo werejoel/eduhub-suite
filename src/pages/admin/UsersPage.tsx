@@ -5,10 +5,10 @@ import DataTable from "@/components/dashboard/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Mail, Search, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Mail, Search, Loader2, Ban, UserCheck, Trash2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { User, UserRole } from "@/lib/types";
+import { AccountStatus, User, UserRole } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -18,7 +18,10 @@ import {
 } from "@/components/ui/select";
 
 const fetchUsers = async (): Promise<User[]> => {
-  const res = await fetch('/api/users?_sort=-createdAt');
+  const token = localStorage.getItem("eduhub_token");
+  const res = await fetch('/api/admin/users', {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
   if (!res.ok) throw new Error('Failed to fetch users');
   const data = await res.json();
   // Normalize server documents: map MongoDB's `_id` to `id` and createdAt -> created_at
@@ -39,14 +42,27 @@ const UsersPage = () => {
     queryFn: fetchUsers,
   });
 
+  const adminRequest = async (url: string, options: RequestInit = {}) => {
+    const token = localStorage.getItem("eduhub_token");
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.error || "Request failed");
+    return data;
+  };
+
   const confirmEmail = async (userId: string) => {
     try {
-      const res = await fetch(`/api/users/${userId}`, {
+      const res = await adminRequest(`/api/admin/users/${userId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email_confirmed: true, updated_at: new Date().toISOString() }),
       });
-      if (!res.ok) throw new Error('Failed to confirm email');
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       toast.success('Email has been confirmed successfully. The user may now log in.');
@@ -57,17 +73,48 @@ const UsersPage = () => {
 
   const unconfirmEmail = async (userId: string) => {
     try {
-      const res = await fetch(`/api/users/${userId}`, {
+      await adminRequest(`/api/admin/users/${userId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email_confirmed: false, updated_at: new Date().toISOString() }),
       });
-      if (!res.ok) throw new Error('Failed to revoke confirmation');
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       toast.success('Email confirmation has been revoked.');
     } catch (error: any) {
       toast.error(error.message || 'Unable to revoke email confirmation.');
+    }
+  };
+
+  const updateAccountStatus = async (userId: string, account_status: AccountStatus) => {
+    try {
+      await adminRequest(`/api/admin/users/${userId}`, {
+        method: "PUT",
+        body: JSON.stringify({ account_status, updated_at: new Date().toISOString() }),
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      toast.success(`Account ${account_status === "active" ? "activated" : account_status}.`);
+    } catch (error: any) {
+      toast.error(error.message || "Unable to update account status.");
+    }
+  };
+
+  const deleteUser = async (user: User) => {
+    if (!window.confirm(`Delete ${user.first_name} ${user.last_name}'s account permanently?`)) return;
+    try {
+      await adminRequest(`/api/admin/users/${user.id}`, { method: "DELETE" });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      toast.success("User account deleted.");
+    } catch (error: any) {
+      toast.error(error.message || "Unable to delete user account.");
+    }
+  };
+
+  const sendPasswordReset = async (user: User) => {
+    try {
+      await adminRequest(`/api/admin/users/${user.id}/password-reset`, { method: "POST" });
+      toast.success(`Password reset email sent to ${user.email}.`);
+    } catch (error: any) {
+      toast.error(error.message || "Unable to send password reset email.");
     }
   };
 
@@ -148,12 +195,10 @@ const UsersPage = () => {
 
           const applyRole = async () => {
             try {
-              const res = await fetch(`/api/users/${userRow.id}`, {
+              await adminRequest(`/api/admin/users/${userRow.id}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ role: selected, updated_at: new Date().toISOString() }),
               });
-              if (!res.ok) throw new Error("Failed to update role");
               queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
               toast.success("User role has been updated.");
             } catch (err: any) {
@@ -191,12 +236,10 @@ const UsersPage = () => {
 
           const applyStatus = async () => {
             try {
-              const res = await fetch(`/api/users/${userRow.id}`, {
+              await adminRequest(`/api/admin/users/${userRow.id}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: statusSelected, updated_at: new Date().toISOString() }),
               });
-              if (!res.ok) throw new Error("Failed to update status");
               queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
               toast.success("Teacher status has been updated.");
             } catch (err: any) {
@@ -253,6 +296,27 @@ const UsersPage = () => {
               <UpdateRoleControl userRow={row} />
             </div>
             <UpdateTeacherStatusControl userRow={row} />
+            <div className="flex flex-wrap gap-2 items-center">
+              <Select
+                value={row.account_status || "active"}
+                onValueChange={(value) => updateAccountStatus(row.id, value as AccountStatus)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active"><UserCheck className="mr-2 inline-block h-4 w-4" />Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="blocked"><Ban className="mr-2 inline-block h-4 w-4" />Blocked</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={() => sendPasswordReset(row)}>
+                <KeyRound className="mr-1 h-4 w-4" />Reset Email
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => deleteUser(row)}>
+                <Trash2 className="mr-1 h-4 w-4" />Delete
+              </Button>
+            </div>
           </div>
         );
       },
