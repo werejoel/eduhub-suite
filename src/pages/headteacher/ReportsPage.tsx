@@ -14,7 +14,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -22,7 +21,13 @@ import {
 } from "recharts";
 
 const EXAM_TYPES = ["Beginning-of-Term", "Mid-Term", "Final", "Quiz", "Monthly"];
-const COLORS = ["#0066CC", "#00CC66", "#FFAA00", "#FF6666", "#6600FF"];
+const GRADE_COLORS: Record<string, string> = {
+  A: "#059669",
+  B: "#2563eb",
+  C: "#d97706",
+  D: "#ea580c",
+  F: "#e11d48",
+};
 
 const HeadteacherReportsPage = () => {
   const { data: marks = [], isLoading: marksLoading } = useMarks();
@@ -144,6 +149,11 @@ const HeadteacherReportsPage = () => {
       totalMarksRecorded: classMarks.length,
     };
   }, [selectedClassId, classes, marks, students]);
+
+  const gradeChartData = Object.entries(aggregateReportData.gradeDistribution)
+    .map(([grade, count]) => ({ grade, name: `Grade ${grade}`, value: count }))
+    .filter((entry) => entry.value > 0);
+  const gradeTotal = gradeChartData.reduce((sum, entry) => sum + entry.value, 0);
 
   const handleExportSchoolReport = () => {
     exportToExcel({
@@ -343,29 +353,41 @@ const HeadteacherReportsPage = () => {
 
         <div className="bg-card rounded-2xl p-6 border border-border shadow-md">
           <h3 className="text-lg font-semibold mb-4">Grade Distribution</h3>
-          <div className="h-64">
+          <div className="h-64 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={Object.entries(aggregateReportData.gradeDistribution).map(([grade, count]) => ({
-                    name: `Grade ${grade}`,
-                    value: count,
-                  }))}
+                  data={gradeChartData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={80}
-                  fill="#8884d8"
+                  innerRadius={48}
+                  outerRadius={88}
+                  paddingAngle={3}
                   dataKey="value"
+                  label={({ value }) => gradeTotal > 0 ? `${((Number(value) / gradeTotal) * 100).toFixed(1)}%` : ""}
+                  labelLine={{ stroke: "#64748b", strokeWidth: 1 }}
                 >
-                  {Object.keys(aggregateReportData.gradeDistribution).map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  {gradeChartData.map((entry) => (
+                    <Cell key={entry.grade} fill={GRADE_COLORS[entry.grade]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  formatter={(value: number, _name: string, item: any) => [
+                    `${value} students (${gradeTotal > 0 ? ((value / gradeTotal) * 100).toFixed(1) : 0}%)`,
+                    item?.payload?.name || "Grade",
+                  ]}
+                />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {gradeChartData.map((entry) => (
+              <div key={entry.grade} className="flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-2 text-sm">
+                <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: GRADE_COLORS[entry.grade] }} />
+                <span className="flex-1 font-medium">{entry.grade}</span>
+                <span className="text-muted-foreground">{gradeTotal > 0 ? ((entry.value / gradeTotal) * 100).toFixed(1) : 0}%</span>
+              </div>
+            ))}
           </div>
         </div>
       </motion.div>
