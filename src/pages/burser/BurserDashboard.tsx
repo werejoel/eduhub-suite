@@ -11,7 +11,6 @@ import {
   DollarSign,
   Users,
   Calendar,
-  BarChart3,
   PieChart,
   Download,
   Search,
@@ -71,18 +70,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
   PieChart as PieChartComponent,
   Pie,
   Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import { useCreateFee, useDeleteFee, useUpdateFee } from "@/hooks/useDatabase";
@@ -207,43 +198,39 @@ const BurserDashboard = () => {
     };
   }, [fees]);
 
-  // Payment trend data (by month)
-  const paymentTrends = useMemo(() => {
-    const monthlyData: Record<
-      string,
-      { paid: number; pending: number; overdue: number }
-    > = {};
+  const paymentBreakdown = useMemo(() => {
+    const expected = students
+      .filter((student) => student.status === "active")
+      .reduce(
+        (sum, student) =>
+          sum +
+          getExpectedFee(
+            getClassName(student.class_id),
+            student.boarding_status || "day",
+          ),
+        0,
+      );
+    const collected = fees
+      .filter((fee) => fee.payment_status === "paid")
+      .reduce((sum, fee) => sum + Number(fee.amount || 0), 0);
+    const pending = fees
+      .filter((fee) => fee.payment_status === "pending")
+      .reduce((sum, fee) => sum + Number(fee.amount || 0), 0);
+    const overdue = fees
+      .filter((fee) => fee.payment_status === "overdue")
+      .reduce((sum, fee) => sum + Number(fee.amount || 0), 0);
 
-    fees.forEach((fee) => {
-      const date = new Date(fee.createdAt);
-      const monthKey = `${date.getFullYear()}-${String(
-        date.getMonth() + 1,
-      ).padStart(2, "0")}`;
-
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { paid: 0, pending: 0, overdue: 0 };
-      }
-
-      if (fee.payment_status === "paid")
-        monthlyData[monthKey].paid += fee.amount;
-      if (fee.payment_status === "pending")
-        monthlyData[monthKey].pending += fee.amount;
-      if (fee.payment_status === "overdue")
-        monthlyData[monthKey].overdue += fee.amount;
-    });
-
-    return Object.entries(monthlyData)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, data]) => ({
-        month: new Date(month + "-01").toLocaleDateString("en-US", {
-          month: "short",
-          year: "2-digit",
-        }),
-        paid: Math.round(data.paid / 1000000),
-        pending: Math.round(data.pending / 1000000),
-        overdue: Math.round(data.overdue / 1000000),
-      }));
-  }, [fees]);
+    return [
+      { name: "Paid", value: collected, color: "#059669" },
+      { name: "Pending", value: pending, color: "#d97706" },
+      { name: "Overdue", value: overdue, color: "#e11d48" },
+      {
+        name: "Outstanding Balance",
+        value: Math.max(0, expected - collected),
+        color: "#16a34a",
+      },
+    ].filter((entry) => entry.value > 0);
+  }, [fees, students, classes]);
 
   // Status distribution
   const statusDistribution = useMemo(() => {
@@ -571,6 +558,9 @@ const BurserDashboard = () => {
 
   // Render different views based on active tab
   const renderContent = () => {
+    const paymentTotal = paymentBreakdown.reduce((sum, entry) => sum + entry.value, 0);
+    const statusTotal = statusDistribution.reduce((sum, entry) => sum + entry.value, 0);
+
     switch (activeTab) {
       case "overview":
         return (
@@ -665,7 +655,7 @@ const BurserDashboard = () => {
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Payment Trends Chart */}
+              {/* Payment Summary Chart */}
               <motion.div
                 whileHover={{
                   boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
@@ -673,21 +663,49 @@ const BurserDashboard = () => {
                 className="lg:col-span-2 bg-white p-6 rounded-xl shadow-md border border-gray-100"
               >
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Payment Trends (Millions UGX)
+                  <PieChart className="w-5 h-5" />
+                  Payment Summary
                 </h3>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={paymentTrends}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `${value}M`} />
-                    <Legend />
-                    <Bar dataKey="paid" fill="#10b981" />
-                    <Bar dataKey="pending" fill="#f59e0b" />
-                    <Bar dataKey="overdue" fill="#ef4444" />
-                  </BarChart>
+                  <PieChartComponent>
+                    <Pie
+                      data={paymentBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={65}
+                      outerRadius={105}
+                      paddingAngle={3}
+                      dataKey="value"
+                      label={({ value }) => {
+                        const percentage = paymentTotal > 0 ? (Number(value) / paymentTotal) * 100 : 0;
+                        return `${percentage.toFixed(1)}%`;
+                      }}
+                      labelLine={{ stroke: "#64748b", strokeWidth: 1 }}
+                    >
+                      {paymentBreakdown.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => {
+                        const percentage = paymentTotal > 0 ? (value / paymentTotal) * 100 : 0;
+                        return [`${formatUGX(value)} (${percentage.toFixed(1)}%)`, "Amount"];
+                      }}
+                    />
+                  </PieChartComponent>
                 </ResponsiveContainer>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {paymentBreakdown.map((entry) => {
+                    const percentage = paymentTotal > 0 ? (entry.value / paymentTotal) * 100 : 0;
+                    return (
+                      <div key={entry.name} className="flex min-w-0 items-center gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm">
+                        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span className="min-w-0 flex-1 truncate text-slate-600">{entry.name}</span>
+                        <span className="shrink-0 font-semibold text-slate-800">{percentage.toFixed(1)}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </motion.div>
 
               {/* Status Distribution */}
@@ -707,11 +725,14 @@ const BurserDashboard = () => {
                       data={statusDistribution}
                       cx="50%"
                       cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: ${value}`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
+                      label={({ value }) => {
+                        const percentage = statusTotal > 0 ? (Number(value) / statusTotal) * 100 : 0;
+                        return `${percentage.toFixed(1)}%`;
+                      }}
+                      labelLine={{ stroke: "#64748b", strokeWidth: 1 }}
                     >
                       {statusDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -719,6 +740,18 @@ const BurserDashboard = () => {
                     </Pie>
                   </PieChartComponent>
                 </ResponsiveContainer>
+                <div className="mt-2 space-y-2">
+                  {statusDistribution.map((entry) => {
+                    const percentage = statusTotal > 0 ? (entry.value / statusTotal) * 100 : 0;
+                    return (
+                      <div key={entry.name} className="flex items-center gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm">
+                        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span className="flex-1 text-slate-600">{entry.name}</span>
+                        <span className="font-semibold text-slate-800">{percentage.toFixed(1)}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </motion.div>
             </div>
 
@@ -1045,7 +1078,7 @@ const BurserDashboard = () => {
               </h3>
               <DataTable
                 columns={[
-                  { key: "name", label: "Student Name" },
+                  { key: "name", label: "Student Names" },
                   { key: "admission", label: "Admission No." },
                   { key: "class", label: "Class" },
                   { key: "section", label: "Section" },
@@ -1053,12 +1086,12 @@ const BurserDashboard = () => {
                   { key: "contact", label: "Contact" },
                   {
                     key: "registrationFee",
-                    label: "Reg. Fee",
+                    label: "Reg. Fees",
                     render: (v: number) => formatUGX(v),
                   },
                   {
                     key: "expectedFee",
-                    label: "Expected Fee",
+                    label: "Expected Fees",
                     render: (v: number) => formatUGX(v),
                   },
                   {
