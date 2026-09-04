@@ -62,6 +62,7 @@ const StudentsPage = () => {
     useState<string>("all");
   const [filterClassGroup, setFilterClassGroup] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [requirementsDialogOpen, setRequirementsDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -366,14 +367,17 @@ const StudentsPage = () => {
   };
 
   const handleAddStudent = async () => {
+    if (isAddingStudent) return;
     if (
       !newStudent.first_name ||
       !newStudent.last_name ||
-      !newStudent.class_id
+      !newStudent.class_id ||
+      !newStudent.admission_number
     ) {
-      toast.error("All required fields must be completed.");
+      toast.error("First name, last name, admission number, and class are required.");
       return;
     }
+    setIsAddingStudent(true);
     try {
       const boardingStatus = newStudent.boarding_status || "day";
       const className = getClassName(newStudent.class_id!);
@@ -411,8 +415,11 @@ const StudentsPage = () => {
         contact: "",
       });
       setDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      toast.error(error?.message || "Failed to add student");
+    } finally {
+      setIsAddingStudent(false);
     }
   };
 
@@ -743,10 +750,11 @@ const StudentsPage = () => {
                   Cancel
                 </Button>
                 <Button
+                  type="button"
                   onClick={handleAddStudent}
-                  disabled={createMutation.isPending}
+                  disabled={isAddingStudent}
                 >
-                  {createMutation.isPending ? "Adding..." : "Add Student"}
+                  {isAddingStudent ? "Adding..." : "Add Student"}
                 </Button>
               </div>
             </DialogContent>
