@@ -527,10 +527,12 @@ const BurserDashboard = () => {
   const confirmDeletePayment = async () => {
     if (deletePaymentRow) {
       try {
-        await deleteFee.mutateAsync(String(deletePaymentRow.id));
+        const paymentId = deletePaymentRow.id || deletePaymentRow._id;
+        if (!paymentId) throw new Error("Payment record ID is missing");
+        await deleteFee.mutateAsync(String(paymentId));
         toast.success("Payment deleted");
-      } catch {
-        toast.error("Failed to delete payment");
+      } catch (error: any) {
+        toast.error(error?.message || "Failed to delete payment");
       }
       setDeleteConfirmOpen(false);
       setDeletePaymentRow(null);

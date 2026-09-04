@@ -126,10 +126,11 @@ async function updateItem<T>(
 }
 
 async function deleteItem(collection: string, id: string): Promise<void> {
-  await fetch(apiUrl(`/api/${collection}/${id}`), {
+  const res = await fetch(apiUrl(`/api/${collection}/${id}`), {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
+  await handleResponse(res);
 }
 
 // STUDENT OPERATIONS

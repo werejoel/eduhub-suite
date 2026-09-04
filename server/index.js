@@ -880,10 +880,17 @@ collections.forEach((col) => {
       ? [authenticateToken, requireAdmin]
       : col === "students"
         ? [requireRoles("admin", "burser")]
+        : col === "fees"
+          ? [requireRoles("admin", "burser")]
         : []),
     async (req, res) => {
     try {
-      await Model.findByIdAndDelete(req.params.id);
+      const deleted = await Model.findByIdAndDelete(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({
+          error: col === "fees" ? "Fee record not found" : "Not found",
+        });
+      }
       res.status(204).end();
     } catch (err) {
       res.status(500).json({ error: err.message });
