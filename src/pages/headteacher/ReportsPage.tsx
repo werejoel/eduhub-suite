@@ -20,7 +20,13 @@ import {
   Cell,
 } from "recharts";
 
-const EXAM_TYPES = ["Beginning-of-Term", "Mid-Term", "Final", "Quiz", "Monthly"];
+const EXAM_TYPES = [
+  "Beginning-of-Term",
+  "Mid-Term",
+  "Final",
+  "Quiz",
+  "Monthly",
+];
 const GRADE_COLORS: Record<string, string> = {
   A: "#059669",
   B: "#2563eb",
@@ -46,34 +52,50 @@ const HeadteacherReportsPage = () => {
     const totalClasses = classes.length;
 
     // Class-wise performance
-    const classPerformance = classes.map((cls) => {
-      const classMarks = marks.filter((m) => m.class_id === cls.id);
-      const classStudents = students.filter((s) => s.class_id === cls.id);
+    const classPerformance = classes
+      .map((cls) => {
+        const classMarks = marks.filter((m) => m.class_id === cls.id);
+        const classStudents = students.filter((s) => s.class_id === cls.id);
 
-      if (classMarks.length === 0) return null;
+        if (classMarks.length === 0) return null;
 
-      const validMarks = classMarks.filter((m) => m.exam_type !== "Quiz");
-      const totalObtained = validMarks.reduce((sum, m) => sum + m.marks_obtained, 0);
-      const totalPossible = validMarks.reduce((sum, m) => sum + m.total_marks, 0);
-      const percentage = totalPossible > 0 ? (totalObtained / totalPossible) * 100 : 0;
+        const validMarks = classMarks.filter((m) => m.exam_type !== "Quiz");
+        const totalObtained = validMarks.reduce(
+          (sum, m) => sum + m.marks_obtained,
+          0,
+        );
+        const totalPossible = validMarks.reduce(
+          (sum, m) => sum + m.total_marks,
+          0,
+        );
+        const percentage =
+          totalPossible > 0 ? (totalObtained / totalPossible) * 100 : 0;
 
-      return {
-        name: cls.class_name,
-        classId: cls.id,
-        percentage: Math.round(percentage),
-        studentCount: classStudents.length,
-        marksCount: classMarks.length,
-      };
-    }).filter(Boolean);
+        return {
+          name: cls.class_name,
+          classId: cls.id,
+          percentage: Math.round(percentage),
+          studentCount: classStudents.length,
+          marksCount: classMarks.length,
+        };
+      })
+      .filter(Boolean);
 
     // Exam-wise summary
     const examSummary = EXAM_TYPES.map((exam) => {
       const examMarks = marks.filter((m) => m.exam_type === exam);
       if (examMarks.length === 0) return null;
 
-      const totalObtained = examMarks.reduce((sum, m) => sum + m.marks_obtained, 0);
-      const totalPossible = examMarks.reduce((sum, m) => sum + m.total_marks, 0);
-      const percentage = totalPossible > 0 ? (totalObtained / totalPossible) * 100 : 0;
+      const totalObtained = examMarks.reduce(
+        (sum, m) => sum + m.marks_obtained,
+        0,
+      );
+      const totalPossible = examMarks.reduce(
+        (sum, m) => sum + m.total_marks,
+        0,
+      );
+      const percentage =
+        totalPossible > 0 ? (totalObtained / totalPossible) * 100 : 0;
 
       return {
         exam,
@@ -84,19 +106,31 @@ const HeadteacherReportsPage = () => {
     }).filter(Boolean);
 
     // Grade distribution across all classes
-    const allStudentGrades = classes.map((cls) => {
-      const classStudents = students.filter((s) => s.class_id === cls.id);
-      const classMarks = marks.filter((m) => m.class_id === cls.id);
+    const allStudentGrades = classes
+      .map((cls) => {
+        const classStudents = students.filter((s) => s.class_id === cls.id);
+        const classMarks = marks.filter((m) => m.class_id === cls.id);
 
-      return classStudents.map((student) => {
-        const studentMarks = classMarks.filter((m) => m.student_id === student.id && m.exam_type !== "Quiz");
-        if (studentMarks.length === 0) return null;
+        return classStudents
+          .map((student) => {
+            const studentMarks = classMarks.filter(
+              (m) => m.student_id === student.id && m.exam_type !== "Quiz",
+            );
+            if (studentMarks.length === 0) return null;
 
-        const totalObtained = studentMarks.reduce((sum, m) => sum + m.marks_obtained, 0);
-        const totalPossible = studentMarks.reduce((sum, m) => sum + m.total_marks, 0);
-        return calculateGrade(totalObtained, totalPossible);
-      }).filter(Boolean);
-    }).flat();
+            const totalObtained = studentMarks.reduce(
+              (sum, m) => sum + m.marks_obtained,
+              0,
+            );
+            const totalPossible = studentMarks.reduce(
+              (sum, m) => sum + m.total_marks,
+              0,
+            );
+            return calculateGrade(totalObtained, totalPossible);
+          })
+          .filter(Boolean);
+      })
+      .flat();
 
     const gradeDistribution = {
       A: allStudentGrades.filter((g) => g === "A").length,
@@ -121,26 +155,39 @@ const HeadteacherReportsPage = () => {
 
     const selectedClass = classes.find((c) => c.id === selectedClassId);
     const classMarks = marks.filter((m) => m.class_id === selectedClassId);
-    const classStudents = students.filter((s) => s.class_id === selectedClassId);
+    const classStudents = students.filter(
+      (s) => s.class_id === selectedClassId,
+    );
 
     if (classMarks.length === 0) return null;
 
-    const studentPerformance = classStudents.map((student) => {
-      const studentMarks = classMarks.filter((m) => m.student_id === student.id && m.exam_type !== "Quiz");
-      if (studentMarks.length === 0) return null;
+    const studentPerformance = classStudents
+      .map((student) => {
+        const studentMarks = classMarks.filter(
+          (m) => m.student_id === student.id && m.exam_type !== "Quiz",
+        );
+        if (studentMarks.length === 0) return null;
 
-      const totalObtained = studentMarks.reduce((sum, m) => sum + m.marks_obtained, 0);
-      const totalPossible = studentMarks.reduce((sum, m) => sum + m.total_marks, 0);
-      const percentage = totalPossible > 0 ? (totalObtained / totalPossible) * 100 : 0;
+        const totalObtained = studentMarks.reduce(
+          (sum, m) => sum + m.marks_obtained,
+          0,
+        );
+        const totalPossible = studentMarks.reduce(
+          (sum, m) => sum + m.total_marks,
+          0,
+        );
+        const percentage =
+          totalPossible > 0 ? (totalObtained / totalPossible) * 100 : 0;
 
-      return {
-        name: `${student.first_name} ${student.last_name}`,
-        marks: totalObtained,
-        total: totalPossible,
-        percentage: Math.round(percentage),
-        grade: calculateGrade(totalObtained, totalPossible),
-      };
-    }).filter(Boolean);
+        return {
+          name: `${student.first_name} ${student.last_name}`,
+          marks: totalObtained,
+          total: totalPossible,
+          percentage: Math.round(percentage),
+          grade: calculateGrade(totalObtained, totalPossible),
+        };
+      })
+      .filter(Boolean);
 
     return {
       className: selectedClass?.class_name,
@@ -153,11 +200,14 @@ const HeadteacherReportsPage = () => {
   const gradeChartData = Object.entries(aggregateReportData.gradeDistribution)
     .map(([grade, count]) => ({ grade, name: `Grade ${grade}`, value: count }))
     .filter((entry) => entry.value > 0);
-  const gradeTotal = gradeChartData.reduce((sum, entry) => sum + entry.value, 0);
+  const gradeTotal = gradeChartData.reduce(
+    (sum, entry) => sum + entry.value,
+    0,
+  );
 
   const handleExportSchoolReport = () => {
     exportToExcel({
-      filename: `School_Report_${new Date().toISOString().split('T')[0]}.xlsx`,
+      filename: `School_Report_${new Date().toISOString().split("T")[0]}.xlsx`,
       sheets: [
         {
           name: "Summary",
@@ -169,10 +219,9 @@ const HeadteacherReportsPage = () => {
             [],
             ["Grade Distribution"],
             ["Grade", "Count"],
-            ...Object.entries(aggregateReportData.gradeDistribution).map(([grade, count]) => [
-              grade,
-              count,
-            ]),
+            ...Object.entries(aggregateReportData.gradeDistribution).map(
+              ([grade, count]) => [grade, count],
+            ),
           ],
         },
         {
@@ -207,12 +256,15 @@ const HeadteacherReportsPage = () => {
 
   const handleExportSchoolPDF = () => {
     exportToPDF({
-      filename: `School_Report_${new Date().toISOString().split('T')[0]}.pdf`,
+      filename: `School_Report_${new Date().toISOString().split("T")[0]}.pdf`,
       title: "School Academic Report",
       summaryItems: [
         { label: "Total Classes", value: aggregateReportData.totalClasses },
         { label: "Total Students", value: aggregateReportData.totalStudents },
-        { label: "Total Marks Recorded", value: aggregateReportData.totalMarks },
+        {
+          label: "Total Marks Recorded",
+          value: aggregateReportData.totalMarks,
+        },
       ],
       tableTitle: "Class Performance Summary",
       tableHeaders: ["Class Name", "Average %", "Students", "Marks Count"],
@@ -229,7 +281,7 @@ const HeadteacherReportsPage = () => {
     if (!selectedClassReport) return;
 
     exportToExcel({
-      filename: `Class_Report_${selectedClassReport.className}_${new Date().toISOString().split('T')[0]}.xlsx`,
+      filename: `Class_Report_${selectedClassReport.className}_${new Date().toISOString().split("T")[0]}.xlsx`,
       sheets: [
         {
           name: "Summary",
@@ -244,7 +296,13 @@ const HeadteacherReportsPage = () => {
           name: "Student Performance",
           data: [
             ["Student Performance"],
-            ["Student Name", "Marks Obtained", "Total Marks", "Percentage", "Grade"],
+            [
+              "Student Name",
+              "Marks Obtained",
+              "Total Marks",
+              "Percentage",
+              "Grade",
+            ],
             ...selectedClassReport.studentPerformance.map((student) => [
               student.name,
               student.marks,
@@ -262,12 +320,15 @@ const HeadteacherReportsPage = () => {
     if (!selectedClassReport) return;
 
     exportToPDF({
-      filename: `Class_Report_${selectedClassReport.className}_${new Date().toISOString().split('T')[0]}.pdf`,
+      filename: `Class_Report_${selectedClassReport.className}_${new Date().toISOString().split("T")[0]}.pdf`,
       title: "Class Report",
       summaryItems: [
         { label: "Class Name", value: selectedClassReport.className || "N/A" },
         { label: "Total Students", value: selectedClassReport.totalStudents },
-        { label: "Marks Recorded", value: selectedClassReport.totalMarksRecorded },
+        {
+          label: "Marks Recorded",
+          value: selectedClassReport.totalMarksRecorded,
+        },
       ],
       tableTitle: "Student Performance",
       tableHeaders: ["Student Name", "Marks", "Percentage", "Grade"],
@@ -310,19 +371,33 @@ const HeadteacherReportsPage = () => {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
       >
         <Card className="p-6 border border-border">
-          <div className="text-sm text-muted-foreground mb-1">Total Classes</div>
-          <div className="text-3xl font-bold text-primary">{aggregateReportData.totalClasses}</div>
+          <div className="text-sm text-muted-foreground mb-1">
+            Total Classes
+          </div>
+          <div className="text-3xl font-bold text-primary">
+            {aggregateReportData.totalClasses}
+          </div>
         </Card>
         <Card className="p-6 border border-border">
-          <div className="text-sm text-muted-foreground mb-1">Total Students</div>
-          <div className="text-3xl font-bold text-secondary">{aggregateReportData.totalStudents}</div>
+          <div className="text-sm text-muted-foreground mb-1">
+            Total Students
+          </div>
+          <div className="text-3xl font-bold text-secondary">
+            {aggregateReportData.totalStudents}
+          </div>
         </Card>
         <Card className="p-6 border border-border">
-          <div className="text-sm text-muted-foreground mb-1">Marks Recorded</div>
-          <div className="text-3xl font-bold text-success">{aggregateReportData.totalMarks}</div>
+          <div className="text-sm text-muted-foreground mb-1">
+            Marks Recorded
+          </div>
+          <div className="text-3xl font-bold text-success">
+            {aggregateReportData.totalMarks}
+          </div>
         </Card>
         <Card className="p-6 border border-border">
-          <div className="text-sm text-muted-foreground mb-1">Average Grade</div>
+          <div className="text-sm text-muted-foreground mb-1">
+            Average Grade
+          </div>
           <div className="text-3xl font-bold text-amber-600">
             {aggregateReportData.gradeDistribution.A > 0 ? "A" : "B"}
           </div>
@@ -342,7 +417,12 @@ const HeadteacherReportsPage = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={aggregateReportData.classPerformance}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                <XAxis
+                  dataKey="name"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="percentage" fill="#0066CC" />
@@ -364,7 +444,11 @@ const HeadteacherReportsPage = () => {
                   outerRadius={88}
                   paddingAngle={3}
                   dataKey="value"
-                  label={({ value }) => gradeTotal > 0 ? `${((Number(value) / gradeTotal) * 100).toFixed(1)}%` : ""}
+                  label={({ value }) =>
+                    gradeTotal > 0
+                      ? `${((Number(value) / gradeTotal) * 100).toFixed(1)}%`
+                      : ""
+                  }
                   labelLine={{ stroke: "#64748b", strokeWidth: 1 }}
                 >
                   {gradeChartData.map((entry) => (
@@ -382,10 +466,21 @@ const HeadteacherReportsPage = () => {
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
             {gradeChartData.map((entry) => (
-              <div key={entry.grade} className="flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-2 text-sm">
-                <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: GRADE_COLORS[entry.grade] }} />
+              <div
+                key={entry.grade}
+                className="flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-2 text-sm"
+              >
+                <span
+                  className="h-3 w-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: GRADE_COLORS[entry.grade] }}
+                />
                 <span className="flex-1 font-medium">{entry.grade}</span>
-                <span className="text-muted-foreground">{gradeTotal > 0 ? ((entry.value / gradeTotal) * 100).toFixed(1) : 0}%</span>
+                <span className="text-muted-foreground">
+                  {gradeTotal > 0
+                    ? ((entry.value / gradeTotal) * 100).toFixed(1)
+                    : 0}
+                  %
+                </span>
               </div>
             ))}
           </div>
@@ -402,7 +497,11 @@ const HeadteacherReportsPage = () => {
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Export School Report</h3>
           <div className="flex gap-2">
-            <Button onClick={handleExportSchoolReport} variant="outline" size="sm">
+            <Button
+              onClick={handleExportSchoolReport}
+              variant="outline"
+              size="sm"
+            >
               <Download className="w-4 h-4 mr-2" />
               Excel
             </Button>
@@ -413,7 +512,8 @@ const HeadteacherReportsPage = () => {
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Download comprehensive school-wide academic report with class and exam performance summaries.
+          Download academic report with class and exam
+          performance summaries.
         </p>
       </motion.div>
 
@@ -445,19 +545,37 @@ const HeadteacherReportsPage = () => {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <Card className="p-4 border border-border">
-                <div className="text-sm text-muted-foreground">Total Students</div>
-                <div className="text-2xl font-bold">{selectedClassReport.totalStudents}</div>
+                <div className="text-sm text-muted-foreground">
+                  Total Students
+                </div>
+                <div className="text-2xl font-bold">
+                  {selectedClassReport.totalStudents}
+                </div>
               </Card>
               <Card className="p-4 border border-border">
-                <div className="text-sm text-muted-foreground">Marks Recorded</div>
-                <div className="text-2xl font-bold">{selectedClassReport.totalMarksRecorded}</div>
+                <div className="text-sm text-muted-foreground">
+                  Marks Recorded
+                </div>
+                <div className="text-2xl font-bold">
+                  {selectedClassReport.totalMarksRecorded}
+                </div>
               </Card>
               <div className="flex gap-2 items-end">
-                <Button onClick={handleExportClassReport} variant="default" size="sm" className="flex-1">
+                <Button
+                  onClick={handleExportClassReport}
+                  variant="default"
+                  size="sm"
+                  className="flex-1"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Excel
                 </Button>
-                <Button onClick={handleExportClassPDF} variant="default" size="sm" className="flex-1">
+                <Button
+                  onClick={handleExportClassPDF}
+                  variant="default"
+                  size="sm"
+                  className="flex-1"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   PDF
                 </Button>
@@ -468,38 +586,50 @@ const HeadteacherReportsPage = () => {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="text-left p-3 font-semibold">Student Name</th>
+                    <th className="text-left p-3 font-semibold">
+                      Student Name
+                    </th>
                     <th className="text-center p-3 font-semibold">Marks</th>
-                    <th className="text-center p-3 font-semibold">Percentage</th>
+                    <th className="text-center p-3 font-semibold">
+                      Percentage
+                    </th>
                     <th className="text-center p-3 font-semibold">Grade</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedClassReport.studentPerformance.map((student, idx) => (
-                    <tr key={idx} className="border-t border-border hover:bg-muted/30">
-                      <td className="p-3 font-medium">{student.name}</td>
-                      <td className="p-3 text-center text-muted-foreground">
-                        {student.marks}/{student.total}
-                      </td>
-                      <td className="p-3 text-center font-medium">{student.percentage}%</td>
-                      <td className="p-3 text-center">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${student.grade === "A"
-                              ? "bg-green-100 text-green-800"
-                              : student.grade === "B"
-                                ? "bg-blue-100 text-blue-800"
-                                : student.grade === "C"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : student.grade === "D"
-                                    ? "bg-orange-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
+                  {selectedClassReport.studentPerformance.map(
+                    (student, idx) => (
+                      <tr
+                        key={idx}
+                        className="border-t border-border hover:bg-muted/30"
+                      >
+                        <td className="p-3 font-medium">{student.name}</td>
+                        <td className="p-3 text-center text-muted-foreground">
+                          {student.marks}/{student.total}
+                        </td>
+                        <td className="p-3 text-center font-medium">
+                          {student.percentage}%
+                        </td>
+                        <td className="p-3 text-center">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              student.grade === "A"
+                                ? "bg-green-100 text-green-800"
+                                : student.grade === "B"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : student.grade === "C"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : student.grade === "D"
+                                      ? "bg-orange-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
                             }`}
-                        >
-                          {student.grade}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                          >
+                            {student.grade}
+                          </span>
+                        </td>
+                      </tr>
+                    ),
+                  )}
                 </tbody>
               </table>
             </div>
