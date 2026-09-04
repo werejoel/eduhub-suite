@@ -94,7 +94,7 @@ const SignUp = () => {
         password,
         firstName.trim(),
         lastName.trim(),
-        role
+        role,
       );
 
       if (signUpError) {
@@ -139,7 +139,8 @@ const SignUp = () => {
               <Alert className="border-success bg-success/10">
                 <CheckCircle2 className="h-4 w-4 text-success" />
                 <AlertDescription className="text-success">
-                  Account created. Await administrator approval to activate your account.
+                  Account created. Await administrator approval to activate your
+                  account.
                 </AlertDescription>
               </Alert>
             ) : (
@@ -195,7 +196,9 @@ const SignUp = () => {
                       <SelectItem value="dos">Director of Studies</SelectItem>
                       <SelectItem value="burser">Burser</SelectItem>
                       <SelectItem value="store">Store Manager</SelectItem>
-                      <SelectItem value="dormitory">Dormitory Manager</SelectItem>
+                      <SelectItem value="dormitory">
+                        Dormitory Manager
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">

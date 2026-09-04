@@ -40,10 +40,7 @@ import {
   useDeleteStudent,
   useClasses,
 } from "@/hooks/useDatabase";
-import {
-  Student,
-  StudentRequirement,
-} from "@/lib/types";
+import { Student, StudentRequirement } from "@/lib/types";
 import {
   getStoreRequirements,
   getStudentRequirements,
@@ -108,10 +105,13 @@ const StudentsPage = () => {
   };
 
   const filteredStudents = (students || []).filter((student) => {
-    const fullName = `${student.first_name} ${student.other_names || ""} ${student.last_name}`.toLowerCase();
+    const fullName =
+      `${student.first_name} ${student.other_names || ""} ${student.last_name}`.toLowerCase();
     const matchesSearch =
       fullName.includes(searchQuery.toLowerCase()) ||
-      (student.admission_number || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (student.admission_number || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
       (student.contact || "").includes(searchQuery);
     const matchesClass =
       filterClass === "all" || student.class_id === filterClass;
@@ -128,7 +128,13 @@ const StudentsPage = () => {
       activeTab === "all" ||
       (activeTab === "day" && boarding === "day") ||
       (activeTab === "boarding" && boarding === "boarding");
-    return matchesSearch && matchesClass && matchesBoardingStatus && matchesClassGroup && matchesTab;
+    return (
+      matchesSearch &&
+      matchesClass &&
+      matchesBoardingStatus &&
+      matchesClassGroup &&
+      matchesTab
+    );
   });
 
   const dayStudents = (students || []).filter(
@@ -380,7 +386,8 @@ const StudentsPage = () => {
         class_id: newStudent.class_id,
         admission_number: newStudent.admission_number,
         boarding_status: boardingStatus,
-        registration_fee: newStudent.registration_fee || FEE_STRUCTURE.registration,
+        registration_fee:
+          newStudent.registration_fee || FEE_STRUCTURE.registration,
         parents_names: newStudent.parents_names,
         contact: newStudent.contact,
         requirements_checklist: getStudentRequirements(
@@ -576,7 +583,10 @@ const StudentsPage = () => {
                     id="otherNames"
                     value={newStudent.other_names || ""}
                     onChange={(e) =>
-                      setNewStudent({ ...newStudent, other_names: e.target.value })
+                      setNewStudent({
+                        ...newStudent,
+                        other_names: e.target.value,
+                      })
                     }
                     placeholder="Middle or other names"
                   />
@@ -587,7 +597,10 @@ const StudentsPage = () => {
                     id="parentsNames"
                     value={newStudent.parents_names || ""}
                     onChange={(e) =>
-                      setNewStudent({ ...newStudent, parents_names: e.target.value })
+                      setNewStudent({
+                        ...newStudent,
+                        parents_names: e.target.value,
+                      })
                     }
                     placeholder="Father and/or mother names"
                   />
@@ -603,7 +616,7 @@ const StudentsPage = () => {
                         admission_number: e.target.value,
                       })
                     }
-                    placeholder="ADM-001"
+                    placeholder="KPS-001"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -639,10 +652,8 @@ const StudentsPage = () => {
                         <SelectValue placeholder="Day or Boarding" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="day">Day Student</SelectItem>
-                        <SelectItem value="boarding">
-                          Boarding Student
-                        </SelectItem>
+                        <SelectItem value="day">Day</SelectItem>
+                        <SelectItem value="boarding">Boarding</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -687,17 +698,25 @@ const StudentsPage = () => {
                       id="contact"
                       value={newStudent.contact || ""}
                       onChange={(e) =>
-                        setNewStudent({ ...newStudent, contact: e.target.value })
+                        setNewStudent({
+                          ...newStudent,
+                          contact: e.target.value,
+                        })
                       }
                       placeholder="+256..."
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="registrationFee">Registration Fees (UGX)</Label>
+                    <Label htmlFor="registrationFee">
+                      Registration Fees (UGX)
+                    </Label>
                     <Input
                       id="registrationFee"
                       type="number"
-                      value={newStudent.registration_fee || FEE_STRUCTURE.registration}
+                      value={
+                        newStudent.registration_fee ||
+                        FEE_STRUCTURE.registration
+                      }
                       onChange={(e) =>
                         setNewStudent({
                           ...newStudent,
@@ -750,7 +769,10 @@ const StudentsPage = () => {
                     <Input
                       value={editForm.other_names}
                       onChange={(e) =>
-                        setEditForm({ ...editForm, other_names: e.target.value })
+                        setEditForm({
+                          ...editForm,
+                          other_names: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -760,7 +782,10 @@ const StudentsPage = () => {
                       type="date"
                       value={editForm.date_of_birth}
                       onChange={(e) =>
-                        setEditForm({ ...editForm, date_of_birth: e.target.value })
+                        setEditForm({
+                          ...editForm,
+                          date_of_birth: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -771,7 +796,10 @@ const StudentsPage = () => {
                     <Input
                       value={editForm.parents_names}
                       onChange={(e) =>
-                        setEditForm({ ...editForm, parents_names: e.target.value })
+                        setEditForm({
+                          ...editForm,
+                          parents_names: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -830,8 +858,8 @@ const StudentsPage = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="day">Day Student</SelectItem>
-                      <SelectItem value="boarding">Boarding Student</SelectItem>
+                      <SelectItem value="day">Day</SelectItem>
+                      <SelectItem value="boarding">Boarding</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

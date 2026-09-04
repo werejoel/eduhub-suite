@@ -25,17 +25,33 @@ export const DAY_STORE_REQUIREMENTS: StudentRequirement[] = [
 
 export const COMMON_STUDENT_REQUIREMENTS: StudentRequirement[] = [
   { id: "medical-fees", name: "Medical fees — UGX 10,000", completed: false },
-  { id: "holiday-package", name: "Holiday package — UGX 5,000", completed: false },
+  {
+    id: "holiday-package",
+    name: "Holiday package — UGX 5,000",
+    completed: false,
+  },
   { id: "hair-trimming", name: "Hair trimming — UGX 3,000", completed: false },
 ];
 
 export const PRIMARY_UNIFORM_REQUIREMENTS: StudentRequirement[] = [
   { id: "uniform", name: "Uniform — UGX 40,000", completed: false },
-  { id: "casual-uniform", name: "Casual uniform — UGX 28,000", completed: false },
+  {
+    id: "casual-uniform",
+    name: "Casual uniform — UGX 28,000",
+    completed: false,
+  },
   { id: "sports-wear", name: "Sports wear — UGX 50,000", completed: false },
-  { id: "sunday-uniform", name: "Sunday uniform — UGX 30,000", completed: false },
+  {
+    id: "sunday-uniform",
+    name: "Sunday uniform — UGX 30,000",
+    completed: false,
+  },
   { id: "sweater", name: "Sweater — UGX 30,000", completed: false },
-  { id: "white-stocking", name: "White stockings — 2 pairs, UGX 7,000", completed: false },
+  {
+    id: "white-stocking",
+    name: "White stockings — 2 pairs, UGX 7,000",
+    completed: false,
+  },
 ];
 
 export const EXAM_TERMS = [
@@ -48,7 +64,22 @@ export type ExamTerm = (typeof EXAM_TERMS)[number];
 
 export const CLASS_LEVELS = {
   baby_top: ["Baby", "Top", "BABY", "TOP"],
-  p1_p7: ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P.1", "P.2", "P.3", "P.4", "P.5", "P.6", "P.7"],
+  p1_p7: [
+    "P1",
+    "P2",
+    "P3",
+    "P4",
+    "P5",
+    "P6",
+    "P7",
+    "P.1",
+    "P.2",
+    "P.3",
+    "P.4",
+    "P.5",
+    "P.6",
+    "P.7",
+  ],
 } as const;
 
 export function normalizeClassName(className: string): string {
@@ -70,7 +101,9 @@ export function isP4P7Class(className: string): boolean {
   return ["P4", "P5", "P6", "P7"].includes(n);
 }
 
-export function getClassGroup(className: string): "baby_top" | "p1_p7" | "other" {
+export function getClassGroup(
+  className: string,
+): "baby_top" | "p1_p7" | "other" {
   if (isBabyTopClass(className)) return "baby_top";
   if (isP1P3Class(className) || isP4P7Class(className)) return "p1_p7";
   return "other";
@@ -120,12 +153,19 @@ export function getStudentRequirements(
       ? PRIMARY_UNIFORM_REQUIREMENTS
       : []),
   ];
-  const existingById = new Map(existingRequirements.map((requirement) => [requirement.id, requirement]));
-  return defaults.map((requirement) => existingById.get(requirement.id) || { ...requirement });
+  const existingById = new Map(
+    existingRequirements.map((requirement) => [requirement.id, requirement]),
+  );
+  return defaults.map(
+    (requirement) => existingById.get(requirement.id) || { ...requirement },
+  );
 }
 
 /** Burser weekly report fee reference per class row */
-export const BURSER_FEE_REFERENCE: Record<string, { day?: number; boarding?: number }> = {
+export const BURSER_FEE_REFERENCE: Record<
+  string,
+  { day?: number; boarding?: number }
+> = {
   BABY: { day: FEE_STRUCTURE.day_baby_top },
   TOP: { day: FEE_STRUCTURE.day_baby_top },
   "P.1": { day: FEE_STRUCTURE.day_p1_p3 },

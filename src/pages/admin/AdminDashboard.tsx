@@ -16,6 +16,8 @@ import {
   Sun,
   Moon,
   ClipboardList,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   AreaChart,
@@ -40,6 +42,11 @@ import { toast } from "sonner";
 import { formatUGX } from "@/lib/utils";
 import { useMemo } from "react";
 import { DEFAULT_STUDENT_REQUIREMENTS } from "@/lib/types";
+import {
+  exportStudents,
+  exportFees,
+  exportOutstandingFees,
+} from "@/lib/adminExports";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -49,7 +56,7 @@ function AdminDashboard() {
   const { data: dormitories = [], isLoading: dormitoriesLoading } =
     useDormitories();
   const { data: classes = [] } = useClasses();
-  const { data: pendingRequests = [] } = useItemRequests('pending');
+  const { data: pendingRequests = [] } = useItemRequests("pending");
 
   // Calculate stats from real data
   const stats = useMemo(() => {
@@ -60,11 +67,11 @@ function AdminDashboard() {
       .reduce((sum, f) => sum + (f.amount || 0), 0);
     const totalDormitoryOccupancy = dormitories.reduce(
       (sum, d) => sum + (d.current_occupancy || 0),
-      0
+      0,
     );
     const totalDormitoryCapacity = dormitories.reduce(
       (sum, d) => sum + (d.capacity || 0),
-      0
+      0,
     );
     const occupancyRate =
       totalDormitoryCapacity > 0
@@ -84,8 +91,8 @@ function AdminDashboard() {
     const studentGrowth =
       lastMonthStudents > 0
         ? `+${Math.round(
-          (thisMonthStudents / lastMonthStudents) * 100
-        )}% this month`
+            (thisMonthStudents / lastMonthStudents) * 100,
+          )}% this month`
         : `${thisMonthStudents} new this month`;
 
     // Calculate teacher growth
@@ -109,7 +116,9 @@ function AdminDashboard() {
       },
       {
         title: "Day Students",
-        value: students.filter((s) => (s.boarding_status || "day") === "day").length.toString(),
+        value: students
+          .filter((s) => (s.boarding_status || "day") === "day")
+          .length.toString(),
         change: `${Math.round((students.filter((s) => (s.boarding_status || "day") === "day").length / Math.max(totalStudents, 1)) * 100)}% of total`,
         changeType: "neutral" as const,
         icon: Sun,
@@ -117,7 +126,9 @@ function AdminDashboard() {
       },
       {
         title: "Boarding Students",
-        value: students.filter((s) => s.boarding_status === "boarding").length.toString(),
+        value: students
+          .filter((s) => s.boarding_status === "boarding")
+          .length.toString(),
         change: `${Math.round((students.filter((s) => s.boarding_status === "boarding").length / Math.max(totalStudents, 1)) * 100)}% of total`,
         changeType: "neutral" as const,
         icon: Moon,
@@ -134,8 +145,9 @@ function AdminDashboard() {
       {
         title: "Fees Collected",
         value: formatUGX(totalFeesCollected),
-        change: `${fees.filter((f) => f.payment_status === "paid").length
-          } paid`,
+        change: `${
+          fees.filter((f) => f.payment_status === "paid").length
+        } paid`,
         changeType: "neutral" as const,
         icon: DollarSign,
         iconColor: "bg-secondary",
@@ -154,7 +166,8 @@ function AdminDashboard() {
   const requirementStats = useMemo(() => {
     const activeStudents = students.filter((s) => s.status === "active");
     const fullyComplete = activeStudents.filter((s) => {
-      const checklist = s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
+      const checklist =
+        s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
       return checklist.length > 0 && checklist.every((r) => r.completed);
     }).length;
     const incomplete = activeStudents.length - fullyComplete;
@@ -162,30 +175,40 @@ function AdminDashboard() {
       id: req.id,
       name: req.name,
       pending: activeStudents.filter((s) => {
-        const checklist = s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
+        const checklist =
+          s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
         const item = checklist.find((r) => r.id === req.id);
         return !item?.completed;
       }).length,
     }));
     const incompleteStudents = activeStudents
       .filter((s) => {
-        const checklist = s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
+        const checklist =
+          s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
         return !checklist.every((r) => r.completed);
       })
       .slice(0, 6)
       .map((s) => {
-        const checklist = s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
+        const checklist =
+          s.requirements_checklist || DEFAULT_STUDENT_REQUIREMENTS;
         const completed = checklist.filter((r) => r.completed).length;
         return {
           id: s.id,
           name: `${s.first_name} ${s.last_name}`,
           class:
-            classes.find((c) => c.id === s.class_id)?.class_name || "Unassigned",
+            classes.find((c) => c.id === s.class_id)?.class_name ||
+            "Unassigned",
           section: s.boarding_status === "boarding" ? "Boarding" : "Day",
           progress: `${completed}/${checklist.length}`,
         };
       });
-    return { fullyComplete, incomplete, byItem, incompleteStudents, totalActive: activeStudents.length };
+    return {
+      fullyComplete,
+      incomplete,
+      byItem,
+      incompleteStudents,
+      totalActive: activeStudents.length,
+    };
   }, [students, classes]);
 
   // Get recent students
@@ -194,7 +217,7 @@ function AdminDashboard() {
       .sort(
         (a, b) =>
           new Date(b.enrollment_date).getTime() -
-          new Date(a.enrollment_date).getTime()
+          new Date(a.enrollment_date).getTime(),
       )
       .slice(0, 5)
       .map((student) => ({
@@ -251,7 +274,7 @@ function AdminDashboard() {
         icon={TrendingUp}
       />
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -262,7 +285,7 @@ function AdminDashboard() {
             } catch (err) {
               console.error("Push subscribe error", err);
               toast.error(
-                "Unable to enable push notifications. Please try again later."
+                "Unable to enable push notifications. Please try again later.",
               );
             }
           }}
@@ -271,21 +294,102 @@ function AdminDashboard() {
         </Button>
       </div>
 
+      {/* Data Export Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-2xl p-6 border border-border shadow-md mb-8"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Download className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold">Download Reports</h3>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Export school data as Excel (.xlsx) or CSV (.csv) files
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[
+            {
+              label: "Students List",
+              onExcel: () => {
+                exportStudents(students, classes, "excel");
+                toast.success("Students exported to Excel");
+              },
+              onCsv: () => {
+                exportStudents(students, classes, "csv");
+                toast.success("Students exported to CSV");
+              },
+            },
+            {
+              label: "Fee Records",
+              onExcel: () => {
+                exportFees(fees, students, "excel");
+                toast.success("Fees exported to Excel");
+              },
+              onCsv: () => {
+                exportFees(fees, students, "csv");
+                toast.success("Fees exported to CSV");
+              },
+            },
+            {
+              label: "Outstanding Fees",
+              onExcel: () => {
+                exportOutstandingFees(students, fees, classes, "excel");
+                toast.success("Outstanding fees exported to Excel");
+              },
+              onCsv: () => {
+                exportOutstandingFees(students, fees, classes, "csv");
+                toast.success("Outstanding fees exported to CSV");
+              },
+            },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="p-4 rounded-xl border border-border bg-muted/20"
+            >
+              <p className="font-medium text-sm mb-3">{item.label}</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 gap-1 text-xs"
+                  onClick={item.onExcel}
+                  disabled={isLoading}
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  Excel
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 gap-1 text-xs"
+                  onClick={item.onCsv}
+                  disabled={isLoading}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  CSV
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
         {isLoading
           ? Array.from({ length: 6 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="bg-card rounded-2xl p-6 border border-border animate-pulse"
-            >
-              <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-              <div className="h-8 bg-muted rounded w-1/2"></div>
-            </div>
-          ))
+              <div
+                key={idx}
+                className="bg-card rounded-2xl p-6 border border-border animate-pulse"
+              >
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-1/2"></div>
+              </div>
+            ))
           : stats.map((stat, idx) => (
-            <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
-          ))}
+              <StatCard key={stat.title} {...stat} delay={idx * 0.1} />
+            ))}
       </div>
 
       {/* Requirements & Section Overview */}
@@ -322,7 +426,9 @@ function AdminDashboard() {
                   <p className="text-2xl font-bold text-success">
                     {requirementStats.fullyComplete}
                   </p>
-                  <p className="text-xs text-muted-foreground">Fully Complete</p>
+                  <p className="text-xs text-muted-foreground">
+                    Fully Complete
+                  </p>
                 </div>
                 <div className="bg-warning/10 rounded-xl p-4 text-center">
                   <p className="text-2xl font-bold text-warning">
@@ -339,8 +445,9 @@ function AdminDashboard() {
                   >
                     <span className="text-muted-foreground">{item.name}</span>
                     <span
-                      className={`font-medium ${item.pending > 0 ? "text-warning" : "text-success"
-                        }`}
+                      className={`font-medium ${
+                        item.pending > 0 ? "text-warning" : "text-success"
+                      }`}
                     >
                       {item.pending} pending
                     </span>
@@ -349,7 +456,9 @@ function AdminDashboard() {
               </div>
               {requirementStats.incompleteStudents.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium mb-2">Students needing attention</p>
+                  <p className="text-sm font-medium mb-2">
+                    Students needing attention
+                  </p>
                   <div className="space-y-2">
                     {requirementStats.incompleteStudents.map((s) => (
                       <div
@@ -400,13 +509,13 @@ function AdminDashboard() {
             <div className="space-y-4">
               {classes.map((cls) => {
                 const classStudents = students.filter(
-                  (s) => s.class_id === cls.id && s.status === "active"
+                  (s) => s.class_id === cls.id && s.status === "active",
                 );
                 const dayCount = classStudents.filter(
-                  (s) => (s.boarding_status || "day") === "day"
+                  (s) => (s.boarding_status || "day") === "day",
                 ).length;
                 const boardingCount = classStudents.filter(
-                  (s) => s.boarding_status === "boarding"
+                  (s) => s.boarding_status === "boarding",
                 ).length;
                 return (
                   <div
@@ -571,13 +680,20 @@ function AdminDashboard() {
             )}
           </div>
           {pendingRequests.length === 0 ? (
-            <div className="text-muted-foreground text-sm">No pending requests</div>
+            <div className="text-muted-foreground text-sm">
+              No pending requests
+            </div>
           ) : (
             <div className="space-y-3">
               {pendingRequests.slice(0, 4).map((req: any) => (
-                <div key={req._id} className="flex items-start justify-between gap-2 pb-2 border-b last:border-0">
+                <div
+                  key={req._id}
+                  className="flex items-start justify-between gap-2 pb-2 border-b last:border-0"
+                >
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate">{req.item_name}</div>
+                    <div className="font-medium text-sm truncate">
+                      {req.item_name}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       Qty: {req.quantity_requested} • {req.requested_by}
                     </div>
@@ -667,7 +783,10 @@ function AdminDashboard() {
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-12 bg-muted rounded animate-pulse"></div>
+              <div
+                key={i}
+                className="h-12 bg-muted rounded animate-pulse"
+              ></div>
             ))}
           </div>
         ) : (
@@ -711,10 +830,11 @@ function AdminDashboard() {
                         {formatUGX(fee.amount)}
                       </p>
                       <span
-                        className={`text-xs px-2 py-1 rounded-full ${fee.status === "pending"
-                          ? "bg-warning/10 text-warning"
-                          : "bg-destructive/10 text-destructive"
-                          }`}
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          fee.status === "pending"
+                            ? "bg-warning/10 text-warning"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
                       >
                         {fee.status}
                       </span>

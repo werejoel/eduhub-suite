@@ -34,7 +34,11 @@ import {
   DAY_STORE_REQUIREMENTS,
   BURSER_FEE_REFERENCE,
 } from "@/lib/schoolConfig";
-import { exportToExcel, exportMultipleSheets, formatDataForExport } from "@/lib/exportToExcel";
+import {
+  exportToExcel,
+  exportMultipleSheets,
+  formatDataForExport,
+} from "@/lib/exportToExcel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DataTable from "@/components/dashboard/DataTable";
@@ -176,7 +180,7 @@ const BurserDashboard = () => {
     fees.forEach((fee) => {
       const date = new Date(fee.createdAt);
       const monthKey = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
+        date.getMonth() + 1,
       ).padStart(2, "0")}`;
 
       if (!monthlyData[monthKey]) {
@@ -218,7 +222,7 @@ const BurserDashboard = () => {
     return fees
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
       .slice(0, 15)
       .map((fee) => {
@@ -255,7 +259,7 @@ const BurserDashboard = () => {
       (t) =>
         searchQuery === "" ||
         t.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.term.toLowerCase().includes(searchQuery.toLowerCase())
+        t.term.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [recentTransactions, searchQuery]);
 
@@ -288,11 +292,11 @@ const BurserDashboard = () => {
           ? localStorage.getItem("burser_weekly_report")
           : null;
       return saved ? JSON.parse(saved) : {};
-    }
+    },
   );
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target as any;
     setWeeklyReport((prev) => ({ ...prev, [name]: value }));
@@ -302,7 +306,7 @@ const BurserDashboard = () => {
     try {
       localStorage.setItem(
         "burser_weekly_report",
-        JSON.stringify(weeklyReport)
+        JSON.stringify(weeklyReport),
       );
       toast.success("Weekly report saved locally");
     } catch {
@@ -315,7 +319,7 @@ const BurserDashboard = () => {
     const w = window.open("", "_blank", "noopener,noreferrer");
     if (!w) return toast.error("Unable to open print window");
     w.document.write(
-      `<html><head><title>Burser Weekly Report</title><meta charset="utf-8"></head><body>`
+      `<html><head><title>Burser Weekly Report</title><meta charset="utf-8"></head><body>`,
     );
     w.document.write(content);
     w.document.write("</body></html>");
@@ -328,7 +332,7 @@ const BurserDashboard = () => {
   };
 
   const handleNewPaymentChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target as any;
     setNewPayment((prev) => {
@@ -353,8 +357,8 @@ const BurserDashboard = () => {
 
     // Format due_date to ISO string if it's just a date
     let dueDate = newPayment.due_date;
-    if (dueDate && !dueDate.includes('T')) {
-      dueDate = new Date(dueDate + 'T00:00:00').toISOString();
+    if (dueDate && !dueDate.includes("T")) {
+      dueDate = new Date(dueDate + "T00:00:00").toISOString();
     }
 
     try {
@@ -468,25 +472,30 @@ const BurserDashboard = () => {
               <Button
                 className="gap-2"
                 onClick={() => {
-                  const overviewData = [{
-                    'Metric': 'Total Collected',
-                    'Value (UGX)': stats.totalCollected,
-                    'Collection Rate (%)': stats.collectionRate,
-                  }, {
-                    'Metric': 'Pending Fees',
-                    'Value (UGX)': stats.totalPending,
-                    'Count': stats.pendingCount,
-                  }, {
-                    'Metric': 'Overdue Fees',
-                    'Value (UGX)': stats.totalOverdue,
-                    'Count': stats.overdueCount,
-                  }, {
-                    'Metric': 'Expected Revenue',
-                    'Value (UGX)': stats.totalExpected,
-                    'Records': fees.length,
-                  }];
-                  exportToExcel(overviewData, 'Finance_Overview');
-                  toast.success('Finance overview exported to Excel');
+                  const overviewData = [
+                    {
+                      Metric: "Total Collected",
+                      "Value (UGX)": stats.totalCollected,
+                      "Collection Rate (%)": stats.collectionRate,
+                    },
+                    {
+                      Metric: "Pending Fees",
+                      "Value (UGX)": stats.totalPending,
+                      Count: stats.pendingCount,
+                    },
+                    {
+                      Metric: "Overdue Fees",
+                      "Value (UGX)": stats.totalOverdue,
+                      Count: stats.overdueCount,
+                    },
+                    {
+                      Metric: "Expected Revenue",
+                      "Value (UGX)": stats.totalExpected,
+                      Records: fees.length,
+                    },
+                  ];
+                  exportToExcel(overviewData, "Finance_Overview");
+                  toast.success("Finance overview exported to Excel");
                 }}
               >
                 <Download className="w-4 h-4" />
@@ -568,12 +577,12 @@ const BurserDashboard = () => {
                   className="gap-2"
                   onClick={() => {
                     const exportData = topStudents.map((s, i) => ({
-                      'Rank': i + 1,
-                      'Student Name': s.name,
-                      'Total Paid (UGX)': s.amount,
+                      Rank: i + 1,
+                      "Student Name": s.name,
+                      "Total Paid (UGX)": s.amount,
                     }));
-                    exportToExcel(exportData, 'Top_Paying_Students');
-                    toast.success('Top paying students exported to Excel');
+                    exportToExcel(exportData, "Top_Paying_Students");
+                    toast.success("Top paying students exported to Excel");
                   }}
                 >
                   <Download className="w-4 h-4" />
@@ -664,10 +673,7 @@ const BurserDashboard = () => {
                   placeholder="Academic year"
                 />
               </div>
-              <Button
-                onClick={submitNewPayment}
-                className="mt-4 gap-2"
-              >
+              <Button onClick={submitNewPayment} className="mt-4 gap-2">
                 <CheckCircle className="w-4 h-4" />
                 Record Payment
               </Button>
@@ -692,16 +698,16 @@ const BurserDashboard = () => {
                 <Button
                   className="gap-2"
                   onClick={() => {
-                    const exportData = filteredTransactions.map(t => ({
-                      'Student Name': t.student,
-                      'Term': t.term,
-                      'Amount (UGX)': t.amount,
-                      'Status': t.status,
-                      'Due Date': t.dueDate,
-                      'Date': t.date,
+                    const exportData = filteredTransactions.map((t) => ({
+                      "Student Name": t.student,
+                      Term: t.term,
+                      "Amount (UGX)": t.amount,
+                      Status: t.status,
+                      "Due Date": t.dueDate,
+                      Date: t.date,
                     }));
-                    exportToExcel(exportData, 'Payment_Records');
-                    toast.success('Payment records exported to Excel');
+                    exportToExcel(exportData, "Payment_Records");
+                    toast.success("Payment records exported to Excel");
                   }}
                 >
                   <Download className="w-4 h-4" />
@@ -723,12 +729,13 @@ const BurserDashboard = () => {
                     label: "Status",
                     render: (value: string) => (
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${value === "paid"
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          value === "paid"
                             ? "bg-success/10 text-success"
                             : value === "pending"
                               ? "bg-warning/10 text-warning"
                               : "bg-destructive/10 text-destructive"
-                          }`}
+                        }`}
                       >
                         {value.charAt(0).toUpperCase() + value.slice(1)}
                       </span>
@@ -767,9 +774,10 @@ const BurserDashboard = () => {
           >
             <div className="bg-white p-4 rounded-xl shadow-md border border-gray-100">
               <p className="text-sm text-gray-600 mb-4">
-                Fee structure: Baby/Top (Day) — {formatUGX(FEE_STRUCTURE.day_baby_top)} ·
-                P1–P3 (Day) — {formatUGX(FEE_STRUCTURE.day_p1_p3)} ·
-                P4–P7 (Boarding) — {formatUGX(FEE_STRUCTURE.boarding_p4_p7)}
+                Fee structure: Baby/Top (Day) —{" "}
+                {formatUGX(FEE_STRUCTURE.day_baby_top)} · P1–P3 (Day) —{" "}
+                {formatUGX(FEE_STRUCTURE.day_p1_p3)} · P4–P7 (Boarding) —{" "}
+                {formatUGX(FEE_STRUCTURE.boarding_p4_p7)}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
@@ -848,7 +856,13 @@ const BurserDashboard = () => {
                     key: "balance",
                     label: "Balance",
                     render: (v: number) => (
-                      <span className={v > 0 ? "text-destructive font-medium" : "text-success"}>
+                      <span
+                        className={
+                          v > 0
+                            ? "text-destructive font-medium"
+                            : "text-success"
+                        }
+                      >
                         {formatUGX(v)}
                       </span>
                     ),
@@ -888,15 +902,17 @@ const BurserDashboard = () => {
                   <Button
                     className="gap-2"
                     onClick={() => {
-                      const reportData = [{
-                        'Report Type': 'Weekly Report',
-                        'School': 'KIBAALE PARENTS PRIMARY SCHOOL',
-                        'Date Generated': new Date().toLocaleDateString(),
-                        'Prepared By': weeklyReport.prepared_by || 'N/A',
-                        'Approved By': weeklyReport.approved_by || 'N/A',
-                      }];
-                      exportToExcel(reportData, 'Weekly_Report');
-                      toast.success('Weekly report exported to Excel');
+                      const reportData = [
+                        {
+                          "Report Type": "Weekly Report",
+                          School: "KIBAALE PARENTS PRIMARY SCHOOL",
+                          "Date Generated": new Date().toLocaleDateString(),
+                          "Prepared By": weeklyReport.prepared_by || "N/A",
+                          "Approved By": weeklyReport.approved_by || "N/A",
+                        },
+                      ];
+                      exportToExcel(reportData, "Weekly_Report");
+                      toast.success("Weekly report exported to Excel");
                     }}
                   >
                     <Download className="w-4 h-4" />
@@ -940,7 +956,8 @@ const BurserDashboard = () => {
                             {cls}
                             {BURSER_FEE_REFERENCE[cls]?.boarding && (
                               <span className="text-xs text-gray-500 block">
-                                Ref: {formatUGX(BURSER_FEE_REFERENCE[cls].boarding!)}
+                                Ref:{" "}
+                                {formatUGX(BURSER_FEE_REFERENCE[cls].boarding!)}
                               </span>
                             )}
                           </td>
@@ -1008,7 +1025,8 @@ const BurserDashboard = () => {
                   <h3 className="font-semibold mb-2">
                     SCHOOL FEES — DAY SECTION
                     <span className="text-sm font-normal text-gray-500 ml-2">
-                      (Baby/Top: {formatUGX(FEE_STRUCTURE.day_baby_top)} · P1–P3: {formatUGX(FEE_STRUCTURE.day_p1_p3)})
+                      (Baby/Top: {formatUGX(FEE_STRUCTURE.day_baby_top)} ·
+                      P1–P3: {formatUGX(FEE_STRUCTURE.day_p1_p3)})
                     </span>
                   </h3>
                   <table className="w-full table-auto border-collapse">
@@ -1141,7 +1159,8 @@ const BurserDashboard = () => {
                   <h3 className="font-semibold mb-2">
                     STORE REQUIREMENTS — BOARDING
                     <span className="text-sm font-normal text-gray-500 ml-2 block mt-1">
-                      Posho 20kgs · Beans 10kgs · Sugar 4kg · Gnuts 4kg · Tissues 4 Rolls · Broom 1 · Squeezer 1
+                      Posho 20kgs · Beans 10kgs · Sugar 4kg · Gnuts 4kg ·
+                      Tissues 4 Rolls · Broom 1 · Squeezer 1
                     </span>
                   </h3>
                   <table className="w-full table-auto border-collapse text-sm">
@@ -1299,7 +1318,17 @@ const BurserDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {["BABY", "TOP", "P.1", "P.2", "P.3", "P.4", "P.5", "P.6", "P.7"].map((cls) => (
+                      {[
+                        "BABY",
+                        "TOP",
+                        "P.1",
+                        "P.2",
+                        "P.3",
+                        "P.4",
+                        "P.5",
+                        "P.6",
+                        "P.7",
+                      ].map((cls) => (
                         <tr key={`dayreq-${cls}`}>
                           <td className="border px-2 py-1">{cls}</td>
                           <td className="border px-2 py-1">
@@ -1312,21 +1341,27 @@ const BurserDashboard = () => {
                           <td className="border px-2 py-1">
                             <Input
                               name={`dayreq_${cls}_tissues`}
-                              value={weeklyReport[`dayreq_${cls}_tissues`] || ""}
+                              value={
+                                weeklyReport[`dayreq_${cls}_tissues`] || ""
+                              }
                               onChange={handleInputChange}
                             />
                           </td>
                           <td className="border px-2 py-1">
                             <Input
                               name={`dayreq_${cls}_received`}
-                              value={weeklyReport[`dayreq_${cls}_received`] || ""}
+                              value={
+                                weeklyReport[`dayreq_${cls}_received`] || ""
+                              }
                               onChange={handleInputChange}
                             />
                           </td>
                           <td className="border px-2 py-1">
                             <Input
                               name={`dayreq_${cls}_balance`}
-                              value={weeklyReport[`dayreq_${cls}_balance`] || ""}
+                              value={
+                                weeklyReport[`dayreq_${cls}_balance`] || ""
+                              }
                               onChange={handleInputChange}
                             />
                           </td>
@@ -1450,7 +1485,9 @@ const BurserDashboard = () => {
                   <h3 className="font-semibold mb-2">STORE CHECKLIST</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-2 text-primary">Boarding Section</h4>
+                      <h4 className="font-medium mb-2 text-primary">
+                        Boarding Section
+                      </h4>
                       <ul className="text-sm space-y-1">
                         {BOARDING_STORE_REQUIREMENTS.map((r) => (
                           <li key={r.id} className="flex items-center gap-2">
@@ -1461,7 +1498,9 @@ const BurserDashboard = () => {
                       </ul>
                     </div>
                     <div className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-2 text-primary">Day Section</h4>
+                      <h4 className="font-medium mb-2 text-primary">
+                        Day Section
+                      </h4>
                       <ul className="text-sm space-y-1">
                         {DAY_STORE_REQUIREMENTS.map((r) => (
                           <li key={r.id} className="flex items-center gap-2">
@@ -1656,7 +1695,12 @@ const BurserDashboard = () => {
             { id: "students", icon: Users, label: "Students" },
             { id: "payments", icon: CreditCard, label: "Payments" },
             { id: "reports", icon: FileText, label: "Reports" },
-            { id: "finances", icon: DollarSign, label: "Finances", route: "/burser/finances" },
+            {
+              id: "finances",
+              icon: DollarSign,
+              label: "Finances",
+              route: "/burser/finances",
+            },
             { id: "settings", icon: Settings, label: "Settings" },
           ].map((item) => (
             <motion.button
@@ -1669,10 +1713,11 @@ const BurserDashboard = () => {
                 }
               }}
               whileHover={{ x: 5 }}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-colors ${activeTab === item.id
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-colors ${
+                activeTab === item.id
                   ? "bg-white/20 border-l-4 border-white"
                   : "hover:bg-white/10"
-                }`}
+              }`}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
               {sidebarOpen && <span className="font-medium">{item.label}</span>}
@@ -1732,17 +1777,26 @@ const BurserDashboard = () => {
 
           {renderContent()}
 
-          <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialog
+            open={deleteConfirmOpen}
+            onOpenChange={setDeleteConfirmOpen}
+          >
             <AlertDialogContent className="sm:max-w-md">
               <AlertDialogHeader>
-                <AlertDialogTitle className="text-destructive">Delete Payment</AlertDialogTitle>
+                <AlertDialogTitle className="text-destructive">
+                  Delete Payment
+                </AlertDialogTitle>
                 <AlertDialogDescription className="mt-3">
-                  Are you sure you want to delete this payment record? This action cannot be undone.
+                  Are you sure you want to delete this payment record? This
+                  action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <div className="flex justify-end gap-3 mt-6">
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDeletePayment} className="bg-destructive hover:bg-destructive/90">
+                <AlertDialogAction
+                  onClick={confirmDeletePayment}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
                   Delete
                 </AlertDialogAction>
               </div>

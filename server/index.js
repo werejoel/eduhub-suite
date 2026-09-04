@@ -10,7 +10,47 @@ const MONGODB_URI =
 const PORT = process.env.PORT || 4000;
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const JWT_SECRET = process.env.JWT_SECRET || "change_this_secret";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080";
+
+// Email transport for password reset (optional — logs to console if SMTP not configured)
+let mailTransport = null;
+try {
+  const nodemailer = require("nodemailer");
+  if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+    mailTransport = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || "587"),
+      secure: process.env.SMTP_SECURE === "true",
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
+} catch (e) {
+  console.warn("nodemailer not available; password reset links will be logged to console");
+}
+
+async function sendPasswordResetEmail(email, resetLink) {
+  const subject = "Reset your EduHub password";
+  const html = `
+    <p>You requested a password reset for your EduHub account.</p>
+    <p><a href="${resetLink}">Click here to reset your password</a></p>
+    <p>This link expires in 1 hour. If you did not request this, ignore this email.</p>
+  `;
+  if (mailTransport) {
+    await mailTransport.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: email,
+      subject,
+      html,
+    });
+  } else {
+    console.log(`[Password Reset] Email: ${email} | Link: ${resetLink}`);
+  }
+}
 const webpush = require("web-push");
 const XLSX = require("xlsx");
 const PDFDocument = require("pdfkit");
@@ -148,6 +188,16 @@ app.post("/api/auth/login", async (req, res) => {
         .status(403)
         .json({ error: "Email not confirmed. Await administrator approval." });
 
+    const accountStatus = user.account_status || "active";
+    if (accountStatus === "blocked")
+      return res
+        .status(403)
+        .json({ error: "Your account has been blocked. Contact the administrator." });
+    if (accountStatus === "inactive")
+      return res
+        .status(403)
+        .json({ error: "Your account is deactivated. Contact the administrator." });
+
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: "Invalid credentials" });
     const payload = { id: user._id, role: user.role };
@@ -160,6 +210,83 @@ app.post("/api/auth/login", async (req, res) => {
       last_name: user.last_name,
     };
     res.json({ token, user: safeUser });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/auth/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Email is required" });
+
+    const user = await UserModel.findOne({ email });
+    // Always return success to prevent email enumeration
+    if (!user) {
+      return res.json({
+        message: "If an account exists with that email, a reset link has been sent.",
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await UserModel.findByIdAndUpdate(user._id, {
+      reset_token: resetTokenHash,
+      reset_token_expires: resetExpires,
+    });
+
+    const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    await sendPasswordResetEmail(email, resetLink);
+
+    res.json({
+      message: "If an account exists with that email, a reset link has been sent.",
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  try {
+    const { email, token, new_password } = req.body;
+    if (!email || !token || !new_password)
+      return res
+        .status(400)
+        .json({ error: "Email, token, and new password are required" });
+    if (new_password.length < 6)
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters" });
+
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await UserModel.findOne({
+      email,
+      reset_token: resetTokenHash,
+      reset_token_expires: { $gt: new Date() },
+    });
+
+    if (!user)
+      return res
+        .status(400)
+        .json({ error: "Invalid or expired reset token" });
+
+    const hashed = await bcrypt.hash(new_password, 10);
+    await UserModel.findByIdAndUpdate(user._id, {
+      password: hashed,
+      reset_token: null,
+      reset_token_expires: null,
+    });
+
+    res.json({ message: "Password reset successfully. You may now log in." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -62,7 +62,6 @@ import DosReports from "./pages/dos/ReportsPage";
 import DosTeachers from "./pages/dos/TeachersPage";
 import DosCirculars from "./pages/dos/CircularsPage";
 
-
 const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -78,7 +77,17 @@ const App = () => (
             <Route
               path="/settings"
               element={
-                <ProtectedRoute allowedRoles={["admin", "teacher", "headteacher", "dos", "burser", "store", "dormitory"]}>
+                <ProtectedRoute
+                  allowedRoles={[
+                    "admin",
+                    "teacher",
+                    "headteacher",
+                    "dos",
+                    "burser",
+                    "store",
+                    "dormitory",
+                  ]}
+                >
                   <Settings />
                 </ProtectedRoute>
               }
@@ -380,7 +389,9 @@ const App = () => (
             <Route
               path="/dormitory/details"
               element={
-                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
+                <ProtectedRoute
+                  allowedRoles={["dormitory", "admin", "headteacher"]}
+                >
                   <DormitoryDetails />
                 </ProtectedRoute>
               }
@@ -388,7 +399,9 @@ const App = () => (
             <Route
               path="/dormitory/occupancy"
               element={
-                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
+                <ProtectedRoute
+                  allowedRoles={["dormitory", "admin", "headteacher"]}
+                >
                   <OccupancyReport />
                 </ProtectedRoute>
               }
@@ -396,7 +409,9 @@ const App = () => (
             <Route
               path="/dormitory/assignments"
               element={
-                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
+                <ProtectedRoute
+                  allowedRoles={["dormitory", "admin", "headteacher"]}
+                >
                   <AssignStudents />
                 </ProtectedRoute>
               }
@@ -404,7 +419,9 @@ const App = () => (
             <Route
               path="/dormitory/student-status"
               element={
-                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
+                <ProtectedRoute
+                  allowedRoles={["dormitory", "admin", "headteacher"]}
+                >
                   <StudentStatus />
                 </ProtectedRoute>
               }
@@ -412,7 +429,9 @@ const App = () => (
             <Route
               path="/dormitory/requirements"
               element={
-                <ProtectedRoute allowedRoles={["dormitory", "admin", "headteacher"]}>
+                <ProtectedRoute
+                  allowedRoles={["dormitory", "admin", "headteacher"]}
+                >
                   <DormitoryRequirements />
                 </ProtectedRoute>
               }
@@ -447,7 +466,9 @@ const initializeTheme = () => {
     root.style.colorScheme = "light";
   } else {
     // system
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     if (prefersDark) {
       root.classList.add("dark");
       root.style.colorScheme = "dark";
@@ -462,11 +483,13 @@ const initializeTheme = () => {
 initializeTheme();
 
 // Listen for system theme changes
-window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-  const theme = localStorage.getItem("theme") || "system";
-  if (theme === "system") {
-    initializeTheme();
-  }
-});
+window
+  .matchMedia("(prefers-color-scheme: dark)")
+  .addEventListener("change", () => {
+    const theme = localStorage.getItem("theme") || "system";
+    if (theme === "system") {
+      initializeTheme();
+    }
+  });
 
 export default App;

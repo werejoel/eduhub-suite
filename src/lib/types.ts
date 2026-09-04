@@ -179,6 +179,8 @@ export type UserRole =
   | "store"
   | "dormitory";
 
+export type AccountStatus = "active" | "inactive" | "blocked";
+
 export interface User {
   id: string;
   email: string;
@@ -189,6 +191,7 @@ export interface User {
   phone?: string;
   subject?: string;
   status?: "active" | "inactive";
+  account_status?: AccountStatus;
   createdAt: string;
   updatedAt: string;
 }

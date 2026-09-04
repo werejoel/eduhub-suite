@@ -1,11 +1,24 @@
-// Export utility for creating Excel files
+// Export utility for creating Excel and CSV files
 export const exportToExcel = (data: any[], fileName: string) => {
-  // Dynamic import to avoid build issues
   import("xlsx").then((XLSX) => {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     XLSX.writeFile(wb, `${fileName}.xlsx`);
+  });
+};
+
+export const exportToCSV = (data: any[], fileName: string) => {
+  import("xlsx").then((XLSX) => {
+    const ws = XLSX.utils.json_to_sheet(data);
+    const csv = XLSX.utils.sheet_to_csv(ws);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${fileName}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   });
 };
 
