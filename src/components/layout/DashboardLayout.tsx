@@ -438,13 +438,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <motion.aside
         initial={false}
         animate={{ width: sidebarOpen ? 280 : 80 }}
-        className="hidden lg:flex flex-col bg-red-900 dark:bg-slate-900 fixed h-screen z-40"
+        className="fixed z-40 hidden h-screen shrink-0 flex-col border-r border-white/10 bg-[#800020] shadow-2xl dark:bg-slate-900 lg:flex"
       >
         {/* Logo */}
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-            <GraduationCap className="w-6 h-6 text-secondary-foreground" />
-          </div>
+        <div className="flex min-h-[88px] items-center gap-3 border-b border-white/10 px-5 py-4">
+          <img
+            src="/favicon.svg"
+            alt="Kabale Parents SMS logo"
+            className="h-10 w-10 shrink-0 rounded-xl bg-white p-1 shadow-md"
+          />
           <AnimatePresence>
             {sidebarOpen && (
               <motion.div
@@ -465,7 +467,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
           {items.map((item, index) => {
             const isActive = location.pathname === item.href;
             const showSection =
@@ -473,17 +475,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             return (
               <div key={item.href}>
                 {showSection && sidebarOpen && (
-                  <p className="px-4 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                  <p className="border-t border-white/10 px-3 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 first:border-0 first:pt-1">
                     {item.section}
                   </p>
                 )}
                 <Link
                   to={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                    "flex min-h-11 items-center gap-3 rounded-xl border-l-2 border-transparent px-3 py-2.5 transition-all duration-200",
                     isActive
-                      ? "bg-secondary text-secondary-foreground shadow-lg"
-                      : "text-white/80 dark:text-white/80 hover:bg-white/10 hover:text-white dark:hover:bg-white/10 dark:hover:text-white",
+                      ? "border-secondary bg-secondary text-secondary-foreground shadow-lg"
+                      : "text-white/75 dark:text-white/80 hover:bg-white/10 hover:text-white dark:hover:bg-white/10 dark:hover:text-white",
                   )}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -506,10 +508,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
 
         {/* Toggle & Logout */}
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="space-y-1 border-t border-white/10 bg-black/10 p-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white transition-colors"
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            className={cn(
+              "flex min-h-11 w-full items-center rounded-xl py-2.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white",
+              sidebarOpen ? "gap-3 px-4" : "justify-center px-2",
+            )}
           >
             <Menu className="w-5 h-5" />
             {sidebarOpen && (
@@ -520,7 +526,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </button>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-red-600/40 hover:text-white dark:text-white/80 dark:hover:bg-red-600/40 dark:hover:text-white transition-colors mt-1"
+            aria-label="Logout"
+            className={cn(
+              "flex min-h-11 w-full items-center rounded-xl py-2.5 text-white/80 transition-colors hover:bg-red-600/40 hover:text-white dark:text-white/80 dark:hover:bg-red-600/40 dark:hover:text-white",
+              sidebarOpen ? "gap-3 px-4" : "justify-center px-2",
+            )}
           >
             <LogOut className="w-5 h-5" />
             {sidebarOpen && (
@@ -548,16 +558,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: "spring", damping: 25 }}
-              className="fixed left-0 top-0 h-full w-72 bg-red-900 dark:bg-slate-900 z-50 lg:hidden flex flex-col"
+              className="fixed left-0 top-0 z-50 flex h-full w-72 flex-col border-r border-white/10 bg-[#800020] shadow-2xl dark:bg-slate-900 lg:hidden"
             >
-              <div className="p-6 flex items-center justify-between">
+              <div className="flex min-h-[88px] items-center justify-between border-b border-white/10 px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-                    <GraduationCap className="w-6 h-6 text-secondary-foreground" />
-                  </div>
+                  <img
+                    src="/favicon.svg"
+                    alt="Kabale Parents SMS logo"
+                    className="h-10 w-10 shrink-0 rounded-xl bg-white p-1 shadow-md"
+                  />
                   <div>
-                    <h1 className="text-xl font-bold text-primary-foreground">
-                      EduManage
+                    <h1 className="text-lg font-bold text-primary-foreground">
+                      Kabale Parents SMS
                     </h1>
                     <p className="text-xs text-primary-foreground/70">
                       {roleLabels[role]}
@@ -571,7 +583,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              <nav className="flex-1 px-3 py-4 space-y-1">
+              <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
                 {items.map((item, index) => {
                   const isActive = location.pathname === item.href;
                   const showSection =
@@ -587,10 +599,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         to={item.href}
                         onClick={() => setMobileOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
+                          "flex min-h-11 items-center gap-3 rounded-xl border-l-2 border-transparent px-3 py-2.5 transition-all",
                           isActive
-                            ? "bg-secondary text-secondary-foreground"
-                            : "text-primary-foreground/80 hover:bg-sidebar-accent",
+                            ? "border-secondary bg-secondary text-secondary-foreground shadow-lg"
+                            : "text-primary-foreground/80 hover:bg-white/10",
                         )}
                       >
                         <item.icon className="w-5 h-5" />

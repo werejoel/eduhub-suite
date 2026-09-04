@@ -617,42 +617,6 @@ const BurserDashboard = () => {
               </motion.div>
             </div>
 
-            {/* Export Overview Button */}
-            <div className="flex justify-end">
-              <Button
-                className="gap-2"
-                onClick={() => {
-                  const overviewData = [
-                    {
-                      Metric: "Total Collected",
-                      "Value (UGX)": stats.totalCollected,
-                      "Collection Rate (%)": stats.collectionRate,
-                    },
-                    {
-                      Metric: "Pending Fees",
-                      "Value (UGX)": stats.totalPending,
-                      Count: stats.pendingCount,
-                    },
-                    {
-                      Metric: "Overdue Fees",
-                      "Value (UGX)": stats.totalOverdue,
-                      Count: stats.overdueCount,
-                    },
-                    {
-                      Metric: "Expected Revenue",
-                      "Value (UGX)": stats.totalExpected,
-                      Records: fees.length,
-                    },
-                  ];
-                  exportToExcel(overviewData, "Finance_Overview");
-                  toast.success("Finance overview exported to Excel");
-                }}
-              >
-                <Download className="w-4 h-4" />
-                Export Overview
-              </Button>
-            </div>
-
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Payment Summary Chart */}
@@ -2076,23 +2040,39 @@ const BurserDashboard = () => {
       {/* Sidebar */}
       <motion.aside
         animate={{ width: sidebarOpen ? 280 : 80 }}
-        className="bg-[#800020] text-white shadow-xl overflow-hidden"
+        className="flex h-screen shrink-0 flex-col border-r border-white/10 bg-[#800020] text-white shadow-2xl overflow-hidden"
       >
-        <div className="p-6 flex items-center justify-between">
-          {sidebarOpen && <h1 className="text-xl font-bold">Burser</h1>}
+        <div className="relative flex min-h-[88px] items-center justify-center border-b border-white/10 px-4 py-4 pr-16">
+          <div className={`flex min-w-0 items-center gap-3 ${sidebarOpen ? "" : "mx-auto"}`}>
+            <img
+              src="/favicon.svg"
+              alt="Kabale Parents SMS logo"
+              className="h-10 w-10 shrink-0 rounded-xl bg-white p-1 shadow-md"
+            />
+            {sidebarOpen && (
+              <div className="min-w-0">
+                <h1 className="truncate text-lg font-bold">Kabale Parents SMS</h1>
+                <p className="text-xs text-white/70">Bursar Portal</p>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            className="absolute right-3 top-3 rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
           >
             {sidebarOpen ? (
-              <X className="w-5 h-5" />
+              <span className="flex items-center gap-1">
+                <X className="w-5 h-5" />
+                <span className="text-xs font-medium">Collapse</span>
+              </span>
             ) : (
               <Menu className="w-5 h-5" />
             )}
           </button>
         </div>
 
-        <nav className="space-y-2 px-3 py-6">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
           {[
             { id: "overview", icon: Home, label: "Overview" },
             { id: "students", icon: Users, label: "Students" },
@@ -2116,10 +2096,10 @@ const BurserDashboard = () => {
                 }
               }}
               whileHover={{ x: 5 }}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-colors ${
+              className={`flex min-h-11 w-full items-center gap-3 rounded-xl border-l-2 border-transparent px-3 py-2.5 text-left transition-colors ${
                 activeTab === item.id
-                  ? "bg-white/20 border-l-4 border-white"
-                  : "hover:bg-white/10"
+                  ? "border-secondary bg-white/20 shadow-sm"
+                  : "text-white/80 hover:bg-white/10 hover:text-white"
               }`}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -2128,8 +2108,7 @@ const BurserDashboard = () => {
           ))}
         </nav>
 
-        {sidebarOpen && (
-          <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/20">
+        <div className="mt-auto space-y-1 border-t border-white/10 bg-black/10 p-3">
             <button
               onClick={async () => {
                 try {
@@ -2141,13 +2120,12 @@ const BurserDashboard = () => {
                   console.error("Logout error:", error);
                 }
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium"
+              className={`flex min-h-11 w-full items-center rounded-xl py-2.5 text-sm font-medium transition-colors hover:bg-white/10 ${sidebarOpen ? "gap-3 px-3" : "justify-center px-2"}`}
             >
               <LogOut className="w-5 h-5" />
-              Logout
+              {sidebarOpen && <span>Logout</span>}
             </button>
           </div>
-        )}
       </motion.aside>
 
       {/* Main Content */}
@@ -2165,16 +2143,52 @@ const BurserDashboard = () => {
               <p className="text-gray-600 mt-1">Welcome back, Burser</p>
             </div>
             {activeTab === "overview" && (
-              <button
-                onClick={() => setBalanceVisible(!balanceVisible)}
-                className="p-3 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {balanceVisible ? (
-                  <Eye className="w-6 h-6" />
-                ) : (
-                  <EyeOff className="w-6 h-6" />
-                )}
-              </button>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="gap-2 bg-[#800020] text-white hover:bg-[#660018]"
+                  onClick={() => {
+                    const overviewData = [
+                      {
+                        Metric: "Total Collected",
+                        "Value (UGX)": stats.totalCollected,
+                        "Collection Rate (%)": stats.collectionRate,
+                      },
+                      {
+                        Metric: "Pending Fees",
+                        "Value (UGX)": stats.totalPending,
+                        Count: stats.pendingCount,
+                      },
+                      {
+                        Metric: "Overdue Fees",
+                        "Value (UGX)": stats.totalOverdue,
+                        Count: stats.overdueCount,
+                      },
+                      {
+                        Metric: "Expected Revenue",
+                        "Value (UGX)": stats.totalExpected,
+                        Records: fees.length,
+                      },
+                    ];
+                    exportToExcel(overviewData, "Finance_Overview");
+                    toast.success("Finance overview exported to Excel");
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  Export Overview
+                </Button>
+                <button
+                  onClick={() => setBalanceVisible(!balanceVisible)}
+                  className="p-3 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  {balanceVisible ? (
+                    <Eye className="w-6 h-6" />
+                  ) : (
+                    <EyeOff className="w-6 h-6" />
+                  )}
+                </button>
+              </div>
             )}
           </div>
 
