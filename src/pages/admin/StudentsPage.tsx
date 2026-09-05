@@ -431,10 +431,6 @@ const StudentsPage = () => {
         title="Students Management"
         description="Manage student records, day/boarding sections, and requirements"
         icon={Users}
-        action={{
-          label: "Add New Student",
-          onClick: () => setDialogOpen(true),
-        }}
       />
 
       {isLoading ? (
@@ -449,38 +445,38 @@ const StudentsPage = () => {
             className="mb-6"
           >
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList
-                style={{
-                  backgroundColor: "#ffffff",
-                  paddingBlockStart: "15px",
-                  paddingBlockEnd: "15px",
-                }}
-                className="grid w-250 grid-cols-3"
-              >
+              <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-[#800020] p-3 shadow-lg sm:flex-row sm:items-center">
+                <Button
+                  type="button"
+                  onClick={() => setDialogOpen(true)}
+                  className="h-11 shrink-0 gap-2 bg-emerald-600 px-5 font-semibold text-white shadow-sm hover:bg-emerald-700"
+                >
+                  <Users className="h-4 w-4" />
+                  Add New Student
+                </Button>
+                <TabsList className="grid h-auto flex-1 grid-cols-3 gap-1 bg-transparent p-0">
                 <TabsTrigger
-                  style={{
-                    backgroundColor: "#800020",
-                    color: "white",
-                  }}
                   value="all"
+                  className="h-11 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 data-[state=active]:ring-2 data-[state=active]:ring-white sm:text-sm"
                 >
                   All Students ({students?.length || 0})
                 </TabsTrigger>
                 <TabsTrigger
-                  style={{ backgroundColor: "#a0002a", color: "white" }}
                   value="day"
+                  className="h-11 rounded-lg bg-yellow-500 px-2 text-xs font-semibold text-yellow-950 hover:bg-yellow-600 data-[state=active]:ring-2 data-[state=active]:ring-white sm:text-sm"
                 >
                   Day Students ({dayStudents.length})
                 </TabsTrigger>
                 <TabsTrigger
-                  style={{ backgroundColor: "#600018", color: "white" }}
                   value="boarding"
+                  className="h-11 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 data-[state=active]:ring-2 data-[state=active]:ring-white sm:text-sm"
                 >
                   Boarding Students ({boardingStudents.length})
                 </TabsTrigger>
-              </TabsList>
+                </TabsList>
+              </div>
 
-              <div className="bg-card rounded-2xl p-4 border border-border shadow-md mt-6 mb-6">
+              <div className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-md">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
