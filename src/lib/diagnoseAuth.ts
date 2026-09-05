@@ -1,6 +1,8 @@
+import { apiUrl } from "./services";
+
 async function testServerConnection() {
   try {
-    const res = await fetch('/api/health');
+    const res = await fetch(apiUrl('/api/health'));
     return res.ok;
   } catch (err) {
     console.error('Server connection test failed:', err);
@@ -10,7 +12,7 @@ async function testServerConnection() {
 
 async function testUsersCollectionAccess() {
   try {
-    const res = await fetch('/api/users?_limit=1');
+    const res = await fetch(apiUrl('/api/users?_limit=1'));
     if (!res.ok) throw new Error('Failed to fetch users');
     const json = await res.json();
     console.log('Users Collection Access:', { count: Array.isArray(json) ? json.length : 0, sample: json });
@@ -23,7 +25,7 @@ async function testUsersCollectionAccess() {
 
 async function testReadUserDocument(userId: string) {
   try {
-    const res = await fetch(`/api/users/${userId}`);
+    const res = await fetch(apiUrl(`/api/users/${userId}`));
     if (!res.ok) {
       console.log('User Document not found');
       return false;
@@ -46,7 +48,7 @@ async function testFirebaseConnection() {
 async function checkSecurityRules() {
   try {
     // Try to read from a protected collection
-    const res = await fetch('/api/students?_limit=1');
+    const res = await fetch(apiUrl('/api/students?_limit=1'));
     console.log('Security Rules Test: Can read students collection', {
       status: res.ok,
     });
