@@ -30,11 +30,6 @@ export default defineConfig(({ mode }) => ({
         drop_console: true,
         drop_debugger: true,
       },
-      mangle: {
-        properties: {
-          regex: /^_[A-Za-z]/,
-        },
-      },
     },
   },
 }));
