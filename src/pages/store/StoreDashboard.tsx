@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatUGX } from "@/lib/utils";
+import { apiUrl } from "@/lib/services";
 import {
   Dialog,
   DialogContent,
@@ -138,7 +139,7 @@ const StoreDashboard = () => {
     }
 
     try {
-      const res = await fetch("/api/item-requests", {
+      const res = await fetch(apiUrl("/api/item-requests"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -9,6 +9,7 @@ import { CheckCircle2, XCircle, Mail, Search, Loader2, Ban, UserCheck, Trash2, K
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AccountStatus, User, UserRole } from "@/lib/types";
+import { apiUrl } from "@/lib/services";
 import {
   Select,
   SelectContent,
@@ -19,7 +20,7 @@ import {
 
 const fetchUsers = async (): Promise<User[]> => {
   const token = localStorage.getItem("eduhub_token");
-  const res = await fetch('/api/admin/users', {
+  const res = await fetch(apiUrl('/api/admin/users'), {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (!res.ok) throw new Error('Failed to fetch users');
@@ -44,7 +45,7 @@ const UsersPage = () => {
 
   const adminRequest = async (url: string, options: RequestInit = {}) => {
     const token = localStorage.getItem("eduhub_token");
-    const res = await fetch(url, {
+    const res = await fetch(apiUrl(url), {
       ...options,
       headers: {
         "Content-Type": "application/json",

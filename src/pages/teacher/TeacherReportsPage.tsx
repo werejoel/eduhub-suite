@@ -20,6 +20,7 @@ import {
   useMarks,
 } from "@/hooks/useDatabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiUrl } from "@/lib/services";
 import {
   BarChart,
   Bar,
@@ -211,7 +212,7 @@ const TeacherReportsPage = () => {
     }
 
     try {
-      const response = await fetch(`/api/reports/${reportType}`, {
+      const response = await fetch(apiUrl(`/api/reports/${reportType}`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -259,7 +260,7 @@ const TeacherReportsPage = () => {
     }
 
     try {
-      const response = await fetch(`/api/reports/${reportType}`, {
+      const response = await fetch(apiUrl(`/api/reports/${reportType}`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

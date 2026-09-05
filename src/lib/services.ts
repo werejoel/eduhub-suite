@@ -17,7 +17,7 @@ const API_BASE =
   "https://eduhub-suite-13.onrender.com";
 
 const normalizeBase = (base: string) => base.replace(/\/$/, "");
-const apiUrl = (path: string) => `${normalizeBase(API_BASE)}${path}`;
+export const apiUrl = (path: string) => `${normalizeBase(API_BASE)}${path}`;
 
 // Helper to convert VAPID base64 key to UInt8Array
 function urlBase64ToUint8Array(base64String: string) {

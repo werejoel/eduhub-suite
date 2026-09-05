@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { subscribeToPush } from "@/lib/services";
+import { apiUrl, subscribeToPush } from "@/lib/services";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
@@ -150,7 +150,7 @@ export default function SettingsPage() {
     setIsLoadingProfile(true);
 
     try {
-      const res = await fetch(`/api/users/${user?.id}`, {
+      const res = await fetch(apiUrl(`/api/users/${user?.id}`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -191,7 +191,7 @@ export default function SettingsPage() {
     setIsLoadingPassword(true);
 
     try {
-      const res = await fetch("/api/auth/change-password", {
+      const res = await fetch(apiUrl("/api/auth/change-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

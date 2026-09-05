@@ -14,6 +14,7 @@ import {
   dutyService,
   ratingService,
   paymentRequestService,
+  apiUrl,
 } from "@/lib/services";
 import {
   Student,
@@ -981,7 +982,7 @@ export const useItemRequests = (status: string = 'pending') => {
   return useQuery({
     queryKey: QUERY_KEYS.itemRequestsByStatus(status),
     queryFn: async () => {
-      const res = await fetch(`/api/item-requests?status=${status}`, {
+      const res = await fetch(apiUrl(`/api/item-requests?status=${status}`), {
         headers: authHeaders(),
       });
       if (!res.ok) throw new Error('Failed to fetch requests');
@@ -997,7 +998,7 @@ export const useApproveItemRequest = () => {
 
   return useMutation({
     mutationFn: ({ id, approval_notes }: { id: string; approval_notes: string }) =>
-      fetch(`/api/item-requests/${id}/approve`, {
+      fetch(apiUrl(`/api/item-requests/${id}/approve`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ approval_notes }),
@@ -1026,7 +1027,7 @@ export const useRejectItemRequest = () => {
 
   return useMutation({
     mutationFn: ({ id, rejection_reason }: { id: string; rejection_reason: string }) =>
-      fetch(`/api/item-requests/${id}/reject`, {
+      fetch(apiUrl(`/api/item-requests/${id}/reject`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ rejection_reason }),
