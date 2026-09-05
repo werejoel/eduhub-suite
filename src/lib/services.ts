@@ -198,7 +198,9 @@ export const classService = {
     return deleteItem("classes", id);
   },
   async getByTeacher(teacherId: string) {
-    const res = await fetch(apiUrl(`/api/classes?teacher_id=${teacherId}`));
+    const res = await fetch(apiUrl(`/api/classes?teacher_id=${teacherId}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<Class[]>;
   },
 };
@@ -209,7 +211,9 @@ export const feeService = {
     return getAll<Fee>("fees", { _sort: "due_date" });
   },
   async getByStudent(studentId: string) {
-    const res = await fetch(apiUrl(`/api/fees/student/${studentId}`));
+    const res = await fetch(apiUrl(`/api/fees/student/${studentId}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<Fee[]>;
   },
   async create(fee: Omit<Fee, "id" | "createdAt" | "updatedAt">) {
@@ -222,7 +226,9 @@ export const feeService = {
     return deleteItem("fees", id);
   },
   async getByStatus(status: "paid" | "pending" | "overdue") {
-    const res = await fetch(apiUrl(`/api/fees/status/${status}`));
+    const res = await fetch(apiUrl(`/api/fees/status/${status}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<Fee[]>;
   },
   async getById(id: string) {
@@ -236,11 +242,15 @@ export const attendanceService = {
     return getAll<Attendance>("attendance", { _sort: "-attendance_date" });
   },
   async getByStudent(studentId: string) {
-    const res = await fetch(apiUrl(`/api/attendance/student/${studentId}`));
+    const res = await fetch(apiUrl(`/api/attendance/student/${studentId}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<Attendance[]>;
   },
   async getByClass(classId: string) {
-    const res = await fetch(apiUrl(`/api/attendance/class/${classId}`));
+    const res = await fetch(apiUrl(`/api/attendance/class/${classId}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<Attendance[]>;
   },
   async create(attendance: Omit<Attendance, "id" | "createdAt" | "updatedAt">) {
@@ -251,7 +261,7 @@ export const attendanceService = {
   ) {
     const res = await fetch(apiUrl("/api/attendance/bulk"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify(records),
     });
     return handleResponse(res) as Promise<Attendance[]>;
@@ -273,11 +283,15 @@ export const markService = {
     return getAll<Mark>("marks");
   },
   async getByStudent(studentId: string) {
-    const res = await fetch(apiUrl(`/api/marks/student/${studentId}`));
+    const res = await fetch(apiUrl(`/api/marks/student/${studentId}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<Mark[]>;
   },
   async getByClass(classId: string) {
-    const res = await fetch(apiUrl(`/api/marks/class/${classId}`));
+    const res = await fetch(apiUrl(`/api/marks/class/${classId}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<Mark[]>;
   },
   async create(mark: Omit<Mark, "id" | "createdAt" | "updatedAt">) {
@@ -286,7 +300,7 @@ export const markService = {
   async bulkCreate(records: Omit<Mark, "id" | "createdAt" | "updatedAt">[]) {
     const res = await fetch(apiUrl("/api/marks/bulk"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify(records),
     });
     return handleResponse(res) as Promise<Mark[]>;
@@ -388,7 +402,9 @@ export const storeService = {
     return deleteItem("store_items", id);
   },
   async getLowStock(threshold: number = 10) {
-    const res = await fetch(apiUrl(`/api/store_items/low-stock/${threshold}`));
+    const res = await fetch(apiUrl(`/api/store_items/low-stock/${threshold}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<StoreItem[]>;
   },
 };
@@ -399,7 +415,9 @@ export const dutyService = {
     return getAll<TeacherDuty>("duties", { _sort: "-assigned_date" });
   },
   async getByTeacherId(teacherId: string) {
-    const res = await fetch(apiUrl(`/api/duties?teacher_id=${teacherId}`));
+    const res = await fetch(apiUrl(`/api/duties?teacher_id=${teacherId}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<TeacherDuty[]>;
   },
   async getById(id: string) {
@@ -422,11 +440,15 @@ export const ratingService = {
     return getAll<DutyRating>("ratings", { _sort: "-rating_date" });
   },
   async getByDutyId(dutyId: string) {
-    const res = await fetch(apiUrl(`/api/ratings?duty_id=${dutyId}`));
+    const res = await fetch(apiUrl(`/api/ratings?duty_id=${dutyId}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<DutyRating[]>;
   },
   async getByTeacherId(teacherId: string) {
-    const res = await fetch(apiUrl(`/api/ratings?teacher_id=${teacherId}`));
+    const res = await fetch(apiUrl(`/api/ratings?teacher_id=${teacherId}`), {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(res) as Promise<DutyRating[]>;
   },
   async getById(id: string) {
