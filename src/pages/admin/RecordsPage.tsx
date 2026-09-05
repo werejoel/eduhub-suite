@@ -105,9 +105,39 @@ const columns = [
   },
 ];
 
+const downloadRecord = (record: Record) => {
+  try {
+    const headers = ["Type", "Title", "Date", "Created By", "Status"];
+    const values = [
+      record.type,
+      record.title,
+      record.date,
+      record.createdBy,
+      record.status,
+    ];
+    const csv = [headers, values]
+      .map((row) =>
+        row.map((value) => `"${value.replace(/"/g, '""')}"`).join(",")
+      )
+      .join("\n");
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${record.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded ${record.title}`);
+  } catch (error) {
+    toast.error("Failed to download report");
+    console.error(error);
+  }
+};
 
-//Main Function
- const RecordsPage = () => {
+const RecordsPage = () => {
   const [records] = useState<Record[]>(initialRecords);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -181,9 +211,7 @@ const columns = [
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => {
-                  toast.success(`Preparing download for ${record.title}...`);
-                }}
+                onClick={() => downloadRecord(record)}
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download
