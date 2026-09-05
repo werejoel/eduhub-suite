@@ -13,7 +13,8 @@ import {
 } from "./types";
 
 const API_BASE =
-  (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:4000";
+  (import.meta as any).env?.VITE_API_BASE_URL ||
+  "https://eduhub-suite-13.onrender.com";
 
 const normalizeBase = (base: string) => base.replace(/\/$/, "");
 const apiUrl = (path: string) => `${normalizeBase(API_BASE)}${path}`;
