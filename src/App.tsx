@@ -29,7 +29,6 @@ import ItemRequestsPage from "./pages/admin/ItemRequestsPage";
 import HeadteacherDashboard from "./pages/headteacher/HeadteacherDashboard";
 import StaffPage from "./pages/headteacher/StaffPage";
 import ClassesPageHead from "./pages/headteacher/ClassesPage";
-import StudentsPageHead from "./pages/headteacher/StudentsPage";
 import AcademicPage from "./pages/headteacher/AcademicPage";
 import ReportsPage from "./pages/headteacher/ReportsPage";
 import FinancesPage from "./pages/headteacher/FinancesPage";
@@ -257,7 +256,7 @@ const App = () => (
               path="/headteacher/students"
               element={
                 <ProtectedRoute allowedRoles={["headteacher"]}>
-                  <StudentsPageHead />
+                  <StudentsPage />
                 </ProtectedRoute>
               }
             />
