@@ -26,6 +26,8 @@ import {
   Plus,
   Pencil,
   Trash2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import {
   useFees,
@@ -2107,17 +2109,16 @@ const BurserDashboard = () => {
             )}
           </div>
           <button
+            type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-            className="absolute right-3 top-3 rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
           >
             {sidebarOpen ? (
-              <span className="flex items-center gap-1">
-                <X className="w-5 h-5" />
-                <span className="text-xs font-medium">Collapse</span>
-              </span>
+              <PanelLeftClose className="h-5 w-5" />
             ) : (
-              <Menu className="w-5 h-5" />
+              <PanelLeftOpen className="h-5 w-5" />
             )}
           </button>
         </div>
