@@ -39,7 +39,11 @@ import {
   useDeleteStudent,
   useClasses,
 } from "@/hooks/useDatabase";
-import { Student, StudentRequirement, TrackingChecklistItem } from "@/lib/types";
+import {
+  Student,
+  StudentRequirement,
+  TrackingChecklistItem,
+} from "@/lib/types";
 import {
   DEFAULT_TRACKING_CHECKLIST,
   getStudentRequirements,
@@ -480,24 +484,24 @@ const StudentsPage = () => {
                   Add New Student
                 </Button>
                 <TabsList className="grid h-auto flex-1 grid-cols-3 gap-1 bg-transparent p-0">
-                <TabsTrigger
-                  value="all"
-                  className="h-11 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 data-[state=active]:ring-2 data-[state=active]:ring-white sm:text-sm"
-                >
-                  All Students ({students?.length || 0})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="day"
-                  className="h-11 rounded-lg bg-yellow-500 px-2 text-xs font-semibold text-yellow-950 hover:bg-yellow-600 data-[state=active]:ring-2 data-[state=active]:ring-white sm:text-sm"
-                >
-                  Day Students ({dayStudents.length})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="boarding"
-                  className="h-11 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 data-[state=active]:ring-2 data-[state=active]:ring-white sm:text-sm"
-                >
-                  Boarding Students ({boardingStudents.length})
-                </TabsTrigger>
+                  <TabsTrigger
+                    value="all"
+                    className="h-11 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 data-[state=active]:ring-2 data-[state=active]:ring-white sm:text-sm"
+                  >
+                    All Students ({students?.length || 0})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="day"
+                    className="h-11 rounded-lg bg-yellow-500 px-2 text-xs font-semibold text-yellow-950 hover:bg-yellow-600 data-[state=active]:ring-2 data-[state=active]:ring-white sm:text-sm"
+                  >
+                    Day Students ({dayStudents.length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="boarding"
+                    className="h-11 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 data-[state=active]:ring-2 data-[state=active]:ring-white sm:text-sm"
+                  >
+                    Boarding Students ({boardingStudents.length})
+                  </TabsTrigger>
                 </TabsList>
               </div>
 

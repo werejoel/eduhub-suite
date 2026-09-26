@@ -295,12 +295,6 @@ const navItems: Record<string, NavItem[]> = {
       href: "/burser",
       section: "Overview",
     },
-    {
-      label: "Transactions",
-      icon: DollarSign,
-      href: "/burser",
-      section: "Finance Module",
-    },
     { label: "Fees", icon: FileText, href: "/burser", section: "Finance" },
     {
       label: "Finances",
