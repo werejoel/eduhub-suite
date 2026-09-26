@@ -127,7 +127,7 @@ const BurserDashboard = () => {
     academic_year: "",
     payment_status: "paid",
     payment_method: "cash" as PaymentMethod,
-    fee_type: "tuition" as "tuition" | "registration" | "other" | "bursary",
+    fee_type: "fees" as "fees" | "registration" | "other" | "bursary",
     due_date: "",
   });
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
@@ -321,7 +321,7 @@ const BurserDashboard = () => {
           academicYear: fee.academic_year,
           status: fee.payment_status,
           paymentMethod: fee.payment_method || "cash",
-          feeType: fee.fee_type || "tuition",
+          feeType: fee.fee_type === "tuition" ? "fees" : fee.fee_type || "fees",
           section: boarding === "boarding" ? "boarding" : "day",
           date: formatDate(fee.createdAt),
           dueDate: formatDate(fee.due_date),
@@ -533,7 +533,7 @@ const BurserDashboard = () => {
         academic_year: "",
         payment_status: "paid",
         payment_method: "cash",
-        fee_type: "tuition",
+        fee_type: "fees",
         due_date: "",
       });
     } catch (err: any) {
@@ -551,7 +551,7 @@ const BurserDashboard = () => {
       academic_year: "",
       payment_status: "paid",
       payment_method: "cash",
-      fee_type: "tuition",
+      fee_type: "fees",
       due_date: "",
     });
   };
@@ -568,8 +568,8 @@ const BurserDashboard = () => {
       academic_year: fee.academic_year || "",
       payment_status: fee.payment_status,
       payment_method: fee.payment_method || "cash",
-      fee_type: (fee.fee_type || "tuition") as
-        | "tuition"
+      fee_type: (fee.fee_type === "tuition" ? "fees" : fee.fee_type || "fees") as
+        | "fees"
         | "registration"
         | "other"
         | "bursary",
@@ -933,9 +933,9 @@ const BurserDashboard = () => {
                   name="student_id"
                   value={newPayment.student_id}
                   onChange={handleNewPaymentChange}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 lg:col-span-2"
+                  className="appearance-none rounded-lg border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-amber-50 px-3 py-2 text-slate-800 shadow-sm transition-colors hover:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-300 lg:col-span-2"
                 >
-                  <option value="">Select student (by name)</option>
+                  <option value="" className="bg-white text-slate-500">Select student (by name)</option>
                   {[...students]
                     .sort((a, b) =>
                       `${a.first_name} ${a.last_name}`.localeCompare(
@@ -974,9 +974,9 @@ const BurserDashboard = () => {
                   name="fee_type"
                   value={newPayment.fee_type}
                   onChange={handleNewPaymentChange}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="appearance-none rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-orange-50 px-3 py-2 text-slate-800 shadow-sm transition-colors hover:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300"
                 >
-                  <option value="tuition">Tuition</option>
+                  <option value="fees" className="bg-white text-slate-800">Fees</option>
                   <option value="registration">Registration</option>
                   <option value="other">Other fees</option>
                   <option value="bursary">Bursary</option>
@@ -985,7 +985,7 @@ const BurserDashboard = () => {
                   name="payment_method"
                   value={newPayment.payment_method}
                   onChange={handleNewPaymentChange}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="appearance-none rounded-lg border border-sky-200 bg-gradient-to-r from-sky-50 via-white to-cyan-50 px-3 py-2 text-slate-800 shadow-sm transition-colors hover:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
                 >
                   <option value="cash">Cash</option>
                   <option value="schoolPay">SchoolPay</option>
@@ -995,7 +995,7 @@ const BurserDashboard = () => {
                   name="payment_status"
                   value={newPayment.payment_status}
                   onChange={handleNewPaymentChange}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="appearance-none rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-lime-50 px-3 py-2 text-slate-800 shadow-sm transition-colors hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                 >
                   <option value="paid">Paid</option>
                   <option value="pending">Pending</option>
@@ -1049,7 +1049,7 @@ const BurserDashboard = () => {
                 <select
                   value={paymentStatusFilter}
                   onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="appearance-none rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                 >
                   <option value="all">All statuses</option>
                   <option value="paid">Paid</option>
@@ -1059,7 +1059,7 @@ const BurserDashboard = () => {
                 <select
                   value={paymentMethodFilter}
                   onChange={(e) => setPaymentMethodFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="appearance-none rounded-lg border border-sky-200 bg-gradient-to-r from-sky-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
                 >
                   <option value="all">All methods</option>
                   <option value="cash">Cash</option>
@@ -1069,10 +1069,10 @@ const BurserDashboard = () => {
                 <select
                   value={paymentTypeFilter}
                   onChange={(e) => setPaymentTypeFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="appearance-none rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300"
                 >
                   <option value="all">All fee types</option>
-                  <option value="tuition">Tuition</option>
+                  <option value="fees">Fees</option>
                   <option value="registration">Registration</option>
                   <option value="other">Other fees</option>
                   <option value="bursary">Bursary</option>
@@ -1080,7 +1080,7 @@ const BurserDashboard = () => {
                 <select
                   value={paymentSectionFilter}
                   onChange={(e) => setPaymentSectionFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="appearance-none rounded-lg border border-violet-200 bg-gradient-to-r from-violet-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-300"
                 >
                   <option value="all">Day & boarding</option>
                   <option value="day">Day only</option>
@@ -1089,7 +1089,7 @@ const BurserDashboard = () => {
                 <select
                   value={paymentTermFilter}
                   onChange={(e) => setPaymentTermFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="appearance-none rounded-lg border border-teal-200 bg-gradient-to-r from-teal-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-teal-300 focus:outline-none focus:ring-2 focus:ring-teal-300"
                 >
                   <option value="all">All terms</option>
                   {[...new Set(fees.map((f) => f.term || "N/A"))].map((term) => (

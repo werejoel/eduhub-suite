@@ -122,7 +122,7 @@ export interface Fee {
   academic_year: string;
   payment_status: "paid" | "pending" | "overdue";
   payment_method?: PaymentMethod;
-  fee_type?: "tuition" | "registration" | "other" | "bursary";
+  fee_type?: "fees" | "tuition" | "registration" | "other" | "bursary";
   due_date: string;
   paid_date?: string;
   createdAt: string;
