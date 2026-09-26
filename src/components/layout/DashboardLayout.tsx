@@ -376,7 +376,7 @@ const roleLabels = {
   admin: "Administrator",
   teacher: "Teacher",
   headteacher: "Head Teacher",
-  burser: "Burser",
+  burser: "Bursar",
   store: "Store Manager",
   dormitory: "Dormitory Manager",
   dos: "Director of Studies",
@@ -456,7 +456,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex min-h-[88px] items-center gap-3 border-b border-white/10 px-5 py-4">
           <img
             src="/favicon.svg"
-            alt="Kabale Parents SMS logo"
+            alt="Kibale Parents Primary School logo"
             className="h-10 w-10 shrink-0 rounded-xl bg-white p-1 shadow-md"
           />
           <AnimatePresence>
@@ -468,7 +468,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="overflow-hidden"
               >
                 <h1 className="max-w-[150px] text-lg font-bold leading-tight text-white dark:text-white whitespace-normal break-words">
-                  Kabale Parents SMS
+                  Kibale Parents Primary School
                 </h1>
                 <p className="text-xs text-white/70 dark:text-white/70">
                   {roleLabels[role]}
@@ -576,12 +576,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="flex items-center gap-3">
                   <img
                     src="/favicon.svg"
-                    alt="Kabale Parents SMS logo"
+                    alt="Kibale Parents Primary School logo"
                     className="h-10 w-10 shrink-0 rounded-xl bg-white p-1 shadow-md"
                   />
                   <div>
                     <h1 className="text-lg font-bold text-primary-foreground">
-                      Kabale Parents SMS
+                      Kibale Parents Primary School
                     </h1>
                     <p className="text-xs text-primary-foreground/70">
                       {roleLabels[role]}

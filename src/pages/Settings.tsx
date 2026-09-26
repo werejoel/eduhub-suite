@@ -567,7 +567,7 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between gap-4 rounded-lg border border-sky-200 bg-sky-50 p-4">
                     <div>
                       <p className="font-medium text-sky-900">Browser Push Notifications</p>
-                      <p className="text-sm text-sky-700">Allow alerts from Kabale Parents SMS on this device.</p>
+                      <p className="text-sm text-sky-700">Allow alerts from Kibale Parents Primary School on this device.</p>
                     </div>
                     <Button
                       type="button"

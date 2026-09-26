@@ -115,7 +115,7 @@ const XLSX = require("xlsx");
 const PDFDocument = require("pdfkit");
 
 // allow school name to be set via env for reports; default to generic name if not set
-const SCHOOL_NAME = process.env.SCHOOL_NAME || "KIBAALE PARENTS PRIMARY SCHOOL";
+const SCHOOL_NAME = process.env.SCHOOL_NAME || "KIBALE PARENTS PRIMARY SCHOOL";
 
 function calculateGrade(marks, totalMarks) {
   if (!totalMarks || totalMarks <= 0) return "—";

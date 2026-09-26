@@ -443,7 +443,7 @@ const BurserDashboard = () => {
     const w = window.open("", "_blank", "noopener,noreferrer");
     if (!w) return toast.error("Unable to open print window");
     w.document.write(
-      `<html><head><title>Burser Weekly Report</title><meta charset="utf-8"></head><body>`,
+      `<html><head><title>Bursar Weekly Report</title><meta charset="utf-8"></head><body>`,
     );
     w.document.write(content);
     w.document.write("</body></html>");
@@ -1499,7 +1499,7 @@ const BurserDashboard = () => {
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <h2 className="text-xl font-bold">
-                    KIBAALE PARENTS PRIMARY SCHOOL
+                    KIBALE PARENTS PRIMARY SCHOOL
                   </h2>
                   <p className="text-sm text-gray-600">
                     BURSAR’S WEEKLY REPORT — “EDUCATION FOR FREEDOM”
@@ -1519,7 +1519,7 @@ const BurserDashboard = () => {
                       const reportData = [
                         {
                           "Report Type": "Weekly Report",
-                          School: "KIBAALE PARENTS PRIMARY SCHOOL",
+                          School: "KIBALE PARENTS PRIMARY SCHOOL",
                           "Date Generated": new Date().toLocaleDateString(),
                           "Prepared By": weeklyReport.prepared_by || "N/A",
                           "Approved By": weeklyReport.approved_by || "N/A",
@@ -2295,13 +2295,13 @@ const BurserDashboard = () => {
           >
             <img
               src="/favicon.svg"
-              alt="Kabale Parents SMS logo"
+              alt="Kibale Parents Primary School logo"
               className="h-10 w-10 shrink-0 rounded-xl bg-white p-1 shadow-md"
             />
             {sidebarOpen && (
               <div className="min-w-0">
                 <h1 className="truncate text-lg font-bold">
-                  Kabale Parents SMS
+                  Kibale Parents Primary School
                 </h1>
                 <p className="text-xs text-white/70">Bursar Portal</p>
               </div>
@@ -2390,7 +2390,7 @@ const BurserDashboard = () => {
                 {activeTab === "reports" && "Reports"}
                 {activeTab === "settings" && "Settings"}
               </h1>
-              <p className="text-gray-600 mt-1">Welcome back, Burser</p>
+              <p className="text-gray-600 mt-1">Welcome back, Bursar</p>
             </div>
             {activeTab === "overview" && (
               <div className="flex flex-wrap items-center justify-end gap-3">

@@ -1,4 +1,4 @@
-/** Letter grade from percentage (Kabale primary scale) */
+/** Letter grade from percentage (primary school scale) */
 export function calculateGrade(marks: number, totalMarks: number): string {
   if (!totalMarks || totalMarks <= 0) return "—";
   const percentage = (marks / totalMarks) * 100;

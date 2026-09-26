@@ -217,7 +217,7 @@ const UsersPage = () => {
                   <SelectItem value="admin">Administrator</SelectItem>
                   <SelectItem value="teacher">Teacher</SelectItem>
                   <SelectItem value="headteacher">Head Teacher</SelectItem>
-                  <SelectItem value="burser">Burser</SelectItem>
+                  <SelectItem value="burser">Bursar</SelectItem>
                   <SelectItem value="store">Store Manager</SelectItem>
                   <SelectItem value="dormitory">Dormitory Manager</SelectItem>
                 </SelectContent>

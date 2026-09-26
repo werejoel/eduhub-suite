@@ -39,7 +39,7 @@ const roleCards = [
     accent: "text-amber-700",
   },
   {
-    title: "Burser",
+    title: "Bursar",
     description: "Financial management & transactions",
     icon: Users,
     color: "bg-[#800020]",
@@ -105,7 +105,7 @@ const Index = () => {
               <div className="inline-flex items-center gap-2 rounded-full border border-secondary/30 bg-secondary/20 px-4 py-2 backdrop-blur-sm mb-6">
                 <GraduationCap className="w-5 h-5 text-secondary" />
                 <span className="text-sm font-medium text-primary-foreground/90">
-                  Kabale Parents School Management System
+                  Kibale Parents Primary School Management System
                 </span>
               </div>
             </motion.div>
@@ -281,11 +281,11 @@ const Index = () => {
           <div className="flex items-center justify-center gap-2 mb-4">
             <GraduationCap className="w-6 h-6 text-secondary" />
             <span className="text-primary-foreground font-bold text-lg">
-             Kabale Parents School Management System
+             Kibale Parents Primary School Management System
             </span>
           </div>
           <p className="text-primary-foreground/70 text-sm">
-            © {currentYear} Kabale Parents School Management System. All rights reserved. Powered By Koboko WebTech Solutions Ltd
+            © {currentYear} Kibale Parents Primary School Management System. All rights reserved. Powered By Koboko WebTech Solutions Ltd
           </p>
         </div>
       </footer>

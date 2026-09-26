@@ -85,7 +85,7 @@ export const EXAM_TERMS = [
 
 export type ExamTerm = (typeof EXAM_TERMS)[number];
 
-/** Standard Kabale classes — use when seeding or quick-add */
+/** Standard Kibale classes — use when seeding or quick-add */
 export const SCHOOL_CLASS_PRESETS = [
   { class_name: "Baby", class_code: "BABY", form_number: 0 },
   { class_name: "Top Class", class_code: "TOP", form_number: 0 },
