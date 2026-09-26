@@ -38,6 +38,7 @@ import {
   useUpdateStudent,
   useDeleteStudent,
   useClasses,
+  useCreateClass,
 } from "@/hooks/useDatabase";
 import {
   Student,
@@ -52,6 +53,7 @@ import {
   getRequirementsProgress,
   refreshStudentRequirements,
   getStoreRequirements,
+  SCHOOL_CLASS_PRESETS,
   FEE_STRUCTURE,
 } from "@/lib/schoolConfig";
 
@@ -59,6 +61,7 @@ const StudentsPage = () => {
   const { data: students, isLoading } = useStudents();
   const { data: classes = [] } = useClasses();
   const createMutation = useCreateStudent();
+  const createClassMutation = useCreateClass();
   const updateMutation = useUpdateStudent();
   const deleteMutation = useDeleteStudent();
 
@@ -406,14 +409,40 @@ const StudentsPage = () => {
     setIsAddingStudent(true);
     try {
       const boardingStatus = newStudent.boarding_status || "day";
-      const className = getClassName(newStudent.class_id!);
+      let classId = newStudent.class_id!;
+      let className = getClassName(classId);
+      if (classId.startsWith("preset:")) {
+        const classCode = classId.slice("preset:".length);
+        const preset = SCHOOL_CLASS_PRESETS.find(
+          (item) => item.class_code === classCode,
+        );
+        if (!preset) throw new Error("Selected class preset was not found");
+        const existingClass = classes.find(
+          (item) =>
+            item.class_code.toUpperCase() === preset.class_code ||
+            item.class_name.toLowerCase() === preset.class_name.toLowerCase(),
+        );
+        if (existingClass) {
+          classId = existingClass.id;
+        } else {
+          const createdClass = await createClassMutation.mutateAsync({
+            class_name: preset.class_name,
+            class_code: preset.class_code,
+            form_number: preset.form_number,
+            teacher_id: "",
+            capacity: 0,
+          });
+          classId = createdClass.id;
+        }
+        className = preset.class_name;
+      }
       await createMutation.mutateAsync({
         first_name: newStudent.first_name,
         last_name: newStudent.last_name,
         other_names: newStudent.other_names,
         date_of_birth: newStudent.date_of_birth,
         gender: newStudent.gender,
-        class_id: newStudent.class_id,
+        class_id: classId,
         admission_number: newStudent.admission_number,
         boarding_status: boardingStatus,
         registration_fee:
@@ -671,6 +700,25 @@ const StudentsPage = () => {
                             {cls.class_name}
                           </SelectItem>
                         ))}
+                        {SCHOOL_CLASS_PRESETS.slice(0, 2)
+                          .filter(
+                            (preset) =>
+                              !classes.some(
+                                (cls) =>
+                                  cls.class_code.toUpperCase() ===
+                                    preset.class_code ||
+                                  cls.class_name.toLowerCase() ===
+                                    preset.class_name.toLowerCase(),
+                              ),
+                          )
+                          .map((preset) => (
+                            <SelectItem
+                              key={preset.class_code}
+                              value={`preset:${preset.class_code}`}
+                            >
+                              {preset.class_name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
