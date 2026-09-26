@@ -194,6 +194,12 @@ const navItems: Record<string, NavItem[]> = {
       section: "Academics Module",
     },
     {
+      label: "Weekly Report",
+      icon: FileText,
+      href: "/headteacher/weekly-report",
+      section: "Academics Module",
+    },
+    {
       label: "Assign Duties",
       icon: FileText,
       href: "/headteacher/duties",
@@ -272,6 +278,12 @@ const navItems: Record<string, NavItem[]> = {
       label: "Monitor Teachers",
       icon: Users,
       href: "/dos/teachers",
+      section: "Staff Module",
+    },
+    {
+      label: "Teacher Ratings",
+      icon: FileText,
+      href: "/dos/teacher-ratings",
       section: "Staff Module",
     },
     { label: "Settings", icon: Settings, href: "/settings", section: "System" },

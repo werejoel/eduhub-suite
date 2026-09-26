@@ -34,6 +34,7 @@ import {
   Line,
 } from "recharts";
 import { calculateGrade } from "@/lib/exportUtils";
+import { computeTermReport } from "@/lib/grading";
 
 const EXAM_TYPES = [
   "Beginning-of-Term",
@@ -50,6 +51,7 @@ const TeacherReportsPage = () => {
   const { data: allMarks = [], isLoading: marksLoading, isError: marksError } = useMarks();
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [selectedTerm, setSelectedTerm] = useState("all");
   const [searchParams] = useSearchParams();
   const [reportType, setReportType] = useState<"class" | "student">("class");
 
@@ -77,8 +79,17 @@ const TeacherReportsPage = () => {
 
   const classMarks = useMemo(() => {
     if (!selectedClassId) return [];
-    return allMarks.filter((m) => m.class_id === selectedClassId);
-  }, [allMarks, selectedClassId]);
+    return allMarks.filter(
+      (m) =>
+        m.class_id === selectedClassId &&
+        (selectedTerm === "all" || m.term === selectedTerm),
+    );
+  }, [allMarks, selectedClassId, selectedTerm]);
+
+  const availableTerms = useMemo(
+    () => [...new Set(allMarks.map((mark) => mark.term).filter(Boolean))].sort(),
+    [allMarks],
+  );
 
   // Student report data
   const studentReportData = useMemo(() => {
@@ -87,7 +98,11 @@ const TeacherReportsPage = () => {
     const student = students.find((s) => s.id === selectedStudentId);
     if (!student) return null;
 
-    const studentMarks = allMarks.filter((m) => m.student_id === selectedStudentId);
+    const studentMarks = allMarks.filter(
+      (m) =>
+        m.student_id === selectedStudentId &&
+        (selectedTerm === "all" || m.term === selectedTerm),
+    );
 
     // Group marks by exam type
     const marksByExam: Record<string, typeof studentMarks> = {};
@@ -116,23 +131,28 @@ const TeacherReportsPage = () => {
     }).filter(Boolean);
 
     // Overall statistics
-    const allStudentMarks = studentMarks.filter((m) => m.exam_type !== "Quiz");
-    const totalMarksObtained = allStudentMarks.reduce((sum, m) => sum + m.marks_obtained, 0);
-    const totalPossible = allStudentMarks.reduce((sum, m) => sum + m.total_marks, 0);
-    const overallPercentage = totalPossible > 0 ? (totalMarksObtained / totalPossible) * 100 : 0;
-    const overallGrade = calculateGrade(totalMarksObtained, totalPossible);
+    const termSummary = computeTermReport(
+      studentMarks
+        .filter((mark) => mark.exam_type !== "Quiz")
+        .map((mark) => ({
+          subject: mark.subject,
+          marks_obtained: mark.marks_obtained,
+          total_marks: mark.total_marks,
+        })),
+    );
 
     return {
       student,
       examSummary,
-      totalMarksObtained,
-      totalPossible,
-      overallPercentage: Math.round(overallPercentage),
-      overallGrade,
+      totalMarksObtained: termSummary.totalMarksObtained,
+      totalPossible: termSummary.totalPossible,
+      overallPercentage: termSummary.average,
+      overallGrade: termSummary.overallGrade,
+      aggregate: termSummary.aggregate,
       examCount: examSummary.length,
       subjectCount: new Set(studentMarks.map((m) => m.subject)).size,
     };
-  }, [selectedStudentId, students, allMarks]);
+  }, [selectedStudentId, selectedTerm, students, allMarks]);
 
   // Class report data
   const classReportData = useMemo(() => {
@@ -222,6 +242,7 @@ const TeacherReportsPage = () => {
           reportType,
           classId: selectedClassId,
           studentId: selectedStudentId,
+          term: selectedTerm,
           format: "excel",
         }),
       });
@@ -241,7 +262,7 @@ const TeacherReportsPage = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${reportType}-report-${new Date().toISOString()}.xlsx`;
+      link.download = `${reportType}-report-${selectedTerm}-${new Date().toISOString()}.xlsx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -270,6 +291,7 @@ const TeacherReportsPage = () => {
           reportType,
           classId: selectedClassId,
           studentId: selectedStudentId,
+          term: selectedTerm,
         }),
       });
       if (!response.ok) throw new Error(`Server responded with ${response.status}`);
@@ -277,7 +299,7 @@ const TeacherReportsPage = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${reportType}-report-${new Date().toISOString()}.pdf`;
+      link.download = `${reportType}-report-${selectedTerm}-${new Date().toISOString()}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -317,7 +339,7 @@ const TeacherReportsPage = () => {
             animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-2xl p-6 border border-border shadow-md mb-6"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div>
                 <label className="text-sm font-medium mb-2 block">Report Type</label>
                 <div className="flex gap-2">
@@ -354,6 +376,23 @@ const TeacherReportsPage = () => {
                 </Select>
               </div>
 
+              <div>
+                <label className="text-sm font-medium mb-2 block">Term</label>
+                <Select value={selectedTerm} onValueChange={setSelectedTerm}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select term" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All terms</SelectItem>
+                    {availableTerms.map((term) => (
+                      <SelectItem key={term} value={term}>
+                        {term}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {reportType === "student" && (
                 <div>
                   <label className="text-sm font-medium mb-2 block">Select Student</label>
@@ -382,7 +421,7 @@ const TeacherReportsPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6"
               >
                 <Card className="p-6 border border-border">
                   <div className="text-sm text-muted-foreground mb-1">Total Students</div>
@@ -533,9 +572,15 @@ const TeacherReportsPage = () => {
                   </div>
                 </Card>
                 <Card className="p-6 border border-border">
-                  <div className="text-sm text-muted-foreground mb-1">Overall Percentage</div>
+                  <div className="text-sm text-muted-foreground mb-1">Average</div>
                   <div className="text-3xl font-bold text-secondary">
                     {studentReportData.overallPercentage}%
+                  </div>
+                </Card>
+                <Card className="p-6 border border-border">
+                  <div className="text-sm text-muted-foreground mb-1">Aggregate</div>
+                  <div className="text-3xl font-bold text-primary">
+                    {studentReportData.aggregate || "—"}
                   </div>
                 </Card>
                 <Card className="p-6 border border-border">

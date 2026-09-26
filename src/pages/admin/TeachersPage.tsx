@@ -106,12 +106,22 @@ function TeachersPage() {
       fullName.includes(searchQuery.toLowerCase()) ||
       teacher.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSubject =
-      filterSubject === "all" || teacher.subject === filterSubject;
+      filterSubject === "all" ||
+      teacher.subject === filterSubject ||
+      teacher.subjects?.includes(filterSubject);
     return matchesSearch && matchesSubject;
   });
 
   const uniqueSubjects = [
-    ...new Set((teachers || []).map((t) => t.subject)),
+    ...new Set(
+      (teachers || []).flatMap((teacher) =>
+        teacher.subjects?.length
+          ? teacher.subjects
+          : teacher.subject
+            ? [teacher.subject]
+            : [],
+      ),
+    ),
   ].filter(Boolean);
 
   const stats = useMemo(
@@ -126,11 +136,19 @@ function TeachersPage() {
   );
 
   const handleAddTeacher = async () => {
+    const subjects = [
+      ...new Set(
+        (newTeacher.subject || "")
+          .split(",")
+          .map((subject) => subject.trim())
+          .filter(Boolean),
+      ),
+    ];
     if (
       !newTeacher.first_name ||
       !newTeacher.last_name ||
       !newTeacher.email ||
-      !newTeacher.subject
+      subjects.length === 0
     ) {
       toast.error("All required fields must be completed.");
       return;
@@ -144,7 +162,8 @@ function TeachersPage() {
             last_name: newTeacher.last_name,
             email: newTeacher.email,
             phone: newTeacher.phone,
-            subject: newTeacher.subject,
+            subject: subjects[0],
+            subjects,
             qualification: newTeacher.qualification,
             employee_id: newTeacher.employee_id,
           },
@@ -155,7 +174,8 @@ function TeachersPage() {
           last_name: newTeacher.last_name,
           email: newTeacher.email,
           phone: newTeacher.phone,
-          subject: newTeacher.subject,
+          subject: subjects[0],
+          subjects,
           qualification: newTeacher.qualification,
           employee_id: newTeacher.employee_id,
           employment_date: new Date().toISOString(),
@@ -195,7 +215,7 @@ function TeachersPage() {
       last_name: teacher.last_name || "",
       email: teacher.email || "",
       phone: teacher.phone || "",
-      subject: teacher.subject || "",
+      subject: teacher.subjects?.join(", ") || teacher.subject || "",
       qualification: teacher.qualification || "",
       employee_id: teacher.employee_id || "",
     });
@@ -372,7 +392,11 @@ function TeachersPage() {
                           {teacher.first_name} {teacher.last_name}
                         </TableCell>
                         <TableCell>{teacher.email}</TableCell>
-                        <TableCell>{teacher.subject || "—"}</TableCell>
+                        <TableCell>
+                          {teacher.subjects?.length
+                            ? teacher.subjects.join(", ")
+                            : teacher.subject || "—"}
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {teacherClasses.length > 0 ? (
@@ -496,14 +520,14 @@ function TeachersPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="subject">Subject *</Label>
+                    <Label htmlFor="subject">Subjects *</Label>
                     <Input
                       id="subject"
                       value={newTeacher.subject}
                       onChange={(e) =>
                         setNewTeacher({ ...newTeacher, subject: e.target.value })
                       }
-                      placeholder="e.g., Mathematics"
+                      placeholder="e.g., Mathematics, English"
                     />
                   </div>
                   <div className="space-y-2">

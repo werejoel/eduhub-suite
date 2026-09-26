@@ -23,6 +23,7 @@ import {
 } from "@/hooks/useDatabase";
 import { useTeachers } from "@/hooks/useDatabase";
 import { Class } from "@/lib/types";
+import { SCHOOL_CLASS_PRESETS } from "@/lib/schoolConfig";
 
 const columns = [
   { key: "class_name", label: "Class Name" },
@@ -181,6 +182,34 @@ function ClassesPage() {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
+                <div>
+                  <Label htmlFor="class_preset">Class Preset</Label>
+                  <select
+                    id="class_preset"
+                    value=""
+                    onChange={(e) => {
+                      const preset = SCHOOL_CLASS_PRESETS.find(
+                        (item) => item.class_code === e.target.value,
+                      );
+                      if (preset) {
+                        setNewClass({
+                          ...newClass,
+                          class_name: preset.class_name,
+                          class_code: preset.class_code,
+                          form_number: preset.form_number,
+                        });
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                  >
+                    <option value="">Choose a standard class</option>
+                    {SCHOOL_CLASS_PRESETS.map((preset) => (
+                      <option key={preset.class_code} value={preset.class_code}>
+                        {preset.class_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <Label htmlFor="class_name">Class Name</Label>
                   <Input

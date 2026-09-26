@@ -8,30 +8,53 @@ export const FEE_STRUCTURE = {
   registration: 50_000,
 } as const;
 
+function req(
+  id: string,
+  name: string,
+  requiredQuantity: number,
+  unit: string,
+): StudentRequirement {
+  return {
+    id,
+    name,
+    completed: false,
+    requiredQuantity,
+    broughtQuantity: 0,
+    unit,
+  };
+}
+
 export const BOARDING_STORE_REQUIREMENTS: StudentRequirement[] = [
-  { id: "b1", name: "Posho — 20 kgs", completed: false },
-  { id: "b2", name: "Beans — 10 kgs", completed: false },
-  { id: "b3", name: "Sugar — 4 kgs", completed: false },
-  { id: "b4", name: "Gnuts — 4 kgs", completed: false },
-  { id: "b5", name: "Tissues — 4 Rolls", completed: false },
-  { id: "b6", name: "Broom — 1", completed: false },
-  { id: "b7", name: "Squeezer — 1", completed: false },
+  req("b1", "Posho", 20, "kgs"),
+  req("b2", "Beans", 10, "kgs"),
+  req("b3", "Sugar", 4, "kgs"),
+  req("b4", "Gnuts", 4, "kgs"),
+  req("b5", "Tissues", 4, "rolls"),
+  req("b6", "Broom", 1, "pcs"),
+  req("b7", "Squeezer", 1, "pcs"),
 ];
 
 export const DAY_STORE_REQUIREMENTS: StudentRequirement[] = [
-  { id: "d1", name: "Sugar — 2 kgs", completed: false },
-  { id: "d2", name: "Tissues — 2 Rolls", completed: false },
+  req("d1", "Sugar", 2, "kgs"),
+  req("d2", "Tissues", 2, "rolls"),
 ];
 
 export const COMMON_STUDENT_REQUIREMENTS: StudentRequirement[] = [
-  { id: "medical-fees", name: "Medical fees — UGX 10,000", completed: false },
-  {
-    id: "holiday-package",
-    name: "Holiday package — UGX 5,000",
-    completed: false,
-  },
-  { id: "hair-trimming", name: "Hair trimming — UGX 3,000", completed: false },
+  req("church-fee", "Church fee", 5000, "UGX"),
+  req("medical-fees", "Medical fees", 10_000, "UGX"),
+  req("holiday-package", "Holiday package", 5000, "UGX"),
+  req("hair-trimming", "Hair trimming", 3000, "UGX"),
 ];
+
+/** Default student tracking checklist (number + items) */
+export const DEFAULT_TRACKING_CHECKLIST = [
+  { id: "trk-1", label: "Admission file opened", done: false },
+  { id: "trk-2", label: "Requirements verified", done: false },
+  { id: "trk-3", label: "Fees / registration cleared", done: false },
+  { id: "trk-4", label: "Store items received", done: false },
+  { id: "trk-5", label: "Uniform issued", done: false },
+  { id: "trk-6", label: "Parent contact confirmed", done: false },
+] as const;
 
 export const PRIMARY_UNIFORM_REQUIREMENTS: StudentRequirement[] = [
   { id: "uniform", name: "Uniform — UGX 40,000", completed: false },
@@ -62,8 +85,34 @@ export const EXAM_TERMS = [
 
 export type ExamTerm = (typeof EXAM_TERMS)[number];
 
+/** Standard Kabale classes — use when seeding or quick-add */
+export const SCHOOL_CLASS_PRESETS = [
+  { class_name: "Baby", class_code: "BABY", form_number: 0 },
+  { class_name: "Top Class", class_code: "TOP", form_number: 0 },
+  { class_name: "P.1", class_code: "P1", form_number: 1 },
+  { class_name: "P.2", class_code: "P2", form_number: 2 },
+  { class_name: "P.3", class_code: "P3", form_number: 3 },
+  { class_name: "P.4", class_code: "P4", form_number: 4 },
+  { class_name: "P.5", class_code: "P5", form_number: 5 },
+  { class_name: "P.6", class_code: "P6", form_number: 6 },
+  { class_name: "P.7", class_code: "P7", form_number: 7 },
+] as const;
+
+/** Dropdown catalog for store / requirements (admin can still type custom items) */
+export const STORE_ITEM_CATALOG = [
+  { key: "posho", label: "Posho", unit: "kgs", defaultRequired: 20 },
+  { key: "beans", label: "Beans", unit: "kgs", defaultRequired: 10 },
+  { key: "sugar", label: "Sugar", unit: "kgs", defaultRequired: 2 },
+  { key: "gnuts", label: "Gnuts", unit: "kgs", defaultRequired: 4 },
+  { key: "tissues", label: "Tissues", unit: "rolls", defaultRequired: 2 },
+  { key: "broom", label: "Broom", unit: "pcs", defaultRequired: 1 },
+  { key: "squeezer", label: "Squeezer", unit: "pcs", defaultRequired: 1 },
+  { key: "uniform", label: "Uniform", unit: "set", defaultRequired: 1 },
+  { key: "church-fee", label: "Church fee", unit: "UGX", defaultRequired: 5000 },
+] as const;
+
 export const CLASS_LEVELS = {
-  baby_top: ["Baby", "Top", "BABY", "TOP"],
+  baby_top: ["Baby", "Top Class", "Top", "BABY", "TOP", "TOPCLASS"],
   p1_p7: [
     "P1",
     "P2",
@@ -88,7 +137,7 @@ export function normalizeClassName(className: string): string {
 
 export function isBabyTopClass(className: string): boolean {
   const n = normalizeClassName(className);
-  return n === "BABY" || n === "TOP";
+  return n === "BABY" || n === "TOP" || n === "TOPCLASS";
 }
 
 export function isP1P3Class(className: string): boolean {
@@ -156,9 +205,73 @@ export function getStudentRequirements(
   const existingById = new Map(
     existingRequirements.map((requirement) => [requirement.id, requirement]),
   );
-  return defaults.map(
-    (requirement) => existingById.get(requirement.id) || { ...requirement },
+  return defaults.map((requirement) => {
+    const existing = existingById.get(requirement.id);
+    if (!existing) return { ...requirement };
+    const required =
+      existing.requiredQuantity ?? requirement.requiredQuantity ?? 0;
+    const brought = existing.broughtQuantity ?? 0;
+    return {
+      ...requirement,
+      ...existing,
+      requiredQuantity: required,
+      broughtQuantity: brought,
+      completed:
+        required > 0 ? brought >= required : Boolean(existing.completed),
+    };
+  }).concat(
+    existingRequirements.filter(
+      (existing) => !defaults.some((requirement) => requirement.id === existing.id),
+    ),
   );
+}
+
+export function getRequirementRemaining(requirement: StudentRequirement): number {
+  const required = requirement.requiredQuantity ?? 0;
+  const brought = requirement.broughtQuantity ?? 0;
+  if (required <= 0) return requirement.completed ? 0 : 1;
+  return Math.max(0, required - brought);
+}
+
+export function getRequirementsProgress(requirements: StudentRequirement[]) {
+  let requiredTotal = 0;
+  let broughtTotal = 0;
+  let completedCount = 0;
+  requirements.forEach((r) => {
+    const reqQty = r.requiredQuantity ?? 0;
+    const brought = r.broughtQuantity ?? 0;
+    if (reqQty > 0) {
+      requiredTotal += reqQty;
+      broughtTotal += Math.min(brought, reqQty);
+      if (brought >= reqQty) completedCount += 1;
+    } else if (r.completed) {
+      completedCount += 1;
+      requiredTotal += 1;
+      broughtTotal += 1;
+    } else {
+      requiredTotal += 1;
+    }
+  });
+  return {
+    completedCount,
+    totalCount: requirements.length,
+    requiredTotal,
+    broughtTotal,
+    remainingTotal: Math.max(0, requiredTotal - broughtTotal),
+    label:
+      requiredTotal > 0
+        ? `${broughtTotal}/${requiredTotal} units`
+        : `${completedCount}/${requirements.length}`,
+  };
+}
+
+/** Rebuild checklist when class or boarding section changes */
+export function refreshStudentRequirements(
+  boardingStatus: "day" | "boarding",
+  className: string,
+  existing: StudentRequirement[] = [],
+): StudentRequirement[] {
+  return getStudentRequirements(boardingStatus, className, existing);
 }
 
 /** Burser weekly report fee reference per class row */
@@ -168,6 +281,7 @@ export const BURSER_FEE_REFERENCE: Record<
 > = {
   BABY: { day: FEE_STRUCTURE.day_baby_top },
   TOP: { day: FEE_STRUCTURE.day_baby_top },
+  TOPCLASS: { day: FEE_STRUCTURE.day_baby_top },
   "P.1": { day: FEE_STRUCTURE.day_p1_p3 },
   "P.2": { day: FEE_STRUCTURE.day_p1_p3 },
   "P.3": { day: FEE_STRUCTURE.day_p1_p3 },

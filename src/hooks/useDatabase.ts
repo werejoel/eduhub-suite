@@ -14,6 +14,8 @@ import {
   dutyService,
   ratingService,
   paymentRequestService,
+  studentStoreIntakeService,
+  dosTeacherRatingService,
   apiUrl,
 } from "@/lib/services";
 import {
@@ -28,6 +30,8 @@ import {
   TeacherDuty,
   DutyRating,
   PaymentRequest,
+  StudentStoreIntake,
+  DosTeacherRating,
 } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -1357,6 +1361,60 @@ export const useRejectPaymentRequest = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to reject request",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useStudentStoreIntakes = () =>
+  useQuery({
+    queryKey: ["student_store_intakes"],
+    queryFn: () => studentStoreIntakeService.getAll(),
+  });
+
+export const useCreateStudentStoreIntake = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (
+      body: Omit<StudentStoreIntake, "id" | "createdAt" | "updatedAt">,
+    ) => studentStoreIntakeService.create(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["student_store_intakes"] });
+      toast({ title: "Recorded", description: "Student items logged in store" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to record intake",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDosTeacherRatings = () =>
+  useQuery({
+    queryKey: ["dos_teacher_ratings"],
+    queryFn: () => dosTeacherRatingService.getAll(),
+  });
+
+export const useCreateDosTeacherRating = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (
+      body: Omit<DosTeacherRating, "id" | "createdAt" | "updatedAt">,
+    ) => dosTeacherRatingService.create(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dos_teacher_ratings"] });
+      toast({ title: "Saved", description: "DOS rating recorded" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save rating",
         variant: "destructive",
       });
     },

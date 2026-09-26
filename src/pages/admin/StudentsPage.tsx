@@ -19,13 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
+import StudentRequirementsForm from "@/components/students/StudentRequirementsForm";
 import {
   Users,
   Search,
   Filter,
   Loader,
-  CheckCircle2,
   ClipboardList,
   Edit,
   Trash2,
@@ -40,12 +39,15 @@ import {
   useDeleteStudent,
   useClasses,
 } from "@/hooks/useDatabase";
-import { Student, StudentRequirement } from "@/lib/types";
+import { Student, StudentRequirement, TrackingChecklistItem } from "@/lib/types";
 import {
-  getStoreRequirements,
+  DEFAULT_TRACKING_CHECKLIST,
   getStudentRequirements,
   getExpectedFee,
   getClassGroup,
+  getRequirementsProgress,
+  refreshStudentRequirements,
+  getStoreRequirements,
   FEE_STRUCTURE,
 } from "@/lib/schoolConfig";
 
@@ -92,6 +94,12 @@ const StudentsPage = () => {
     contact: "",
     registration_fee: 0,
     date_of_birth: "",
+    other_fees: 0,
+    other_fees_note: "",
+    tracking_number: "",
+    tracking_checklist: DEFAULT_TRACKING_CHECKLIST.map((item) => ({
+      ...item,
+    })) as TrackingChecklistItem[],
   });
 
   const getClassName = (classId: string) =>
@@ -156,6 +164,14 @@ const StudentsPage = () => {
       contact: student.contact || "",
       registration_fee: student.registration_fee || FEE_STRUCTURE.registration,
       date_of_birth: student.date_of_birth || "",
+      other_fees: student.other_fees || 0,
+      other_fees_note: student.other_fees_note || "",
+      tracking_number:
+        student.tracking_number || `TRK-${student.admission_number}`,
+      tracking_checklist: (student.tracking_checklist?.length
+        ? student.tracking_checklist
+        : DEFAULT_TRACKING_CHECKLIST
+      ).map((item) => ({ ...item })),
     });
     setEditDialogOpen(true);
   };
@@ -163,8 +179,11 @@ const StudentsPage = () => {
   const handleOpenRequirements = (student: Student) => {
     setSelectedStudent(student);
     setStudentRequirements(
-      student.requirements_checklist ||
-        getStoreRequirements(student.boarding_status || "day"),
+      getStudentRequirements(
+        student.boarding_status || "day",
+        getClassName(student.class_id),
+        student.requirements_checklist || [],
+      ),
     );
     setRequirementsDialogOpen(true);
   };
@@ -180,16 +199,17 @@ const StudentsPage = () => {
   const tableData = useMemo(
     () =>
       filteredStudents.map((student) => {
-        const checklist =
-          student.requirements_checklist ||
-          getStoreRequirements(student.boarding_status || "day");
-        const completed = checklist.filter((r) => r.completed).length;
-        const total = checklist.length;
+        const checklist = getStudentRequirements(
+          student.boarding_status || "day",
+          getClassName(student.class_id),
+          student.requirements_checklist || [],
+        );
+        const prog = getRequirementsProgress(checklist);
         return {
           ...student,
           class_id: getClassName(student.class_id),
           section: getSectionLabel(student),
-          requirements_progress: `${completed}/${total}`,
+          requirements_progress: prog.label,
           actions: (
             <div className="flex items-center justify-end gap-1">
               <Button
@@ -313,6 +333,17 @@ const StudentsPage = () => {
       toast.error("Please select a class.");
       return;
     }
+    const className = getClassName(editForm.class_id);
+    const sectionChanged =
+      editForm.class_id !== selectedStudent.class_id ||
+      editForm.boarding_status !== (selectedStudent.boarding_status || "day");
+    const requirements_checklist = sectionChanged
+      ? refreshStudentRequirements(
+          editForm.boarding_status,
+          className,
+          selectedStudent.requirements_checklist || [],
+        )
+      : undefined;
     try {
       await updateMutation.mutateAsync({
         id: selectedStudent.id,
@@ -325,6 +356,11 @@ const StudentsPage = () => {
           contact: editForm.contact,
           registration_fee: editForm.registration_fee,
           date_of_birth: editForm.date_of_birth,
+          other_fees: editForm.other_fees,
+          other_fees_note: editForm.other_fees_note,
+          tracking_number: editForm.tracking_number,
+          tracking_checklist: editForm.tracking_checklist,
+          ...(requirements_checklist ? { requirements_checklist } : {}),
         },
       });
       setEditDialogOpen(false);
@@ -333,22 +369,6 @@ const StudentsPage = () => {
       console.error(error);
       toast.error("Failed to update student");
     }
-  };
-
-  const handleToggleRequirement = (requirementId: string) => {
-    setStudentRequirements((prevRequirements) =>
-      prevRequirements.map((req) =>
-        req.id === requirementId
-          ? {
-              ...req,
-              completed: !req.completed,
-              completedDate: !req.completed
-                ? new Date().toISOString()
-                : undefined,
-            }
-          : req,
-      ),
-    );
   };
 
   const handleSaveRequirements = async () => {
@@ -400,6 +420,11 @@ const StudentsPage = () => {
           boardingStatus,
           className,
         ),
+        tracking_number:
+          newStudent.tracking_number || `TRK-${newStudent.admission_number}`,
+        tracking_checklist: DEFAULT_TRACKING_CHECKLIST.map((item) => ({
+          ...item,
+        })),
         enrollment_date: new Date().toISOString(),
         status: "active",
       });
@@ -832,6 +857,80 @@ const StudentsPage = () => {
                     }
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Other fees (UGX)</Label>
+                    <Input
+                      type="number"
+                      value={editForm.other_fees}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          other_fees: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tracking number</Label>
+                    <Input
+                      value={editForm.tracking_number}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          tracking_number: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. TRK-2026-001"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Other fees note</Label>
+                  <Input
+                    value={editForm.other_fees_note}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        other_fees_note: e.target.value,
+                      })
+                    }
+                    placeholder="Books, trip, etc."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Student tracking checklist</Label>
+                  <div className="space-y-2 rounded-md border p-3">
+                    {editForm.tracking_checklist.map(
+                      (item: TrackingChecklistItem, index: number) => (
+                        <label
+                          key={item.id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={item.done}
+                            onChange={(event) =>
+                              setEditForm({
+                                ...editForm,
+                                tracking_checklist:
+                                  editForm.tracking_checklist.map((row) =>
+                                    row.id === item.id
+                                      ? { ...row, done: event.target.checked }
+                                      : row,
+                                  ),
+                              })
+                            }
+                          />
+                          <span className="font-mono text-muted-foreground">
+                            {index + 1}.
+                          </span>
+                          {item.label}
+                        </label>
+                      ),
+                    )}
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label>Class *</Label>
                   <Select
@@ -910,7 +1009,7 @@ const StudentsPage = () => {
             open={requirementsDialogOpen}
             onOpenChange={setRequirementsDialogOpen}
           >
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {selectedStudent
@@ -919,53 +1018,10 @@ const StudentsPage = () => {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                  {studentRequirements.map((requirement) => (
-                    <div
-                      key={requirement.id}
-                      className="flex items-center space-x-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
-                    >
-                      <Checkbox
-                        id={requirement.id}
-                        checked={requirement.completed}
-                        onCheckedChange={() =>
-                          handleToggleRequirement(requirement.id)
-                        }
-                        className="w-5 h-5"
-                      />
-                      <div className="flex-1">
-                        <label
-                          htmlFor={requirement.id}
-                          className={`cursor-pointer font-medium transition-colors ${
-                            requirement.completed
-                              ? "text-muted-foreground line-through"
-                              : "text-foreground"
-                          }`}
-                        >
-                          {requirement.name}
-                        </label>
-                        {requirement.completedDate && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Completed:{" "}
-                            {new Date(
-                              requirement.completedDate,
-                            ).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                      {requirement.completed && (
-                        <CheckCircle2 className="w-5 h-5 text-success" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="bg-primary/10 p-3 rounded-lg text-sm">
-                  <p className="font-medium text-primary">
-                    Progress:{" "}
-                    {studentRequirements.filter((r) => r.completed).length} of{" "}
-                    {studentRequirements.length} completed
-                  </p>
-                </div>
+                <StudentRequirementsForm
+                  requirements={studentRequirements}
+                  onChange={setStudentRequirements}
+                />
               </div>
               <div className="flex justify-end gap-3">
                 <Button

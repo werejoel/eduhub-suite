@@ -79,6 +79,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useCreateFee, useDeleteFee, useUpdateFee } from "@/hooks/useDatabase";
+import type { PaymentMethod } from "@/lib/types";
 
 const getCurrentAcademicYear = () => {
   const y = new Date().getFullYear();
@@ -121,11 +122,19 @@ const BurserDashboard = () => {
   const [newPayment, setNewPayment] = useState({
     student_id: "",
     amount: "",
+    expected_fee: "",
     term: "",
     academic_year: "",
     payment_status: "paid",
+    payment_method: "cash" as PaymentMethod,
+    fee_type: "tuition" as "tuition" | "registration" | "other" | "bursary",
     due_date: "",
   });
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState("all");
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState("all");
+  const [paymentSectionFilter, setPaymentSectionFilter] = useState("all");
+  const [paymentTermFilter, setPaymentTermFilter] = useState("all");
 
   const getClassName = (classId: string) =>
     classes.find((c) => c.id === classId)?.class_name || "Unassigned";
@@ -151,6 +160,8 @@ const BurserDashboard = () => {
         const className = getClassName(s.class_id);
         const boarding = s.boarding_status || "day";
         const expectedFee = getExpectedFee(className, boarding);
+        const otherFees = Number(s.other_fees || 0);
+        const totalExpected = expectedFee + otherFees;
         const studentFees = fees.filter((f) => f.student_id === s.id);
         const paid = studentFees
           .filter(
@@ -164,12 +175,15 @@ const BurserDashboard = () => {
           admission: s.admission_number,
           class: className,
           section: boarding === "boarding" ? "Boarding" : "Day",
+          boardingKey: boarding,
           parents: s.parents_names || "—",
           contact: s.contact || "—",
           registrationFee: s.registration_fee || FEE_STRUCTURE.registration,
           expectedFee,
+          otherFees,
+          totalExpected,
           paid,
-          balance: Math.max(0, expectedFee - paid),
+          balance: Math.max(0, totalExpected - paid),
         };
       });
   }, [students, classes, fees, studentSearchQuery, studentSectionFilter]);
@@ -183,35 +197,46 @@ const BurserDashboard = () => {
     const totalCollected = paid.reduce((sum, f) => sum + (f.amount || 0), 0);
     const totalPending = pending.reduce((sum, f) => sum + (f.amount || 0), 0);
     const totalOverdue = overdue.reduce((sum, f) => sum + (f.amount || 0), 0);
-    const totalExpected = fees.reduce((sum, f) => sum + (f.amount || 0), 0);
+
+    const activeStudents = students.filter((s) => s.status === "active");
+    const schoolExpected = activeStudents.reduce((sum, student) => {
+      const className = getClassName(student.class_id);
+      const boarding = student.boarding_status || "day";
+      return (
+        sum +
+        getExpectedFee(className, boarding) +
+        Number(student.other_fees || 0)
+      );
+    }, 0);
 
     return {
       totalCollected,
       totalPending,
       totalOverdue,
-      totalExpected,
+      totalExpected: schoolExpected,
+      outstandingBalance: Math.max(0, schoolExpected - totalCollected),
       collectionRate:
-        totalExpected > 0
-          ? Math.round((totalCollected / totalExpected) * 100)
+        schoolExpected > 0
+          ? Math.round((totalCollected / schoolExpected) * 100)
           : 0,
       paidCount: paid.length,
       pendingCount: pending.length,
       overdueCount: overdue.length,
     };
-  }, [fees]);
+  }, [fees, students, classes]);
 
   const paymentBreakdown = useMemo(() => {
     const expected = students
       .filter((student) => student.status === "active")
-      .reduce(
-        (sum, student) =>
+      .reduce((sum, student) => {
+        const className = getClassName(student.class_id);
+        const boarding = student.boarding_status || "day";
+        return (
           sum +
-          getExpectedFee(
-            getClassName(student.class_id),
-            student.boarding_status || "day",
-          ),
-        0,
-      );
+          getExpectedFee(className, boarding) +
+          Number(student.other_fees || 0)
+        );
+      }, 0);
     const collected = fees
       .filter((fee) => fee.payment_status === "paid")
       .reduce((sum, fee) => sum + Number(fee.amount || 0), 0);
@@ -243,23 +268,24 @@ const BurserDashboard = () => {
     ];
   }, [stats]);
 
-  // Recent transactions with student names
-  const recentTransactions = useMemo(() => {
+  const paymentTransactions = useMemo(() => {
     return [...fees]
       .sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
-      .slice(0, 15)
       .map((fee) => {
         const student = students.find((s) => s.id === fee.student_id);
         const className = student ? getClassName(student.class_id) : "";
+        const boarding = student?.boarding_status || "day";
+        const baseExpected = student
+          ? getExpectedFee(className, boarding)
+          : 0;
+        const otherFees = Number(student?.other_fees || 0);
         const expectedFee =
           Number(fee.expected_fee) > 0
             ? Number(fee.expected_fee)
-            : student
-              ? getExpectedFee(className, student.boarding_status || "day")
-              : 0;
+            : baseExpected + otherFees;
         const totalForTerm = fees
           .filter(
             (otherFee) =>
@@ -289,24 +315,77 @@ const BurserDashboard = () => {
             ? `${student.first_name} ${student.last_name}`
             : "Unknown",
           amount: fee.amount,
+          expectedFee,
           balance: Math.max(0, expectedFee - totalForTerm),
           term: fee.term,
+          academicYear: fee.academic_year,
           status: fee.payment_status,
+          paymentMethod: fee.payment_method || "cash",
+          feeType: fee.fee_type || "tuition",
+          section: boarding === "boarding" ? "boarding" : "day",
           date: formatDate(fee.createdAt),
           dueDate: formatDate(fee.due_date),
         };
       });
-  }, [fees, students]);
+  }, [fees, students, classes]);
 
-  // Filter transactions
   const filteredTransactions = useMemo(() => {
-    return recentTransactions.filter(
-      (t) =>
+    return paymentTransactions.filter((t) => {
+      const matchesSearch =
         searchQuery === "" ||
         t.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.term.toLowerCase().includes(searchQuery.toLowerCase()),
+        (t.term || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus =
+        paymentStatusFilter === "all" || t.status === paymentStatusFilter;
+      const matchesMethod =
+        paymentMethodFilter === "all" ||
+        t.paymentMethod === paymentMethodFilter;
+      const matchesType =
+        paymentTypeFilter === "all" || t.feeType === paymentTypeFilter;
+      const matchesSection =
+        paymentSectionFilter === "all" || t.section === paymentSectionFilter;
+      const matchesTerm =
+        paymentTermFilter === "all" ||
+        (t.term || "N/A") === paymentTermFilter;
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesMethod &&
+        matchesType &&
+        matchesSection &&
+        matchesTerm
+      );
+    });
+  }, [
+    paymentTransactions,
+    searchQuery,
+    paymentStatusFilter,
+    paymentMethodFilter,
+    paymentTypeFilter,
+    paymentSectionFilter,
+    paymentTermFilter,
+  ]);
+
+  const filteredPaymentTotals = useMemo(() => {
+    const amount = filteredTransactions
+      .filter((row) => row.status === "paid")
+      .reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const bursaryAmount = filteredTransactions
+      .filter((row) => row.status === "paid" && row.feeType === "bursary")
+      .reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const expectedByStudentTerm = new Map<string, number>();
+    filteredTransactions.forEach((row) => {
+      const key = `${row.student}|${row.term || "N/A"}|${row.academicYear || "N/A"}`;
+      if (!expectedByStudentTerm.has(key)) {
+        expectedByStudentTerm.set(key, Number(row.expectedFee || 0));
+      }
+    });
+    const expected = [...expectedByStudentTerm.values()].reduce(
+      (sum, value) => sum + value,
+      0,
     );
-  }, [recentTransactions, searchQuery]);
+    return { amount, bursaryAmount, expected, count: filteredTransactions.length };
+  }, [filteredTransactions]);
 
   // Top paying students
   const topStudents = useMemo(() => {
@@ -386,8 +465,13 @@ const BurserDashboard = () => {
         const student = students.find((s) => s.id === value);
         if (student) {
           const className = getClassName(student.class_id);
+          const boarding = student.boarding_status || "day";
+          const expected =
+            getExpectedFee(className, boarding) +
+            Number(student.other_fees || 0);
+          updated.expected_fee = String(expected);
           updated.amount = String(
-            getExpectedFee(className, student.boarding_status || "day"),
+            getExpectedFee(className, boarding),
           );
         }
       }
@@ -407,6 +491,11 @@ const BurserDashboard = () => {
     }
 
     try {
+      const student = students.find((s) => s.id === newPayment.student_id);
+      const className = student ? getClassName(student.class_id) : "";
+      const boarding = student?.boarding_status || "day";
+      const defaultExpected =
+        getExpectedFee(className, boarding) + Number(student?.other_fees || 0);
       const paymentData = {
         student_id: newPayment.student_id,
         amount: Number(newPayment.amount),
@@ -416,15 +505,13 @@ const BurserDashboard = () => {
           | "paid"
           | "pending"
           | "overdue",
+        payment_method: newPayment.payment_method,
+        fee_type: newPayment.fee_type,
         due_date: dueDate || new Date().toISOString(),
-        expected_fee: getExpectedFee(
-          getClassName(
-            students.find((s) => s.id === newPayment.student_id)?.class_id ||
-              "",
-          ),
-          students.find((s) => s.id === newPayment.student_id)
-            ?.boarding_status || "day",
-        ),
+        expected_fee:
+          Number(newPayment.expected_fee) > 0
+            ? Number(newPayment.expected_fee)
+            : defaultExpected,
       };
 
       if (editingPaymentId) {
@@ -441,9 +528,12 @@ const BurserDashboard = () => {
       setNewPayment({
         student_id: "",
         amount: "",
+        expected_fee: "",
         term: "",
         academic_year: "",
         payment_status: "paid",
+        payment_method: "cash",
+        fee_type: "tuition",
         due_date: "",
       });
     } catch (err: any) {
@@ -456,9 +546,12 @@ const BurserDashboard = () => {
     setNewPayment({
       student_id: "",
       amount: "",
+      expected_fee: "",
       term: "",
       academic_year: "",
       payment_status: "paid",
+      payment_method: "cash",
+      fee_type: "tuition",
       due_date: "",
     });
   };
@@ -470,9 +563,16 @@ const BurserDashboard = () => {
     setNewPayment({
       student_id: fee.student_id,
       amount: String(fee.amount || ""),
+      expected_fee: String(fee.expected_fee || ""),
       term: fee.term || "",
       academic_year: fee.academic_year || "",
       payment_status: fee.payment_status,
+      payment_method: fee.payment_method || "cash",
+      fee_type: (fee.fee_type || "tuition") as
+        | "tuition"
+        | "registration"
+        | "other"
+        | "bursary",
       due_date: fee.due_date ? String(fee.due_date).slice(0, 10) : "",
     });
     setActiveTab("payments");
@@ -828,19 +928,26 @@ const BurserDashboard = () => {
               <h3 className="text-lg font-semibold mb-4">
                 {editingPaymentId ? "Edit Payment" : "Record New Payment"}
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <select
                   name="student_id"
                   value={newPayment.student_id}
                   onChange={handleNewPaymentChange}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 lg:col-span-2"
                 >
-                  <option value="">Select student</option>
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.first_name} {s.last_name}
-                    </option>
-                  ))}
+                  <option value="">Select student (by name)</option>
+                  {[...students]
+                    .sort((a, b) =>
+                      `${a.first_name} ${a.last_name}`.localeCompare(
+                        `${b.first_name} ${b.last_name}`,
+                      ),
+                    )
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.first_name} {s.other_names ? `${s.other_names} ` : ""}
+                        {s.last_name} — {getClassName(s.class_id)}
+                      </option>
+                    ))}
                 </select>
 
                 <Input
@@ -848,7 +955,14 @@ const BurserDashboard = () => {
                   type="number"
                   value={newPayment.amount}
                   onChange={handleNewPaymentChange}
-                  placeholder="Amount (UGX)"
+                  placeholder="Amount paid (UGX)"
+                />
+                <Input
+                  name="expected_fee"
+                  type="number"
+                  value={newPayment.expected_fee}
+                  onChange={handleNewPaymentChange}
+                  placeholder="Expected fee (adjustable)"
                 />
                 <Input
                   name="term"
@@ -856,6 +970,27 @@ const BurserDashboard = () => {
                   onChange={handleNewPaymentChange}
                   placeholder="Term"
                 />
+                <select
+                  name="fee_type"
+                  value={newPayment.fee_type}
+                  onChange={handleNewPaymentChange}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="tuition">Tuition</option>
+                  <option value="registration">Registration</option>
+                  <option value="other">Other fees</option>
+                  <option value="bursary">Bursary</option>
+                </select>
+                <select
+                  name="payment_method"
+                  value={newPayment.payment_method}
+                  onChange={handleNewPaymentChange}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="schoolPay">SchoolPay</option>
+                  <option value="bank">Bank</option>
+                </select>
                 <select
                   name="payment_status"
                   value={newPayment.payment_status}
@@ -911,10 +1046,58 @@ const BurserDashboard = () => {
                     className="pl-10"
                   />
                 </div>
-                <Button variant="outline" className="gap-2">
-                  <Filter className="w-4 h-4" />
-                  Filter
-                </Button>
+                <select
+                  value={paymentStatusFilter}
+                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="all">All statuses</option>
+                  <option value="paid">Paid</option>
+                  <option value="pending">Pending</option>
+                  <option value="overdue">Overdue</option>
+                </select>
+                <select
+                  value={paymentMethodFilter}
+                  onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="all">All methods</option>
+                  <option value="cash">Cash</option>
+                  <option value="schoolPay">SchoolPay</option>
+                  <option value="bank">Bank</option>
+                </select>
+                <select
+                  value={paymentTypeFilter}
+                  onChange={(e) => setPaymentTypeFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="all">All fee types</option>
+                  <option value="tuition">Tuition</option>
+                  <option value="registration">Registration</option>
+                  <option value="other">Other fees</option>
+                  <option value="bursary">Bursary</option>
+                </select>
+                <select
+                  value={paymentSectionFilter}
+                  onChange={(e) => setPaymentSectionFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="all">Day & boarding</option>
+                  <option value="day">Day only</option>
+                  <option value="boarding">Boarding only</option>
+                </select>
+                <select
+                  value={paymentTermFilter}
+                  onChange={(e) => setPaymentTermFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="all">All terms</option>
+                  {[...new Set(fees.map((f) => f.term || "N/A"))].map((term) => (
+                    <option key={term} value={term}>
+                      {term}
+                    </option>
+                  ))}
+                </select>
                 <Button
                   className="gap-2"
                   onClick={() => {
@@ -922,8 +1105,12 @@ const BurserDashboard = () => {
                       "Student Name": t.student,
                       Term: t.term,
                       "Amount (UGX)": t.amount,
+                      "Expected (UGX)": t.expectedFee,
                       "Balance (UGX)": t.balance,
+                      Method: t.paymentMethod,
+                      "Fee Type": t.feeType,
                       Status: t.status,
+                      Section: t.section,
                       "Due Date": t.dueDate,
                       Date: t.date,
                     }));
@@ -936,17 +1123,11 @@ const BurserDashboard = () => {
                 </Button>
               </div>
               <div className="flex flex-wrap items-center gap-3 mb-4 rounded-lg bg-slate-50 px-3 py-2 text-xs">
-                <span className="font-semibold text-slate-600">
-                  Payment status:
-                </span>
-                <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700">
-                  Paid
-                </span>
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-700">
-                  Pending
-                </span>
-                <span className="rounded-full bg-rose-100 px-2.5 py-1 font-medium text-rose-700">
-                  Overdue
+                <span className="font-semibold text-slate-700">
+                  Filtered total: {formatUGX(filteredPaymentTotals.amount)} collected
+                  · {formatUGX(filteredPaymentTotals.bursaryAmount)} bursary
+                  · {formatUGX(filteredPaymentTotals.expected)} expected ·{" "}
+                  {filteredPaymentTotals.count} record(s)
                 </span>
               </div>
 
@@ -954,6 +1135,7 @@ const BurserDashboard = () => {
                 columns={[
                   { key: "student", label: "Student Name" },
                   { key: "term", label: "Term" },
+                  { key: "feeType", label: "Fee Type" },
                   {
                     key: "amount",
                     label: "Amount",
@@ -962,6 +1144,23 @@ const BurserDashboard = () => {
                         {formatUGX(value)}
                       </span>
                     ),
+                  },
+                  {
+                    key: "expectedFee",
+                    label: "Expected",
+                    render: (value: number) => formatUGX(value),
+                  },
+                  {
+                    key: "paymentMethod",
+                    label: "Method",
+                    render: (value: string) => {
+                      const labels: Record<string, string> = {
+                        cash: "Cash",
+                        schoolPay: "SchoolPay",
+                        bank: "Bank",
+                      };
+                      return labels[value] || value;
+                    },
                   },
                   {
                     key: "status",

@@ -18,6 +18,10 @@ export interface Student {
   parents_names?: string;
   contact?: string;
   requirements_checklist?: StudentRequirement[];
+  other_fees?: number;
+  other_fees_note?: string;
+  tracking_number?: string;
+  tracking_checklist?: TrackingChecklistItem[];
   createdAt: string;
   updatedAt: string;
   updated_existing?: boolean;
@@ -30,6 +34,47 @@ export interface StudentRequirement {
   completed: boolean;
   completedDate?: string;
   notes?: string;
+  /** Required amount (kgs, rolls, UGX units, etc.) */
+  requiredQuantity?: number;
+  /** Amount already brought / paid */
+  broughtQuantity?: number;
+  unit?: string;
+  catalogKey?: string;
+}
+
+export interface TrackingChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+  trackingNumber?: string;
+}
+
+export interface StudentStoreIntake {
+  id: string;
+  student_id: string;
+  item_name: string;
+  catalog_key?: string;
+  quantity: number;
+  unit?: string;
+  recorded_by: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PaymentMethod = "cash" | "schoolPay" | "bank";
+
+export interface DosTeacherRating {
+  id: string;
+  teacher_id: string;
+  rating: number;
+  comments: string;
+  term: string;
+  academic_year: string;
+  rated_by: string;
+  rating_date: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** @deprecated Use getStoreRequirements() from schoolConfig.ts instead */
@@ -47,6 +92,8 @@ export interface Teacher {
   email_confirmed: boolean;
   phone?: string;
   subject?: string;
+  /** Multiple subjects when teacher handles more than one */
+  subjects?: string[];
   qualification?: string;
   employment_date?: string;
   employee_id?: string;
@@ -74,6 +121,8 @@ export interface Fee {
   term: string;
   academic_year: string;
   payment_status: "paid" | "pending" | "overdue";
+  payment_method?: PaymentMethod;
+  fee_type?: "tuition" | "registration" | "other" | "bursary";
   due_date: string;
   paid_date?: string;
   createdAt: string;

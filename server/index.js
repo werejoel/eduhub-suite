@@ -117,6 +117,80 @@ const PDFDocument = require("pdfkit");
 // allow school name to be set via env for reports; default to generic name if not set
 const SCHOOL_NAME = process.env.SCHOOL_NAME || "KIBAALE PARENTS PRIMARY SCHOOL";
 
+function calculateGrade(marks, totalMarks) {
+  if (!totalMarks || totalMarks <= 0) return "—";
+  const percentage = (marks / totalMarks) * 100;
+  if (percentage >= 90) return "A";
+  if (percentage >= 80) return "B";
+  if (percentage >= 70) return "C";
+  if (percentage >= 60) return "D";
+  return "F";
+}
+
+function gradeToAggregatePoint(grade) {
+  switch (String(grade || "").toUpperCase()) {
+    case "A":
+      return 1;
+    case "B":
+      return 2;
+    case "C":
+      return 3;
+    case "D":
+      return 4;
+    default:
+      return 9;
+  }
+}
+
+function summarizeSubjectMarks(marks) {
+  const bySubject = {};
+  marks.forEach((m) => {
+    if (!bySubject[m.subject]) {
+      bySubject[m.subject] = { marksObtained: 0, totalMarks: 0 };
+    }
+    bySubject[m.subject].marksObtained += m.marks_obtained;
+    bySubject[m.subject].totalMarks += m.total_marks;
+  });
+  return Object.entries(bySubject).map(([subject, totals]) => {
+    const percentage =
+      totals.totalMarks > 0
+        ? (totals.marksObtained / totals.totalMarks) * 100
+        : 0;
+    const grade = calculateGrade(totals.marksObtained, totals.totalMarks);
+    return {
+      subject,
+      marksObtained: totals.marksObtained,
+      totalMarks: totals.totalMarks,
+      percentage: Math.round(percentage * 10) / 10,
+      grade,
+      aggregatePoint: gradeToAggregatePoint(grade),
+    };
+  });
+}
+
+function computeTermReportFromMarks(marks) {
+  const subjects = summarizeSubjectMarks(marks);
+  const totalMarksObtained = subjects.reduce((s, x) => s + x.marksObtained, 0);
+  const totalPossible = subjects.reduce((s, x) => s + x.totalMarks, 0);
+  const average =
+    subjects.length > 0
+      ? subjects.reduce((s, x) => s + x.percentage, 0) / subjects.length
+      : 0;
+  const overallGrade = calculateGrade(totalMarksObtained, totalPossible);
+  const sortedPoints = [...subjects]
+    .map((s) => s.aggregatePoint)
+    .sort((a, b) => a - b);
+  const aggregate = sortedPoints.slice(0, 4).reduce((sum, p) => sum + p, 0);
+  return {
+    subjects,
+    totalMarksObtained,
+    totalPossible,
+    average: Math.round(average * 10) / 10,
+    overallGrade,
+    aggregate: subjects.length > 0 ? aggregate : 0,
+  };
+}
+
 // Setup VAPID keys for Web Push. Prefer env values, otherwise generate temporary keys.
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || null;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || null;
@@ -256,6 +330,9 @@ const collections = [
   "occupancy_snapshots",
   "duties",
   "ratings",
+  "student_store_intakes",
+  "dos_teacher_ratings",
+  "payment_requests",
 ];
 
 // Users model for authentication
@@ -671,7 +748,9 @@ collections.forEach((col) => {
     base,
     ...((col === "students" || col === "fees")
       ? [requireRoles("admin", "burser")]
-      : []),
+      : col === "student_store_intakes"
+        ? [requireRoles("admin", "store")]
+        : []),
     async (req, res) => {
     try {
       if (col === "students") {
@@ -1254,7 +1333,7 @@ app.get("/api/assignments/export", async (req, res) => {
 app.post("/api/reports/class", authenticateToken, async (req, res) => {
   try {
     console.log("/api/reports/class body", req.body);
-    const { classId, format = "pdf" } = req.body;
+    const { classId, format = "pdf", term } = req.body;
     if (!classId) return res.status(400).json({ error: "classId required" });
 
     const ClassModel = createFlexibleModel("classes");
@@ -1263,7 +1342,10 @@ app.post("/api/reports/class", authenticateToken, async (req, res) => {
 
     const classInfo = await ClassModel.findById(classId).lean();
     const students = await StudentModel.find({ class_id: classId }).lean();
-    const marks = await MarkModel.find({ class_id: classId }).lean();
+    const marks = await MarkModel.find({
+      class_id: classId,
+      ...(term && term !== "all" ? { term } : {}),
+    }).lean();
 
     // map marks by student
     const marksByStudent = {};
@@ -1302,6 +1384,7 @@ app.post("/api/reports/class", authenticateToken, async (req, res) => {
         const info = [
           ["School", SCHOOL_NAME],
           ["Class", classInfo?.class_name || ""],
+          ["Term", term && term !== "all" ? term : "All terms"],
           ["Generated", new Date().toLocaleDateString()],
         ];
         const wsInfo = XLSX.utils.aoa_to_sheet(info);
@@ -1396,14 +1479,17 @@ app.post("/api/reports/class", authenticateToken, async (req, res) => {
 app.post("/api/reports/student", authenticateToken, async (req, res) => {
   try {
     console.log("/api/reports/student body", req.body);
-    const { studentId, format = "pdf" } = req.body;
+    const { studentId, format = "pdf", term } = req.body;
     if (!studentId) return res.status(400).json({ error: "studentId required" });
 
     const StudentModel = createFlexibleModel("students");
     const MarkModel = createFlexibleModel("marks");
 
     const student = await StudentModel.findById(studentId).lean();
-    const marks = await MarkModel.find({ student_id: studentId }).lean();
+    const marks = await MarkModel.find({
+      student_id: studentId,
+      ...(term && term !== "all" ? { term } : {}),
+    }).lean();
     const ClassModel = createFlexibleModel("classes");
     const classInfo = student?.class_id ? await ClassModel.findById(student.class_id).lean() : null;
     const DormModel = createFlexibleModel("dormitories");
@@ -1437,6 +1523,7 @@ app.post("/api/reports/student", authenticateToken, async (req, res) => {
           ["Name", `${student?.first_name || ''} ${student?.last_name || ''}`],
           ["Class", classInfo?.class_name || "N/A"],
           ["Dormitory", dormInfo?.dormitory_name || "N/A"],
+          ["Term", term && term !== "all" ? term : "All terms"],
         ];
         const wsInfo = XLSX.utils.aoa_to_sheet(info);
         applyBorders(wsInfo);
@@ -1477,6 +1564,7 @@ app.post("/api/reports/student", authenticateToken, async (req, res) => {
     doc.fontSize(12).text(`Name: ${student?.first_name || ''} ${student?.last_name || ''}`);
     doc.text(`Class: ${classInfo?.class_name || 'N/A'}`);
     doc.text(`Dormitory: ${dormInfo?.dormitory_name || 'N/A'}`);
+    doc.text(`Term: ${term && term !== "all" ? term : "All terms"}`);
     doc.moveDown();
 
     // table of marks with borders (centered, wider)

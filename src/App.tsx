@@ -60,7 +60,9 @@ import DosClasses from "./pages/dos/ClassesPage";
 import DosNotes from "./pages/dos/NotesPage";
 import DosReports from "./pages/dos/ReportsPage";
 import DosTeachers from "./pages/dos/TeachersPage";
+import DosTeacherRatings from "./pages/dos/TeacherRatingsPage";
 import DosCirculars from "./pages/dos/CircularsPage";
+import HeadteacherWeeklyReport from "./pages/headteacher/WeeklyReportPage";
 
 const queryClient = new QueryClient();
 const App = () => (
@@ -277,6 +279,14 @@ const App = () => (
               }
             />
             <Route
+              path="/headteacher/weekly-report"
+              element={
+                <ProtectedRoute allowedRoles={["headteacher"]}>
+                  <HeadteacherWeeklyReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/headteacher/duties"
               element={
                 <ProtectedRoute allowedRoles={["headteacher"]}>
@@ -365,6 +375,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["dos"]}>
                   <DosTeachers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dos/teacher-ratings"
+              element={
+                <ProtectedRoute allowedRoles={["dos"]}>
+                  <DosTeacherRatings />
                 </ProtectedRoute>
               }
             />

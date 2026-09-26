@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageHeader from "@/components/dashboard/PageHeader";
 import DataTable from "@/components/dashboard/DataTable";
@@ -36,9 +37,19 @@ import {
   useCreateStoreItem,
   useDeleteStoreItem,
   useUpdateStoreItem,
+  useStudents,
+  useClasses,
+  useUpdateStudent,
+  useStudentStoreIntakes,
+  useCreateStudentStoreIntake,
 } from "@/hooks/useDatabase";
-import { StoreItem } from "@/lib/types";
+import { StoreItem, StudentRequirement } from "@/lib/types";
 import { formatUGX } from "@/lib/utils";
+import {
+  STORE_ITEM_CATALOG,
+  getStudentRequirements,
+} from "@/lib/schoolConfig";
+import { Textarea } from "@/components/ui/textarea";
 
 const columns = [
   { key: "item_name", label: "Item Name" },
@@ -76,10 +87,16 @@ const columns = [
 
 //Main Function
 const StorePage = () => {
+  const { user } = useAuth();
   const { data: items, isLoading } = useStoreItems();
+  const { data: students = [] } = useStudents();
+  const { data: classes = [] } = useClasses();
+  const { data: intakes = [] } = useStudentStoreIntakes();
   const createMutation = useCreateStoreItem();
   const updateMutation = useUpdateStoreItem();
   const deleteMutation = useDeleteStoreItem();
+  const updateStudent = useUpdateStudent();
+  const createIntake = useCreateStudentStoreIntake();
 
   const [showLowOnly, setShowLowOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,6 +112,131 @@ const StorePage = () => {
     supplier: "",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [intakeForm, setIntakeForm] = useState({
+    student_id: "",
+    catalog_key: "",
+    custom_name: "",
+    quantity: 1,
+    requiredQuantity: 0,
+    unit: "kgs",
+    notes: "",
+  });
+
+  const intakeTotals = useMemo(() => {
+    const byItem: Record<string, number> = {};
+    intakes.forEach((row) => {
+      const key = row.item_name || "Unknown";
+      byItem[key] = (byItem[key] || 0) + (row.quantity || 0);
+    });
+    return Object.entries(byItem).map(([name, qty]) => ({ name, qty }));
+  }, [intakes]);
+
+  const recordStudentIntake = async () => {
+    if (!intakeForm.student_id || intakeForm.quantity <= 0) {
+      toast.error("Select a student and enter quantity");
+      return;
+    }
+    const catalog = STORE_ITEM_CATALOG.find((c) => c.key === intakeForm.catalog_key);
+    const itemName =
+      intakeForm.custom_name.trim() || catalog?.label || intakeForm.catalog_key;
+    if (!itemName) {
+      toast.error("Select or enter an item name");
+      return;
+    }
+    const student = students.find((s) => s.id === intakeForm.student_id);
+    if (!student) return;
+
+    const className =
+      classes.find((c) => c.id === student.class_id)?.class_name || "";
+    const checklist = getStudentRequirements(
+      student.boarding_status || "day",
+      className,
+      student.requirements_checklist || [],
+    );
+    const normalizedItemName = itemName.trim().toLowerCase();
+    const requirementIndex = checklist.findIndex(
+      (requirement) =>
+        (intakeForm.catalog_key &&
+          requirement.catalogKey === intakeForm.catalog_key) ||
+        requirement.name.trim().toLowerCase() === normalizedItemName,
+    );
+    const updatedChecklist: StudentRequirement[] = checklist.map((req, index) => {
+      if (index !== requirementIndex) return req;
+      const brought = (req.broughtQuantity ?? 0) + intakeForm.quantity;
+      const required = req.requiredQuantity ?? 0;
+      return {
+        ...req,
+        broughtQuantity: brought,
+        completed: required > 0 ? brought >= required : brought > 0,
+        completedDate:
+          required > 0 && brought >= required
+            ? new Date().toISOString()
+            : req.completedDate,
+      };
+    });
+      if (requirementIndex < 0) {
+        const requiredQuantity =
+          intakeForm.requiredQuantity ||
+          catalog?.defaultRequired ||
+          intakeForm.quantity;
+        updatedChecklist.push({
+          id: `intake-${intakeForm.catalog_key || normalizedItemName.replace(/\s+/g, "-")}-${Date.now()}`,
+          name: itemName,
+          catalogKey: intakeForm.catalog_key || undefined,
+          requiredQuantity,
+          broughtQuantity: intakeForm.quantity,
+          unit: intakeForm.unit || catalog?.unit,
+          completed: intakeForm.quantity >= requiredQuantity,
+          completedDate:
+            intakeForm.quantity >= requiredQuantity
+              ? new Date().toISOString()
+              : undefined,
+        });
+      }
+
+    const storeMatch = (items || []).find((it) =>
+        it.item_name.trim().toLowerCase() === normalizedItemName,
+    );
+
+    try {
+      await createIntake.mutateAsync({
+        student_id: intakeForm.student_id,
+        item_name: itemName,
+        catalog_key: intakeForm.catalog_key || undefined,
+        quantity: intakeForm.quantity,
+        unit: intakeForm.unit || catalog?.unit,
+        recorded_by: user ? `${user.first_name} ${user.last_name}` : "Admin",
+        notes: intakeForm.notes,
+      });
+      await updateStudent.mutateAsync({
+        id: student.id,
+        updates: { requirements_checklist: updatedChecklist },
+      });
+      if (storeMatch) {
+        await updateMutation.mutateAsync({
+          id: storeMatch.id,
+          updates: {
+            quantity_in_stock: Math.max(
+              0,
+              (storeMatch.quantity_in_stock || 0) + intakeForm.quantity,
+            ),
+          },
+        });
+      }
+      setIntakeForm({
+        student_id: "",
+        catalog_key: "",
+        custom_name: "",
+        quantity: 1,
+        requiredQuantity: 0,
+        unit: "kgs",
+        notes: "",
+      });
+      toast.success("Items recorded for student and store updated");
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   //filteredItems
   const filteredItems = (items || []).filter((item) => {
@@ -259,6 +401,138 @@ const StorePage = () => {
           delay={0.2}
         />
       </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-2xl p-6 border border-border shadow-md mb-6"
+      >
+        <h3 className="text-lg font-semibold mb-4">Record items brought by student</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Student</Label>
+            <Select
+              value={intakeForm.student_id}
+              onValueChange={(v) =>
+                setIntakeForm({ ...intakeForm, student_id: v })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select student" />
+              </SelectTrigger>
+              <SelectContent>
+                {students.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.first_name} {s.last_name} ({s.admission_number})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Item (dropdown)</Label>
+            <Select
+              value={intakeForm.catalog_key}
+              onValueChange={(v) => {
+                const cat = STORE_ITEM_CATALOG.find((c) => c.key === v);
+                setIntakeForm({
+                  ...intakeForm,
+                  catalog_key: v,
+                  requiredQuantity: cat?.defaultRequired || 0,
+                  unit: cat?.unit || intakeForm.unit,
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose item" />
+              </SelectTrigger>
+              <SelectContent>
+                {STORE_ITEM_CATALOG.map((c) => (
+                  <SelectItem key={c.key} value={c.key}>
+                    {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Or custom item name</Label>
+            <Input
+              value={intakeForm.custom_name}
+              onChange={(e) =>
+                setIntakeForm({ ...intakeForm, custom_name: e.target.value })
+              }
+              placeholder="If not in list"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Quantity brought</Label>
+            <Input
+              type="number"
+              min={0}
+              value={intakeForm.quantity}
+              onChange={(e) =>
+                setIntakeForm({
+                  ...intakeForm,
+                  quantity: Number(e.target.value) || 0,
+                })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Required quantity</Label>
+            <Input
+              type="number"
+              min={0}
+              value={intakeForm.requiredQuantity}
+              onChange={(e) =>
+                setIntakeForm({
+                  ...intakeForm,
+                  requiredQuantity: Number(e.target.value) || 0,
+                })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Unit</Label>
+            <Input
+              value={intakeForm.unit}
+              onChange={(e) =>
+                setIntakeForm({ ...intakeForm, unit: e.target.value })
+              }
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Notes</Label>
+            <Textarea
+              value={intakeForm.notes}
+              onChange={(e) =>
+                setIntakeForm({ ...intakeForm, notes: e.target.value })
+              }
+              rows={2}
+            />
+          </div>
+        </div>
+        <Button
+          className="mt-4"
+          onClick={recordStudentIntake}
+          disabled={createIntake.isPending}
+        >
+          Save intake & update balance
+        </Button>
+        {intakeTotals.length > 0 && (
+          <div className="mt-4 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground mb-2">Store intake totals (all students)</p>
+            <ul className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {intakeTotals.map((t) => (
+                <li key={t.name} className="rounded-md bg-muted px-2 py-1">
+                  {t.name}: {t.qty}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </motion.div>
 
       {/* Filters */}
       <motion.div

@@ -10,6 +10,8 @@ import {
   TeacherDuty,
   DutyRating,
   PaymentRequest,
+  StudentStoreIntake,
+  DosTeacherRating,
 } from "./types";
 
 const API_BASE =
@@ -504,6 +506,31 @@ export const paymentRequestService = {
   },
   async delete(id: string) {
     return deleteItem("payment_requests", id);
+  },
+};
+
+export const studentStoreIntakeService = {
+  async getAll() {
+    return getAll<StudentStoreIntake>("student_store_intakes", {
+      _sort: "-createdAt",
+    });
+  },
+  async create(body: Omit<StudentStoreIntake, "id" | "createdAt" | "updatedAt">) {
+    return createItem<StudentStoreIntake>("student_store_intakes", body);
+  },
+};
+
+export const dosTeacherRatingService = {
+  async getAll() {
+    return getAll<DosTeacherRating>("dos_teacher_ratings", {
+      _sort: "-rating_date",
+    });
+  },
+  async create(body: Omit<DosTeacherRating, "id" | "createdAt" | "updatedAt">) {
+    return createItem<DosTeacherRating>("dos_teacher_ratings", body);
+  },
+  async update(id: string, updates: Partial<DosTeacherRating>) {
+    return updateItem<DosTeacherRating>("dos_teacher_ratings", id, updates);
   },
 };
 
