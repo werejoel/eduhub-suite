@@ -296,12 +296,6 @@ const navItems: Record<string, NavItem[]> = {
       section: "Overview",
     },
     { label: "Fees", icon: FileText, href: "/burser", section: "Finance" },
-    {
-      label: "Finances",
-      icon: DollarSign,
-      href: "/burser/finances",
-      section: "Finance Module",
-    },
     { label: "Settings", icon: Settings, href: "/settings", section: "System" },
   ],
   store: [

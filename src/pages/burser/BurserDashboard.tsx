@@ -2379,12 +2379,6 @@ const BurserDashboard = () => {
             { id: "students", icon: Users, label: "Students" },
             { id: "payments", icon: CreditCard, label: "Payments" },
             { id: "reports", icon: FileText, label: "Reports" },
-            {
-              id: "finances",
-              icon: DollarSign,
-              label: "Finances",
-              route: "/burser/finances",
-            },
             { id: "settings", icon: Settings, label: "Settings" },
           ].map((item) => (
             <motion.button
