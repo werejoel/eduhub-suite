@@ -54,6 +54,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -929,13 +936,18 @@ const BurserDashboard = () => {
                 {editingPaymentId ? "Edit Payment" : "Record New Payment"}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <select
-                  name="student_id"
+                <Select
                   value={newPayment.student_id}
-                  onChange={handleNewPaymentChange}
-                  className="appearance-none rounded-lg border border-rose-200 bg-gradient-to-r from-rose-50 via-white to-amber-50 px-3 py-2 text-slate-800 shadow-sm transition-colors hover:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-300 lg:col-span-2"
+                  onValueChange={(value) =>
+                    handleNewPaymentChange({
+                      target: { name: "student_id", value },
+                    } as React.ChangeEvent<HTMLSelectElement>)
+                  }
                 >
-                  <option value="" className="bg-white text-slate-500">Select student (by name)</option>
+                  <SelectTrigger className="lg:col-span-2 rounded-lg border-rose-200 bg-gradient-to-r from-rose-50 via-white to-amber-50 text-slate-800 shadow-sm transition-colors hover:border-rose-300 focus:ring-rose-300">
+                    <SelectValue placeholder="Select student (by name)" />
+                  </SelectTrigger>
+                  <SelectContent className="border-rose-200 bg-white shadow-xl shadow-rose-950/10">
                   {[...students]
                     .sort((a, b) =>
                       `${a.first_name} ${a.last_name}`.localeCompare(
@@ -943,12 +955,13 @@ const BurserDashboard = () => {
                       ),
                     )
                     .map((s) => (
-                      <option key={s.id} value={s.id}>
+                      <SelectItem key={s.id} value={s.id} className="focus:bg-rose-50 focus:text-rose-950">
                         {s.first_name} {s.other_names ? `${s.other_names} ` : ""}
                         {s.last_name} — {getClassName(s.class_id)}
-                      </option>
+                      </SelectItem>
                     ))}
-                </select>
+                  </SelectContent>
+                </Select>
 
                 <Input
                   name="amount"
@@ -970,37 +983,55 @@ const BurserDashboard = () => {
                   onChange={handleNewPaymentChange}
                   placeholder="Term"
                 />
-                <select
-                  name="fee_type"
+                <Select
                   value={newPayment.fee_type}
-                  onChange={handleNewPaymentChange}
-                  className="appearance-none rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-orange-50 px-3 py-2 text-slate-800 shadow-sm transition-colors hover:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                  onValueChange={(value) =>
+                    setNewPayment((prev) => ({
+                      ...prev,
+                      fee_type: value as typeof prev.fee_type,
+                    }))
+                  }
                 >
-                  <option value="fees" className="bg-white text-slate-800">Fees</option>
-                  <option value="registration">Registration</option>
-                  <option value="other">Other fees</option>
-                  <option value="bursary">Bursary</option>
-                </select>
-                <select
-                  name="payment_method"
+                  <SelectTrigger className="rounded-lg border-amber-200 bg-gradient-to-r from-amber-50 via-white to-orange-50 text-slate-800 shadow-sm transition-colors hover:border-amber-300 focus:ring-amber-300">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-amber-200 bg-white shadow-xl shadow-amber-950/10">
+                    <SelectItem value="fees" className="focus:bg-amber-50 focus:text-amber-950">Fees</SelectItem>
+                    <SelectItem value="registration" className="focus:bg-amber-50 focus:text-amber-950">Registration</SelectItem>
+                    <SelectItem value="other" className="focus:bg-amber-50 focus:text-amber-950">Other fees</SelectItem>
+                    <SelectItem value="bursary" className="focus:bg-amber-50 focus:text-amber-950">Bursary</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
                   value={newPayment.payment_method}
-                  onChange={handleNewPaymentChange}
-                  className="appearance-none rounded-lg border border-sky-200 bg-gradient-to-r from-sky-50 via-white to-cyan-50 px-3 py-2 text-slate-800 shadow-sm transition-colors hover:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                  onValueChange={(value: PaymentMethod) =>
+                    setNewPayment((prev) => ({ ...prev, payment_method: value }))
+                  }
                 >
-                  <option value="cash">Cash</option>
-                  <option value="schoolPay">SchoolPay</option>
-                  <option value="bank">Bank</option>
-                </select>
-                <select
-                  name="payment_status"
+                  <SelectTrigger className="rounded-lg border-sky-200 bg-gradient-to-r from-sky-50 via-white to-cyan-50 text-slate-800 shadow-sm transition-colors hover:border-sky-300 focus:ring-sky-300">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-sky-200 bg-white shadow-xl shadow-sky-950/10">
+                    <SelectItem value="cash" className="focus:bg-sky-50 focus:text-sky-950">Cash</SelectItem>
+                    <SelectItem value="schoolPay" className="focus:bg-sky-50 focus:text-sky-950">SchoolPay</SelectItem>
+                    <SelectItem value="bank" className="focus:bg-sky-50 focus:text-sky-950">Bank</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
                   value={newPayment.payment_status}
-                  onChange={handleNewPaymentChange}
-                  className="appearance-none rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-lime-50 px-3 py-2 text-slate-800 shadow-sm transition-colors hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  onValueChange={(value) =>
+                    setNewPayment((prev) => ({ ...prev, payment_status: value }))
+                  }
                 >
-                  <option value="paid">Paid</option>
-                  <option value="pending">Pending</option>
-                  <option value="overdue">Overdue</option>
-                </select>
+                  <SelectTrigger className="rounded-lg border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-lime-50 text-slate-800 shadow-sm transition-colors hover:border-emerald-300 focus:ring-emerald-300">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-emerald-200 bg-white shadow-xl shadow-emerald-950/10">
+                    <SelectItem value="paid" className="focus:bg-emerald-50 focus:text-emerald-950">Paid</SelectItem>
+                    <SelectItem value="pending" className="focus:bg-emerald-50 focus:text-emerald-950">Pending</SelectItem>
+                    <SelectItem value="overdue" className="focus:bg-emerald-50 focus:text-emerald-950">Overdue</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Input
                   name="due_date"
                   type="date"
@@ -1046,58 +1077,78 @@ const BurserDashboard = () => {
                     className="pl-10"
                   />
                 </div>
-                <select
+                <Select
                   value={paymentStatusFilter}
-                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                  className="appearance-none rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  onValueChange={setPaymentStatusFilter}
                 >
-                  <option value="all">All statuses</option>
-                  <option value="paid">Paid</option>
-                  <option value="pending">Pending</option>
-                  <option value="overdue">Overdue</option>
-                </select>
-                <select
+                  <SelectTrigger className="rounded-lg border-emerald-200 bg-gradient-to-r from-emerald-50 to-white text-sm text-slate-800 shadow-sm transition-colors hover:border-emerald-300 focus:ring-emerald-300 sm:w-auto">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-emerald-200 bg-white shadow-xl shadow-emerald-950/10">
+                    <SelectItem value="all" className="focus:bg-emerald-50 focus:text-emerald-950">All statuses</SelectItem>
+                    <SelectItem value="paid" className="focus:bg-emerald-50 focus:text-emerald-950">Paid</SelectItem>
+                    <SelectItem value="pending" className="focus:bg-emerald-50 focus:text-emerald-950">Pending</SelectItem>
+                    <SelectItem value="overdue" className="focus:bg-emerald-50 focus:text-emerald-950">Overdue</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
                   value={paymentMethodFilter}
-                  onChange={(e) => setPaymentMethodFilter(e.target.value)}
-                  className="appearance-none rounded-lg border border-sky-200 bg-gradient-to-r from-sky-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                  onValueChange={setPaymentMethodFilter}
                 >
-                  <option value="all">All methods</option>
-                  <option value="cash">Cash</option>
-                  <option value="schoolPay">SchoolPay</option>
-                  <option value="bank">Bank</option>
-                </select>
-                <select
+                  <SelectTrigger className="rounded-lg border-sky-200 bg-gradient-to-r from-sky-50 to-white text-sm text-slate-800 shadow-sm transition-colors hover:border-sky-300 focus:ring-sky-300 sm:w-auto">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-sky-200 bg-white shadow-xl shadow-sky-950/10">
+                    <SelectItem value="all" className="focus:bg-sky-50 focus:text-sky-950">All methods</SelectItem>
+                    <SelectItem value="cash" className="focus:bg-sky-50 focus:text-sky-950">Cash</SelectItem>
+                    <SelectItem value="schoolPay" className="focus:bg-sky-50 focus:text-sky-950">SchoolPay</SelectItem>
+                    <SelectItem value="bank" className="focus:bg-sky-50 focus:text-sky-950">Bank</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
                   value={paymentTypeFilter}
-                  onChange={(e) => setPaymentTypeFilter(e.target.value)}
-                  className="appearance-none rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                  onValueChange={setPaymentTypeFilter}
                 >
-                  <option value="all">All fee types</option>
-                  <option value="fees">Fees</option>
-                  <option value="registration">Registration</option>
-                  <option value="other">Other fees</option>
-                  <option value="bursary">Bursary</option>
-                </select>
-                <select
+                  <SelectTrigger className="rounded-lg border-amber-200 bg-gradient-to-r from-amber-50 to-white text-sm text-slate-800 shadow-sm transition-colors hover:border-amber-300 focus:ring-amber-300 sm:w-auto">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-amber-200 bg-white shadow-xl shadow-amber-950/10">
+                    <SelectItem value="all" className="focus:bg-amber-50 focus:text-amber-950">All fee types</SelectItem>
+                    <SelectItem value="fees" className="focus:bg-amber-50 focus:text-amber-950">Fees</SelectItem>
+                    <SelectItem value="registration" className="focus:bg-amber-50 focus:text-amber-950">Registration</SelectItem>
+                    <SelectItem value="other" className="focus:bg-amber-50 focus:text-amber-950">Other fees</SelectItem>
+                    <SelectItem value="bursary" className="focus:bg-amber-50 focus:text-amber-950">Bursary</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
                   value={paymentSectionFilter}
-                  onChange={(e) => setPaymentSectionFilter(e.target.value)}
-                  className="appearance-none rounded-lg border border-violet-200 bg-gradient-to-r from-violet-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                  onValueChange={setPaymentSectionFilter}
                 >
-                  <option value="all">Day & boarding</option>
-                  <option value="day">Day only</option>
-                  <option value="boarding">Boarding only</option>
-                </select>
-                <select
+                  <SelectTrigger className="rounded-lg border-violet-200 bg-gradient-to-r from-violet-50 to-white text-sm text-slate-800 shadow-sm transition-colors hover:border-violet-300 focus:ring-violet-300 sm:w-auto">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-violet-200 bg-white shadow-xl shadow-violet-950/10">
+                    <SelectItem value="all" className="focus:bg-violet-50 focus:text-violet-950">Day &amp; boarding</SelectItem>
+                    <SelectItem value="day" className="focus:bg-violet-50 focus:text-violet-950">Day only</SelectItem>
+                    <SelectItem value="boarding" className="focus:bg-violet-50 focus:text-violet-950">Boarding only</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
                   value={paymentTermFilter}
-                  onChange={(e) => setPaymentTermFilter(e.target.value)}
-                  className="appearance-none rounded-lg border border-teal-200 bg-gradient-to-r from-teal-50 to-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:border-teal-300 focus:outline-none focus:ring-2 focus:ring-teal-300"
+                  onValueChange={setPaymentTermFilter}
                 >
-                  <option value="all">All terms</option>
+                  <SelectTrigger className="rounded-lg border-teal-200 bg-gradient-to-r from-teal-50 to-white text-sm text-slate-800 shadow-sm transition-colors hover:border-teal-300 focus:ring-teal-300 sm:w-auto">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-teal-200 bg-white shadow-xl shadow-teal-950/10">
+                    <SelectItem value="all" className="focus:bg-teal-50 focus:text-teal-950">All terms</SelectItem>
                   {[...new Set(fees.map((f) => f.term || "N/A"))].map((term) => (
-                    <option key={term} value={term}>
+                    <SelectItem key={term} value={term} className="focus:bg-teal-50 focus:text-teal-950">
                       {term}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
+                  </SelectContent>
+                </Select>
                 <Button
                   className="gap-2"
                   onClick={() => {
