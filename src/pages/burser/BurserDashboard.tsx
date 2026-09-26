@@ -2383,13 +2383,7 @@ const BurserDashboard = () => {
           ].map((item) => (
             <motion.button
               key={item.id}
-              onClick={() => {
-                if (item.route) {
-                  navigate(item.route);
-                } else {
-                  setActiveTab(item.id as any);
-                }
-              }}
+              onClick={() => setActiveTab(item.id as any)}
               whileHover={{ x: 5 }}
               className={`flex min-h-11 w-full items-center gap-3 rounded-xl border-l-2 border-transparent px-3 py-2.5 text-left transition-colors ${
                 activeTab === item.id
