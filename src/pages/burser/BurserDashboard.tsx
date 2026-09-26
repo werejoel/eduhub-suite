@@ -975,7 +975,7 @@ const BurserDashboard = () => {
                   type="number"
                   value={newPayment.expected_fee}
                   onChange={handleNewPaymentChange}
-                  placeholder="Expected fee (adjustable)"
+                  placeholder="Expected fee (UGX)"
                 />
                 <Input
                   name="term"
