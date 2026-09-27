@@ -67,8 +67,7 @@ const StudentsPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterClass, setFilterClass] = useState<string>("all");
-  const [filterBoardingStatus, setFilterBoardingStatus] =
-    useState<string>("all");
+  const [filterBoardingStatus, setFilterBoardingStatus] = useState<string>("all");
   const [filterClassGroup, setFilterClassGroup] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isAddingStudent, setIsAddingStudent] = useState(false);

@@ -118,12 +118,15 @@ const BurserDashboard = () => {
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [studentForm, setStudentForm] = useState({
     first_name: "",
+    other_names: "",
     last_name: "",
     admission_number: "",
     class_id: "",
     boarding_status: "day" as "day" | "boarding",
     parents_names: "",
     contact: "",
+    registration_fee: "",
+    other_fees: "",
   });
 
   const [newPayment, setNewPayment] = useState({
@@ -590,12 +593,17 @@ const BurserDashboard = () => {
     setEditingStudentId(student?.id || null);
     setStudentForm({
       first_name: student?.first_name || "",
+      other_names: student?.other_names || "",
       last_name: student?.last_name || "",
       admission_number: student?.admission_number || "",
       class_id: student?.class_id || classes[0]?.id || "",
       boarding_status: student?.boarding_status || "day",
       parents_names: student?.parents_names || "",
       contact: student?.contact || "",
+      registration_fee: String(
+        student?.registration_fee ?? FEE_STRUCTURE.registration,
+      ),
+      other_fees: String(student?.other_fees ?? 0),
     });
     setStudentDialogOpen(true);
   };
@@ -614,13 +622,46 @@ const BurserDashboard = () => {
     }
     try {
       if (editingStudentId) {
+        const currentStudent = students.find(
+          (student) => student.id === editingStudentId,
+        );
+        const updates = {
+          ...studentForm,
+          registration_fee: Number(studentForm.registration_fee) || 0,
+          other_fees: Number(studentForm.other_fees) || 0,
+        };
         await updateStudent.mutateAsync({
           id: editingStudentId,
-          updates: studentForm,
+          updates,
         });
+        const feesChanged =
+          currentStudent &&
+          (currentStudent.class_id !== updates.class_id ||
+            (currentStudent.boarding_status || "day") !==
+              updates.boarding_status ||
+            Number(currentStudent.other_fees || 0) !== updates.other_fees);
+        if (feesChanged) {
+          const expectedFee =
+            getExpectedFee(
+              getClassName(updates.class_id),
+              updates.boarding_status,
+            ) + updates.other_fees;
+          await Promise.all(
+            fees
+              .filter((fee) => fee.student_id === editingStudentId)
+              .map((fee) =>
+                updateFee.mutateAsync({
+                  id: fee.id,
+                  updates: { expected_fee: expectedFee },
+                }),
+              ),
+          );
+        }
       } else {
         await createStudent.mutateAsync({
           ...studentForm,
+          registration_fee: Number(studentForm.registration_fee) || 0,
+          other_fees: Number(studentForm.other_fees) || 0,
           date_of_birth: "",
           gender: "male",
           enrollment_date: new Date().toISOString(),
@@ -1446,6 +1487,18 @@ const BurserDashboard = () => {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label>Other Names</Label>
+                    <Input
+                      value={studentForm.other_names}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          other_names: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label>Last Name</Label>
                     <Input
                       value={studentForm.last_name}
@@ -1465,6 +1518,18 @@ const BurserDashboard = () => {
                         setStudentForm({
                           ...studentForm,
                           admission_number: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Parents Names</Label>
+                    <Input
+                      value={studentForm.parents_names}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          parents_names: e.target.value,
                         })
                       }
                     />
@@ -1513,6 +1578,34 @@ const BurserDashboard = () => {
                         setStudentForm({
                           ...studentForm,
                           contact: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Registration Fee (UGX)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={studentForm.registration_fee}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          registration_fee: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Other Fees (UGX)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={studentForm.other_fees}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          other_fees: e.target.value,
                         })
                       }
                     />
